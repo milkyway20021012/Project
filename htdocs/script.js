@@ -1,6 +1,6 @@
 $(document).ready(function () {
     let apiURL = "travel_rank.php";
-    let tripsPerPage = 5;
+    let tripsPerPage = 10;
     let currentTrips = [];
     let filteredTrips = [];
     let totalPages = 1;
@@ -13,9 +13,9 @@ $(document).ready(function () {
         categories.forEach(category => {
             categoryHtml += `<div class="category main-category" data-id="${category.id}">${category.name}</div>`;
             if (category.sub_categories.length > 0) {
-                categoryHtml += `<div class="sub-categories" id="sub-${category.id}" style="display: none;">`;
+                categoryHtml += `<div class="sub-category" id="sub-${category.id}" style="display: none;">`;
                 category.sub_categories.forEach(subCategory => {
-                    categoryHtml += `<div class="category sub-category" data-id="${subCategory.id}">└ ${subCategory.name}</div>`;
+                    categoryHtml += `<div class="category sub-category" data-id="${subCategory.id}">${subCategory.name}</div>`;
                 });
                 categoryHtml += `</div>`;
             }
@@ -37,7 +37,7 @@ $(document).ready(function () {
     // 點擊子分類時載入特定國家的行程
     $(document).on("click", ".sub-category", function () {
         let categoryId = $(this).data("id");
-        let categoryName = $(this).text().replace("└ ", "");
+        let categoryName = $(this).text().replace("", "");
         $("#category-title").text(categoryName);
         currentCategoryId = categoryId;
         loadTrips(categoryId, "");
@@ -51,18 +51,18 @@ $(document).ready(function () {
 
     function loadTrips(categoryId, query) {
         let url = `${apiURL}?action=get_trips`;
-        if (categoryId) url += `&category_id=${categoryId}`;
+        if (categoryId) url += `&category_id=${categoryId}`;  // 確保 category_id 有被加入
         if (query) url += `&query=${query}`;
-
+    
         $.getJSON(url, function (data) {
-            currentTrips = data.trips;
-            totalPages = Math.ceil(currentTrips.length / tripsPerPage);
+            filteredTrips = data.trips.filter(trip => trip.category_id == categoryId); // 確保只顯示屬於該類別的行程
+            totalPages = Math.ceil(filteredTrips.length / tripsPerPage);
             currentPage = 1;
-            filteredTrips = currentTrips;
             displayTrips(getTripsByPage(currentPage));
             displayPagination();
         });
     }
+    
 
     function getTripsByPage(page) {
         let start = (page - 1) * tripsPerPage;
@@ -84,9 +84,20 @@ $(document).ready(function () {
     function displayPagination() {
         let paginationHtml = "";
         let newTotalPages = Math.ceil(filteredTrips.length / tripsPerPage);
-        for (let i = 1; i <= newTotalPages; i++) {
-            paginationHtml += `<span class="page-link" data-page="${i}">${i}</span> `;
+        totalPages = newTotalPages;
+        for (let i = 1; i <= totalPages; i++) {
+            paginationHtml += `<span class="page-link ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</span> `;
         }
         $("#pagination").html(paginationHtml);
     }
+
+    // 點擊分頁切換
+    $(document).on("click", ".page-link", function () {
+        let selectedPage = parseInt($(this).attr("data-page"));
+        if (selectedPage !== currentPage) {
+            currentPage = selectedPage;
+            displayTrips(getTripsByPage(currentPage));
+            displayPagination();
+        }
+    });
 });

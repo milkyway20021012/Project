@@ -10,9 +10,7 @@ body .ranking-title {
     font-size: 32px;
     font-weight: bold;  
     margin-bottom: 30px;
-
 }
-
 
 h2 {
     color: #333;
@@ -52,6 +50,20 @@ h2 {
 
 .category:hover {
     background: #0056b3;
+}
+
+.sub-category {
+    background: #6c757d; /* 深灰色背景 */
+    color: #f8f9fa; /* 淺色文字 */
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 8px;
+    margin-left: 20px; /* 子類別向右縮排 */
+    font-weight: normal; /* 子類別不加粗 */
+}
+
+.sub-category:hover {
+    background: #5a6268; /* 滑鼠移過時更深的灰色 */
 }
 
 .trips-container {

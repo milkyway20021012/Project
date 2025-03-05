@@ -43,10 +43,27 @@ elseif ($action == 'get_trips') {
     $types = "";
 
     if ($category_id) {
-        $query .= " AND (category_id = ? OR category_id IN (SELECT id FROM categories WHERE parent_id = ?))";
-        $params[] = $category_id;
-        $params[] = $category_id;
-        $types .= "ii";
+        // 先檢查這個分類是否是主分類
+        $check_parent_query = "SELECT parent_id FROM categories WHERE id = ?";
+        $stmt = $conn->prepare($check_parent_query);
+        $stmt->bind_param("i", $category_id);
+        $stmt->execute();
+        $stmt->bind_result($parent_id);
+        $stmt->fetch();
+        $stmt->close();
+
+        if (is_null($parent_id)) {
+            // 如果是主分類，則包含該分類與子分類的行程
+            $query .= " AND (category_id = ? OR category_id IN (SELECT id FROM categories WHERE parent_id = ?))";
+            $params[] = $category_id;
+            $params[] = $category_id;
+            $types .= "ii";
+        } else {
+            // 如果是子分類，只顯示該子分類的行程
+            $query .= " AND category_id = ?";
+            $params[] = $category_id;
+            $types .= "i";
+        }
     }
 
     if ($search_query) {
@@ -59,7 +76,7 @@ elseif ($action == 'get_trips') {
     if (!empty($params)) {
         $stmt->bind_param($types, ...$params);
     }
-    
+
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -70,6 +87,7 @@ elseif ($action == 'get_trips') {
 
     echo json_encode(["trips" => $trips]);
 }
+
 
 $conn->close();
 ?>
