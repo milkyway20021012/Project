@@ -13,35 +13,40 @@ $(document).ready(function () {
         categories.forEach(category => {
             categoryHtml += `<div class="category main-category" data-id="${category.id}">${category.name}</div>`;
             if (category.sub_categories.length > 0) {
-                categoryHtml += `<div class="sub-category" id="sub-${category.id}" style="display: none;">`;
                 category.sub_categories.forEach(subCategory => {
                     categoryHtml += `<div class="category sub-category" data-id="${subCategory.id}">${subCategory.name}</div>`;
                 });
-                categoryHtml += `</div>`;
             }
         });
 
         $("#categories").html(categoryHtml);
     });
 
-    // 點擊主分類時載入所有行程
+    // 點擊主分類時載入所有行程，並高光當前類別
     $(document).on("click", ".main-category", function () {
         let categoryId = $(this).data("id");
         let categoryName = $(this).text();
         $("#category-title").text(categoryName);
         currentCategoryId = categoryId;
-        $("#sub-" + categoryId).toggle(); // 展開或收起子類別
+        highlightCategory($(this));
         loadTrips(categoryId, "");
     });
 
-    // 點擊子分類時載入特定國家的行程
+    // 點擊子分類時載入特定國家的行程，並高光當前子類別
     $(document).on("click", ".sub-category", function () {
         let categoryId = $(this).data("id");
-        let categoryName = $(this).text().replace("", "");
-        $("#category-title").text(categoryName);
+        let categoryName = $(this).text();
+        $("#category-title").text(categoryName); // 只顯示所選子類別的名稱
         currentCategoryId = categoryId;
+        highlightCategory($(this));
         loadTrips(categoryId, "");
     });
+
+    // 高光當前選擇的類別
+    function highlightCategory(selectedElement) {
+        $(".category, .sub-category").removeClass("active-category"); // 移除所有已選擇的高光類別
+        selectedElement.addClass("active-category"); // 為當前選擇的類別添加高光
+    }
 
     // 搜尋功能
     $("#search").on("input", function () {
@@ -63,7 +68,6 @@ $(document).ready(function () {
         });
     }
     
-
     function getTripsByPage(page) {
         let start = (page - 1) * tripsPerPage;
         let end = start + tripsPerPage;

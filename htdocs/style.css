@@ -1,6 +1,6 @@
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f8f9fa;
+    font-family: 'Poppins', sans-serif;
+    background-color: #f4f4f9;
     margin: 0;
     padding: 0;
 }
@@ -10,10 +10,11 @@ body .ranking-title {
     font-size: 32px;
     font-weight: bold;  
     margin-bottom: 30px;
+    color: #222;
 }
 
 h2 {
-    color: #333;
+    color: #444;
     text-align: center;
     margin-bottom: 20px;
     font-size: 28px;
@@ -21,49 +22,67 @@ h2 {
 
 .container {
     display: flex;
-    max-width: 1000px;
-    margin: 0 auto;
+    max-width: 1100px;
+    margin: 20px auto;
     background: white;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: none; /* 移除陰影，取消大框框 */
+    border: none; /* 移除邊框 */
 }
 
 .categories {
     width: 30%;
     padding-right: 20px;
-    border-right: 2px solid #ddd;
+    border-right: none; /* 移除右側邊框 */
+    display: flex;
+    flex-direction: column;
 }
 
 .category {
     cursor: pointer;
-    padding: 15px;
-    background: #007bff;
+    padding: 14px;
+    background: linear-gradient(135deg, #ff7e5f, #feb47b); /* 溫暖的橙色漸變 */
     color: white;
     margin: 10px 0;
-    border-radius: 10px;
-    transition: background 0.3s;
+    border-radius: 12px;
+    transition: all 0.3s ease;
     text-align: center;
     font-size: 18px;
     font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .category:hover {
-    background: #0056b3;
+    background: linear-gradient(135deg, #ff6a4d, #fe9c5e);
+    transform: scale(1.05);
 }
 
 .sub-category {
-    background: #6c757d; /* 深灰色背景 */
-    color: #f8f9fa; /* 淺色文字 */
-    padding: 10px;
+    background: #ffffff; /* 白色背景 */
+    color: #ff7e5f; /* 溫暖的橙色文字 */
+    padding: 12px 18px;
     font-size: 16px;
     border-radius: 8px;
-    margin-left: 20px; /* 子類別向右縮排 */
-    font-weight: normal; /* 子類別不加粗 */
+    margin: 5px 0 5px 30px;
+    font-weight: 500;
+    transition: background 0.3s ease, color 0.3s ease, transform 0.3s ease;
+    display: block;
+    border: 1px solid #ffd2b3;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .sub-category:hover {
-    background: #5a6268; /* 滑鼠移過時更深的灰色 */
+    background: #ffe8d6;
+    color: #ff6a4d;
+    transform: translateX(5px);
+    border-color: #ff7e5f;
+}
+
+.active-category {
+    background: #ff6a4d !important; /* 活躍選項的橙色背景 */
+    color: white !important;
+    font-weight: bold;
 }
 
 .trips-container {
@@ -72,25 +91,26 @@ h2 {
 }
 
 .search-input {
-    width: 50%;
-    padding: 10px;
+    width: 60%;
+    padding: 12px;
     font-size: 16px;
-    border: 2px solid #ddd;
-    border-radius: 10px;
+    border: 2px solid #bbb;
+    border-radius: 8px;
     outline: none;
-    transition: 0.3s;
+    transition: border 0.3s ease;
 }
 
 .search-input:focus {
-    border-color: #007bff;
+    border-color: #ff7e5f;
+    box-shadow: 0 0 5px rgba(255, 126, 95, 0.5);
 }
 
 .trip-item {
     padding: 15px;
     background: #fff;
     border-radius: 10px;
-    margin: 10px 0;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin: 12px 0;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
     transition: transform 0.3s ease-in-out;
     cursor: pointer;
     display: flex;
@@ -99,13 +119,13 @@ h2 {
 }
 
 .trip-item:hover {
-    transform: scale(1.02);
+    transform: scale(1.03);
 }
 
 .trip-info {
     font-size: 18px;
     font-weight: bold;
-    color: #333;
+    color: #222;
 }
 
 .trip-views {
@@ -127,5 +147,5 @@ h2 {
 
 .page-link.active {
     font-weight: bold;
-    color: #007bff;
+    color: #ff7e5f;
 }
