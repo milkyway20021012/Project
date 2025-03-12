@@ -1,95 +1,129 @@
 <?php
-// 連接資料庫
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "travel_rank";
+$servername = "localhost"; // 你的資料庫伺服器
+$username = "root"; // 你的資料庫帳號
+$password = ""; // 你的資料庫密碼
+$dbname = "tripmate"; // 資料庫名稱
 
+// 建立資料庫連線
 $conn = new mysqli($servername, $username, $password, $dbname);
 
+// 檢查連線是否成功
 if ($conn->connect_error) {
-    die("連接失敗: " . $conn->connect_error);
+    die("連線失敗：" . $conn->connect_error);
 }
 
-// 設定分類關鍵字
-$category_keywords = [
-    1 => ['101', '故宮', '日月潭', '墾丁'], // 熱門景點
-    2 => ['櫻花', '賞櫻', '花季'], // 春季推薦
-    3 => ['沙灘', '浮潛', '七星潭'], // 夏季推薦
-    4 => ['楓葉', '賞楓', '秋景'], // 秋季推薦
-    5 => ['滑雪', '雪山', '溫泉'], // 冬季推薦
-    6 => ['遊樂園', '親子', '兒童', '傳藝'], // 親子旅遊
-];
+// 取得所有地區列表（去重）
+$area_result = $conn->query("SELECT DISTINCT area FROM trip ORDER BY area ASC");
+$areas = [];
+while ($row = $area_result->fetch_assoc()) {
+    $areas[] = $row['area'];
+}
 
-// 自動分類的函數
-function getCategoryId($trip_name, $category_keywords) {
-    foreach ($category_keywords as $category_id => $keywords) {
-        foreach ($keywords as $keyword) {
-            if (strpos($trip_name, $keyword) !== false) {
-                return $category_id; // 找到對應的分類ID，直接返回
-            }
+// 取得所有標籤列表（去重，並拆分標籤）
+$tags_result = $conn->query("SELECT DISTINCT tags FROM trip");
+$tags_set = [];
+while ($row = $tags_result->fetch_assoc()) {
+    $tag_list = explode(",", $row['tags']); // 假設標籤以逗號分隔
+    foreach ($tag_list as $tag) {
+        $trimmed_tag = trim($tag);
+        if (!empty($trimmed_tag)) {
+            $tags_set[$trimmed_tag] = true;
         }
     }
-    return null; // 如果沒有匹配到分類，則返回 null
+}
+$tags_list = array_keys($tags_set);
+sort($tags_list);
+
+// 設定分頁變數
+$limit = 10; // 每頁顯示 10 筆
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($page - 1) * $limit;
+$search = isset($_GET['search']) ? trim($_GET['search']) : "";
+$start_date = isset($_GET['start_date']) ? $_GET['start_date'] : "";
+$end_date = isset($_GET['end_date']) ? $_GET['end_date'] : "";
+$area = isset($_GET['area']) ? $_GET['area'] : "";
+$tags = isset($_GET['tags']) ? $_GET['tags'] : "";
+$budget = isset($_GET['budget']) ? $_GET['budget'] : "";
+
+// 建立 SQL 條件
+$whereClauses = [];
+if (!empty($search)) {
+    $whereClauses[] = "title LIKE '%" . $conn->real_escape_string($search) . "%'";
+}
+if (!empty($start_date) && !empty($end_date)) {
+    // 強制 start_date 和 end_date 必須完全符合
+    $whereClauses[] = "start_date = '" . $conn->real_escape_string($start_date) . "' AND end_date = '" . $conn->real_escape_string($end_date) . "'";
+}
+if (!empty($area)) {
+    $whereClauses[] = "area = '" . $conn->real_escape_string($area) . "'";
+}
+if (!empty($tags)) {
+    $whereClauses[] = "tags LIKE '%" . $conn->real_escape_string($tags) . "%'";
+}
+if (!empty($budget)) {
+    $whereClauses[] = "CAST(budget AS UNSIGNED) <= " . (int)$budget;
 }
 
-// 當表單被提交
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["trip_name"])) {
-    $trip_name = $_POST["trip_name"]; // 使用者輸入的行程名稱
-    $views = 0; // 預設瀏覽次數
-
-    // 根據行程名稱自動分配分類
-    $category_id = getCategoryId($trip_name, $category_keywords);
-
-    if ($category_id) {
-        // 插入數據到 trips 表
-        $stmt = $conn->prepare("INSERT INTO trips (name, category_id, views) VALUES (?, ?, ?)");
-        $stmt->bind_param("sii", $trip_name, $category_id, $views);
-
-        if ($stmt->execute()) {
-            echo "行程新增成功，分類已自動分配！";
-        } else {
-            echo "新增失敗：" . $stmt->error;
-        }
-        $stmt->close();
-    } else {
-        echo "無法自動分類，請手動選擇分類。";
-    }
+$whereClause = "";
+if (!empty($whereClauses)) {
+    $whereClause = "WHERE " . implode(" AND ", $whereClauses);
 }
 
-$conn->close();
+// 取得符合條件的總行程數量
+$total_result = $conn->query("SELECT COUNT(*) AS total FROM trip $whereClause");
+$total_row = $total_result->fetch_assoc();
+$total_trips = $total_row['total'];
+$total_pages = ceil($total_trips / $limit);
+
+// SQL 查詢：取得符合條件的行程
+$sql = "SELECT title, view_count FROM trip $whereClause ORDER BY view_count DESC LIMIT $limit OFFSET $offset";
+$result = $conn->query($sql);
+
 ?>
-
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>行程排行</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="script.js"></script>
+    <title>熱門行程排行榜</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="script.js"></script>
 </head>
 <body>
-    <!-- 新增排行榜標題 -->
-    <h1 class="ranking-title">排行榜</h1>
-
     <div class="container">
-        <div class="categories" id="categories">
-            <!-- 類別會在這裡顯示 -->
-        </div>
-        <div class="trips-container">
-            <h2 id="category-title">熱門景點</h2>
-            <input type="text" id="search" class="search-input" placeholder="搜尋行程...">
-            <div id="trips">
-                <!-- 行程會在這裡顯示 -->
+        <h2>熱門行程排行榜</h2>
+        <div class="filters">
+            <input type="text" id="search" class="filter-input" placeholder="搜尋行程..." value="<?php echo htmlspecialchars($search); ?>">
+            <div class="date-range">
+                <label>開始日期：</label>
+                <input type="date" id="start_date" class="filter-input" value="<?php echo htmlspecialchars($start_date); ?>"></br>
+                <label>結束日期：</label>
+                <input type="date" id="end_date" class="filter-input" value="<?php echo htmlspecialchars($end_date); ?>">
             </div>
-            <div id="pagination" class="pagination">
-                <!-- 分頁按鈕會顯示在這裡 -->
-            </div>
+            <label for="area">選擇地區：</label>
+            <select id="area" class="filter-input">
+                <option value="">所有地區</option>
+                <?php foreach ($areas as $a) {
+                    echo "<option value='" . htmlspecialchars($a) . "' " . ($a == $area ? "selected" : "") . ">" . htmlspecialchars($a) . "</option>";
+                } ?>
+            </select>
+            <label for="tags">選擇標籤：</label>
+            <select id="tags" class="filter-input">
+                <option value="">所有標籤</option>
+                <?php foreach ($tags_list as $t) {
+                    echo "<option value='" . htmlspecialchars($t) . "' " . ($t == $tags ? "selected" : "") . ">" . htmlspecialchars($t) . "</option>";
+                } ?>
+            </select>
+            <label for="budget">最大預算：</label>
+            <input type="number" id="budget" class="filter-input" placeholder="最大預算..." value="<?php echo htmlspecialchars($budget); ?>">
         </div>
-    </div>
-</body>
-</html>
-
-
+        <ul id="trip-list">
+            <?php if ($result->num_rows > 0) {
+                while($row = $result->fetch_assoc()) {
+                    echo "<li>" . htmlspecialchars($row['title']) . "<span class='view-count'>瀏覽次數: " . $row['view_count'] . "</span></li>";
+                }
+            } else {
+                echo "<li>目前沒有行程資料</li>";
+            } ?>
+        </ul>
+        <div class="pagination">
