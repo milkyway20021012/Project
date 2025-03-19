@@ -35,7 +35,7 @@ $tags_list = array_keys($tags_set);
 sort($tags_list);
 
 // 設定分頁變數
-$limit = 10; // 每頁顯示 10 筆
+$limit = 7; // 每頁顯示 7 筆
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $limit;
 $search = isset($_GET['search']) ? trim($_GET['search']) : "";
@@ -96,7 +96,7 @@ $result = $conn->query($sql);
             <input type="text" id="search" class="filter-input" placeholder="搜尋行程..." value="<?php echo htmlspecialchars($search); ?>">
             <div class="date-range">
                 <label>開始日期：</label>
-                <input type="date" id="start_date" class="filter-input" value="<?php echo htmlspecialchars($start_date); ?>"></br>
+                <input type="date" id="start_date" class="filter-input" value="<?php echo htmlspecialchars($start_date); ?>">
                 <label>結束日期：</label>
                 <input type="date" id="end_date" class="filter-input" value="<?php echo htmlspecialchars($end_date); ?>">
             </div>
@@ -127,3 +127,13 @@ $result = $conn->query($sql);
             } ?>
         </ul>
         <div class="pagination">
+            <?php for ($i = 1; $i <= $total_pages; $i++) {
+                echo "<a href='?search=" . urlencode($search) . "&start_date=$start_date&end_date=$end_date&area=$area&tags=$tags&budget=$budget&page=$i'>$i</a>";
+            } ?>
+        </div>
+    </div>
+</body>
+</html>
+<?php
+$conn->close();
+?>

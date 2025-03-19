@@ -1,18 +1,28 @@
 /* 全局樣式 */
 body {
     font-family: Arial, sans-serif;
-    text-align: center;
+    text-align: left;
     background-color: #f4f4f4;
     margin: 0;
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    height: 100vh;
 }
 
 /* 容器 */
 .container {
-    max-width: 400px;
-    margin: 50px auto;
-    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%; /* 確保寬度填滿頁面 */
+    max-width: 100%;
+    min-height: 100vh;
     padding: 20px;
+    box-sizing: border-box; /* 確保 padding 和邊框不會超出範圍 */
+    background: white;
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     opacity: 0;
@@ -40,6 +50,10 @@ body {
 ul {
     list-style: none;
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* 增加列表項之間的空間 */
+    width: 100%; /* 確保列表寬度填滿容器 */
 }
 
 li {
@@ -74,6 +88,10 @@ li:nth-child(even) {
 /* 分頁 */
 .pagination {
     margin-top: 15px;
+    display: flex;
+    justify-content: center;
+    width: 100%; /* 使分頁區塊填滿容器 */
+    box-sizing: border-box; /* 讓 padding 和邊框不會超過容器寬度 */
 }
 
 .pagination a, .pagination span {
@@ -100,7 +118,6 @@ li:nth-child(even) {
     background: #007bff;
     color: white;
 }
-
 /* 淡入動畫 */
 @keyframes fadeIn {
     from {
@@ -135,9 +152,7 @@ li:nth-child(even) {
     border-radius: 8px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 400px; /* 確保不會超出畫面 */
-    margin-left: auto;
-    margin-right: auto;
+    max-width: 100%; /* 確保不會超出畫面 */
 }
 
 .filters label {
