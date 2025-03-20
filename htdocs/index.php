@@ -35,7 +35,7 @@ $tags_list = array_keys($tags_set);
 sort($tags_list);
 
 // 設定分頁變數
-$limit = 7; // 每頁顯示 7 筆
+$limit = 6; // 每頁顯示 7 筆
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $limit;
 $search = isset($_GET['search']) ? trim($_GET['search']) : "";
@@ -88,6 +88,12 @@ $result = $conn->query($sql);
     <title>熱門行程排行榜</title>
     <link rel="stylesheet" href="styles.css">
     <script defer src="script.js"></script>
+    <!-- 引入 Select2 的 CSS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
+<!-- 引入 jQuery 和 Select2 的 JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -101,34 +107,44 @@ $result = $conn->query($sql);
                 <input type="date" id="end_date" class="filter-input" value="<?php echo htmlspecialchars($end_date); ?>">
             </div>
             <label for="area">選擇地區：</label>
-            <select id="area" class="filter-input">
-                <option value="">所有地區</option>
-                <?php foreach ($areas as $a) {
-                    echo "<option value='" . htmlspecialchars($a) . "' " . ($a == $area ? "selected" : "") . ">" . htmlspecialchars($a) . "</option>";
-                } ?>
-            </select>
-            <label for="tags">選擇標籤：</label>
-            <select id="tags" class="filter-input">
-                <option value="">所有標籤</option>
-                <?php foreach ($tags_list as $t) {
-                    echo "<option value='" . htmlspecialchars($t) . "' " . ($t == $tags ? "selected" : "") . ">" . htmlspecialchars($t) . "</option>";
-                } ?>
-            </select>
+<select id="area" class="filter-input">
+    <option value="">所有地區</option>
+    <?php foreach ($areas as $a) {
+        echo "<option value='" . htmlspecialchars($a) . "' " . ($a == $area ? "selected" : "") . ">" . htmlspecialchars($a) . "</option>";
+    } ?>
+</select>
+
+<label for="tags">選擇標籤：</label>
+<select id="tags" class="filter-input">
+    <option value="">所有標籤</option>
+    <?php foreach ($tags_list as $t) {
+        echo "<option value='" . htmlspecialchars($t) . "' " . ($t == $tags ? "selected" : "") . ">" . htmlspecialchars($t) . "</option>";
+    } ?>
+</select>
             <label for="budget">最大預算：</label>
             <input type="number" id="budget" class="filter-input" placeholder="最大預算..." value="<?php echo htmlspecialchars($budget); ?>">
+            <button id="clear-filters" class="clear-filters-btn">清除篩選</button>
+
         </div>
+        <!-- 加載指示器 -->
+        <div id="loading-indicator" class="loading-indicator" style="display: none;">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- 行程清單 -->
         <ul id="trip-list">
-            <?php if ($result->num_rows > 0) {
-                while($row = $result->fetch_assoc()) {
-                    echo "<li>" . htmlspecialchars($row['title']) . "<span class='view-count'>瀏覽次數: " . $row['view_count'] . "</span></li>";
-                }
-            } else {
-                echo "<li>目前沒有行程資料</li>";
-            } ?>
-        </ul>
+    <?php if ($result->num_rows > 0) {
+        while($row = $result->fetch_assoc()) {
+            echo "<li><a href='trip-detail.php?id=" . $row['trip_id'] . "'>" . htmlspecialchars($row['title']) . "</a><span class='view-count'>瀏覽次數: " . $row['view_count'] . "</span></li>";
+        }
+    } else {
+        echo "<li>目前沒有行程資料</li>";
+    } ?>
+</ul>
+        <!-- 分頁區域 -->
         <div class="pagination">
             <?php for ($i = 1; $i <= $total_pages; $i++) {
-                echo "<a href='?search=" . urlencode($search) . "&start_date=$start_date&end_date=$end_date&area=$area&tags=$tags&budget=$budget&page=$i'>$i</a>";
+                echo "<a href='?search=" . urlencode($search) . "&start_date=$start_date&end_date=$end_date&area=$area&tags=$tags&budget=$budget&page=$i' class='" . ($i == $current_page ? 'active' : '') . "'>$i</a>";
             } ?>
         </div>
     </div>
