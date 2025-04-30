@@ -421,5 +421,4 @@ FodyWeavers.xsd
 Program
 
 *.DS_Store
-*.env
-Ai-line-bot/*.env
+/project/ai-line-bot/.env
