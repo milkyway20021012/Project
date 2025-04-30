@@ -10,20 +10,20 @@ from openai import OpenAI
 from google.cloud import translate_v2 as translate  # Google Translate
 from google.cloud import speech  # Google Speech-to-Text
 
-# ========== LINE BOT 設定 ==========
-LINE_CHANNEL_ACCESS_TOKEN = 'f7a7h+8Ax4oTzQYjwl0TcD2lUJD8eEFGDaaB94qZPGc2mei6BaMJcwCV3DI8eKhfgCiJfVg11/sNW8mDhGtkjiQek3FZL3Pl8g1ix8sxbWM9mjj1sbAyEdr9XlJuMg7Jg2j2/P/PmDEevkDQjboGnQdB04t89/1O/w1cDnyilFU='
-LINE_CHANNEL_SECRET = '568f8e8c2c6c24970ddd9512dc1fa46d'
+# LINE BOT 設定
+LINE_CHANNEL_ACCESS_TOKEN = os.getenv('CHANNEL_ACCESS_TOKEN')
+LINE_CHANNEL_SECRET = os.getenv('CHANNEL_SECRET')
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
-# ========== OpenAI GPT 設定 ==========
-openai_client = OpenAI(api_key='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 ')
+# OpenAI GPT 設定 
+openai_client = OpenAI(api_key=os.getenv('API_KEY'))
 
-# ========== Google Translate 設定 ==========
+# Google Translate 設定 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gcp-translate-key.json"
 translate_client = translate.Client()
 
-# ========== Google Speech-to-Text 設定 ==========
+# Google Speech-to-Text 設定
 speech_client = speech.SpeechClient()  # Google Speech-to-Text 初始化
 
 # 初始化 Flask
@@ -217,3 +217,4 @@ def handle_message(event):
 
 if __name__ == "__main__":
     app.run(port=8080)
+
