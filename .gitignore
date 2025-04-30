@@ -422,3 +422,4 @@ Program
 
 *.DS_Store
 *.env
+Ai-line-bot/*.env
