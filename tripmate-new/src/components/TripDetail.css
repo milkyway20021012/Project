@@ -1,0 +1,243 @@
+/* src/components/TripDetail.css */
+.trip-detail-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.trip-detail-container {
+    position: relative;
+    background-color: #fff;
+    border-radius: 8px;
+    max-width: 900px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #777;
+    z-index: 10;
+}
+
+.close-button:hover {
+    color: #333;
+}
+
+.trip-detail-header {
+    padding: 25px 30px;
+    border-bottom: 1px solid #eee;
+    background-color: #f9f9f9;
+}
+
+.trip-detail-header h2 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 24px;
+}
+
+.trip-meta {
+    display: flex;
+    gap: 15px;
+    color: #777;
+    font-size: 14px;
+}
+
+.trip-creator,
+.trip-views {
+    display: flex;
+    align-items: center;
+}
+
+.trip-detail-content {
+    padding: 30px;
+}
+
+.trip-info-panel {
+    margin-bottom: 30px;
+}
+
+.trip-info-section {
+    margin-bottom: 25px;
+}
+
+.trip-info-section h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 18px;
+    border-left: 3px solid #3498db;
+    padding-left: 10px;
+}
+
+.trip-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-item label {
+    font-size: 13px;
+    color: #777;
+    margin-bottom: 5px;
+}
+
+.info-item span {
+    font-size: 16px;
+    color: #333;
+}
+
+.trip-description {
+    line-height: 1.6;
+    color: #444;
+    white-space: pre-line;
+}
+
+.trip-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.trip-tag {
+    background-color: #e0f7fa;
+    color: #00838f;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+}
+
+/* 行程安排時間線 */
+.schedule-timeline {
+    position: relative;
+    margin-left: 20px;
+    padding-left: 30px;
+}
+
+.schedule-timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 2px;
+    background-color: #3498db;
+}
+
+.schedule-item {
+    position: relative;
+    margin-bottom: 30px;
+    display: flex;
+}
+
+.schedule-dot {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background-color: #3498db;
+    border-radius: 50%;
+    left: -37px;
+    top: 5px;
+}
+
+.schedule-time {
+    width: 180px;
+    padding-right: 15px;
+}
+
+.schedule-date {
+    font-size: 14px;
+    color: #777;
+}
+
+.schedule-hours {
+    font-weight: bold;
+    color: #333;
+}
+
+.schedule-content {
+    flex: 1;
+}
+
+.schedule-content h4 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+}
+
+/* 參與者列表 */
+.participants-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.participant-item {
+    padding: 10px 15px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.participant-item.accepted {
+    background-color: #e8f5e9;
+}
+
+.participant-item.invited {
+    background-color: #fff8e1;
+}
+
+.participant-item.rejected {
+    background-color: #ffebee;
+}
+
+.participant-status {
+    font-size: 13px;
+    color: #777;
+}
+
+.no-details,
+.no-participants {
+    color: #777;
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .trip-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .participants-list {
+        grid-template-columns: 1fr;
+    }
+
+    .schedule-item {
+        flex-direction: column;
+    }
+
+    .schedule-time {
+        width: auto;
+        margin-bottom: 10px;
+    }
+}

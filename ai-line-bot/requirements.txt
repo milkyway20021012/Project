@@ -1,3 +1,8 @@
 flask==3.0.0
 line-bot-sdk==3.7.0
 python-dotenv
+openai>=1.0.0
+google-cloud-translate
+google-cloud-speech
+google-auth
+google-auth-oauthlib
