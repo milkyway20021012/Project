@@ -55,3 +55,4 @@ credentials.json
 # 其他敏感檔案
 secrets.json
 config.json 
+.vercel
