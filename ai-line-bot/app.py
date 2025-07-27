@@ -58,6 +58,27 @@ else:
 # 初始化 Flask
 app = Flask(__name__)
 
+# 設定 Flask 錯誤處理
+@app.errorhandler(500)
+def internal_error(error):
+    """處理 500 錯誤"""
+    logger.error(f"500 錯誤: {error}")
+    return jsonify({
+        "error": "Internal Server Error",
+        "message": "應用程式發生內部錯誤",
+        "timestamp": time.time()
+    }), 500
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """處理所有未捕獲的異常"""
+    logger.error(f"未捕獲的異常: {str(e)}")
+    return jsonify({
+        "error": "Application Error",
+        "message": str(e),
+        "timestamp": time.time()
+    }), 500
+
 # 簡單的快取機制
 response_cache = {}
 
@@ -80,27 +101,54 @@ def index():
             "message": str(e)
         }), 500
 
+@app.route("/test", methods=["GET"])
+def test():
+    """簡單測試端點"""
+    try:
+        return jsonify({
+            "status": "ok",
+            "message": "測試端點正常運作",
+            "timestamp": time.time()
+        })
+    except Exception as e:
+        logger.error(f"測試端點錯誤: {str(e)}")
+        return jsonify({
+            "error": "Test Error",
+            "message": str(e)
+        }), 500
+
 @app.route("/health", methods=["GET"])
 def health():
     """健康檢查端點"""
     try:
-        env_status = check_environment()
-        
-        return jsonify({
-            "status": "healthy" if env_status else "unhealthy",
+        # 基本檢查
+        basic_status = {
+            "app_loaded": True,
             "timestamp": time.time(),
-            "environment": "production",
-            "environment_variables": {
+            "environment": "production"
+        }
+        
+        # 嘗試檢查環境變數（不讓它導致整個端點失敗）
+        try:
+            env_status = check_environment()
+            basic_status["environment_ok"] = env_status
+            basic_status["environment_variables"] = {
                 "line_token_set": bool(LINE_CHANNEL_ACCESS_TOKEN),
                 "line_secret_set": bool(LINE_CHANNEL_SECRET),
                 "openai_key_set": bool(openai_api_key)
             }
-        })
+        except Exception as env_error:
+            logger.error(f"環境變數檢查錯誤: {str(env_error)}")
+            basic_status["environment_ok"] = False
+            basic_status["environment_error"] = str(env_error)
+        
+        return jsonify(basic_status)
     except Exception as e:
         logger.error(f"健康檢查錯誤: {str(e)}")
         return jsonify({
             "status": "error",
-            "error": str(e)
+            "error": str(e),
+            "timestamp": time.time()
         }), 500
 
 @app.route("/callback", methods=['POST'])
