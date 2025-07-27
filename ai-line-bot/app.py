@@ -7,6 +7,10 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import *
 from openai import OpenAI
+from dotenv import load_dotenv
+
+# 載入環境變數
+load_dotenv()
 
 # LINE 設定
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv('CHANNEL_ACCESS_TOKEN')
