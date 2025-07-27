@@ -65,6 +65,12 @@ def cache_response(user_text, response):
 def process_text_message(event):
     user_text = event.message.text.strip()
     user_id = event.source.user_id
+    
+    # 調試資訊
+    print(f"🔍 處理訊息：{user_text}")
+    print(f"🔑 API 金鑰狀態：{'已設定' if os.getenv('OPENAI_API_KEY') else '未設定'}")
+    if os.getenv('OPENAI_API_KEY'):
+        print(f"🔑 API 金鑰格式：{os.getenv('OPENAI_API_KEY')[:20]}...")
 
     # 快速回覆常見問題
     quick_responses = {
@@ -110,7 +116,14 @@ def process_text_message(event):
                 
             except Exception as e:
                 print(f"⚠️ OpenAI API 錯誤：{str(e)}")
-                reply_text = "抱歉，我現在無法回應，請稍後再試。"
+                print(f"🔍 錯誤詳情：{type(e).__name__}")
+                # 更詳細的錯誤處理
+                if "invalid_api_key" in str(e).lower():
+                    reply_text = "抱歉，API 金鑰設定有問題，請聯繫管理員。"
+                elif "rate_limit" in str(e).lower():
+                    reply_text = "抱歉，API 使用量已達上限，請稍後再試。"
+                else:
+                    reply_text = "抱歉，我現在無法回應，請稍後再試。"
 
     try:
         line_bot_api.push_message(user_id, TextSendMessage(text=reply_text))
