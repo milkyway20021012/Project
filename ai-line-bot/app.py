@@ -15,7 +15,7 @@ line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 line_handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 # OpenAI GPT 設定
-openai_client = OpenAI(api_key=os.getenv('API_KEY'))
+openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 # 初始化 Flask
 app = Flask(__name__)
