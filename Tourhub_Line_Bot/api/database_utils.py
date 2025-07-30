@@ -105,6 +105,55 @@ def get_leaderboard_from_database():
         logger.error(f"從資料庫獲取排行榜資料失敗: {e}")
         return {}
 
+def get_trips_by_location(location: str, limit: int = 5):
+    """根據地區查詢行程列表"""
+    try:
+        connection = get_database_connection()
+        if not connection:
+            return []
+        
+        cursor = connection.cursor(dictionary=True)
+        
+        # 查詢指定地區的行程
+        query = """
+        SELECT 
+            t.trip_id,
+            t.title,
+            t.description,
+            t.area,
+            t.start_date,
+            t.end_date,
+            DATEDIFF(t.end_date, t.start_date) + 1 as duration_days
+        FROM line_trips t
+        WHERE t.area LIKE %s
+        ORDER BY t.trip_id DESC
+        LIMIT %s
+        """
+        
+        cursor.execute(query, (f"%{location}%", limit))
+        results = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        
+        # 轉換為行程列表格式
+        trips = []
+        for row in results:
+            trips.append({
+                "id": str(row.get('trip_id')),
+                "title": row.get('title', '未知行程'),
+                "duration": f"{row.get('duration_days', 1)}天",
+                "highlights": row.get('description', '精彩行程'),
+                "area": row.get('area', '未知地區'),
+                "trip_id": row.get('trip_id')
+            })
+        
+        logger.info(f"找到 {len(trips)} 筆 {location} 相關行程")
+        return trips
+        
+    except Exception as e:
+        logger.error(f"查詢地區行程失敗: {e}")
+        return []
+
 def get_trip_details_by_id(trip_id: int):
     """根據行程ID獲取詳細行程資訊"""
     try:

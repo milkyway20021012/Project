@@ -504,7 +504,7 @@ def create_flex_message(template_type, **kwargs):
                             },
                             {
                                 "type": "text",
-                                "text": f"⏰ {trip['duration']} | ⭐ {trip['rating']}",
+                                "text": f"⏰ {trip['duration']}",
                                 "size": "xs",
                                 "color": "#888888",
                                 "marginTop": "sm"
@@ -570,31 +570,64 @@ def create_flex_message(template_type, **kwargs):
         trip = kwargs.get('trip')
         
         itinerary_contents = []
-        for day_key, day_itinerary in trip["itinerary"].items():
-            itinerary_contents.append({
-                "type": "box",
-                "layout": "horizontal",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": day_key.replace("day", "Day "),
-                        "weight": "bold",
-                        "size": "sm",
-                        "color": "#9B59B6",
-                        "flex": 0
-                    },
-                    {
-                        "type": "text",
-                        "text": day_itinerary,
-                        "size": "sm",
-                        "color": "#555555",
-                        "flex": 1,
-                        "wrap": True,
-                        "marginStart": "md"
-                    }
-                ],
-                "marginBottom": "sm"
-            })
+        
+        # 處理行程內容 - 支援字串和字典格式
+        if isinstance(trip["itinerary"], str):
+            # 如果是字串格式，按行分割
+            itinerary_lines = trip["itinerary"].split('\n')
+            for i, line in enumerate(itinerary_lines, 1):
+                if line.strip():
+                    itinerary_contents.append({
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": f"Day {i}",
+                                "weight": "bold",
+                                "size": "sm",
+                                "color": "#9B59B6",
+                                "flex": 0
+                            },
+                            {
+                                "type": "text",
+                                "text": line.strip(),
+                                "size": "sm",
+                                "color": "#555555",
+                                "flex": 1,
+                                "wrap": True,
+                                "marginStart": "md"
+                            }
+                        ],
+                        "marginBottom": "sm"
+                    })
+        else:
+            # 如果是字典格式，按原來的邏輯處理
+            for day_key, day_itinerary in trip["itinerary"].items():
+                itinerary_contents.append({
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": day_key.replace("day", "Day "),
+                            "weight": "bold",
+                            "size": "sm",
+                            "color": "#9B59B6",
+                            "flex": 0
+                        },
+                        {
+                            "type": "text",
+                            "text": day_itinerary,
+                            "size": "sm",
+                            "color": "#555555",
+                            "flex": 1,
+                            "wrap": True,
+                            "marginStart": "md"
+                        }
+                    ],
+                    "marginBottom": "sm"
+                })
         
         return {
             "type": "bubble",
@@ -629,21 +662,13 @@ def create_flex_message(template_type, **kwargs):
                         "marginBottom": "sm"
                     },
 
-                    {
-                        "type": "box",
-                        "layout": "horizontal",
-                        "contents": [
-                            {"type": "text", "text": "⭐", "size": "md", "flex": 0},
-                            {"type": "text", "text": f"評分：{trip['rating']}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
-                        ],
-                        "marginBottom": "sm"
-                    },
+
                     {
                         "type": "box",
                         "layout": "horizontal",
                         "contents": [
                             {"type": "text", "text": "📍", "size": "md", "flex": 0},
-                            {"type": "text", "text": f"亮點：{trip['highlights']}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                            {"type": "text", "text": f"亮點：{trip.get('highlights', trip.get('description', '精彩行程'))}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
                         ],
                         "marginBottom": "md"
                     },
@@ -745,23 +770,38 @@ def parse_location(user_message):
     return None
 
 def find_location_trips(user_message):
-    """查找地區相關行程"""
-    from api.config import TRIP_DATABASE
+    """根據用戶訊息查找地區相關行程"""
+    from api.database_utils import get_trips_by_location
     
-    for location in TRIP_DATABASE.keys():
-        if location in user_message:
-            return location, TRIP_DATABASE[location]
-    return None, None
+    # 簡單的地區關鍵字匹配
+    location_keywords = {
+        "北海道": ["北海道", "hokkaido", "Hokkaido", "HOKKAIDO"],
+        "東京": ["東京", "tokyo", "Tokyo", "TOKYO"],
+        "大阪": ["大阪", "osaka", "Osaka", "OSAKA"],
+        "京都": ["京都", "kyoto", "Kyoto", "KYOTO"],
+        "大版": ["大版", "osaka", "Osaka", "OSAKA"],  # 修正錯字
+        "tokyo": ["tokyo", "Tokyo", "TOKYO", "東京"]
+    }
+    
+    for location, keywords in location_keywords.items():
+        for keyword in keywords:
+            if keyword in user_message:
+                # 從資料庫查詢該地區的行程
+                trips = get_trips_by_location(location, limit=5)
+                return location, trips
+    
+    return None, []
 
 def find_trip_by_id(trip_id):
     """根據ID查找行程"""
-    from api.config import TRIP_DATABASE
+    from api.database_utils import get_trip_details_by_id
     
-    for location_trips in TRIP_DATABASE.values():
-        for trip in location_trips:
-            if trip["id"] == trip_id:
-                return trip
-    return None
+    try:
+        trip_id_int = int(trip_id)
+        return get_trip_details_by_id(trip_id_int)
+    except (ValueError, TypeError):
+        logger.error(f"無效的行程ID: {trip_id}")
+        return None
 
 # 排行榜資料緩存
 _leaderboard_cache = None
