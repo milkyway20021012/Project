@@ -763,10 +763,17 @@ def parse_time(user_message):
     return None
 
 def parse_location(user_message):
-    """解析集合地點"""
     for location in MEETING_LOCATIONS:
         if location in user_message:
             return location
+    # 模糊比對
+    for location in MEETING_LOCATIONS:
+        if any(word in user_message for word in location.split()):
+            return location
+    # 直接回傳用戶輸入的地點關鍵字（可選）
+    match = re.search(r'(在|到|約在|集合於|見面於)([\u4e00-\u9fa5A-Za-z0-9]+)', user_message)
+    if match:
+        return match.group(2)
     return None
 
 def find_location_trips(user_message):
