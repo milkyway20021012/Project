@@ -1,14 +1,12 @@
 from flask import Flask, request
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
-
 import os
 
 app = Flask(__name__)
 
-# 把你自己的 LINE Secret 加上來
-line_bot_api = LineBotApi(os.environ["LINE_CHANNEL_ACCESS_TOKEN"])
-handler = WebhookHandler(os.environ["LINE_CHANNEL_SECRET"])
+line_bot_api = LineBotApi(os.environ.get("LINE_CHANNEL_ACCESS_TOKEN"))
+handler = WebhookHandler(os.environ.get("LINE_CHANNEL_SECRET"))
 
 @app.route("/", methods=["GET"])
 def home():
@@ -16,7 +14,7 @@ def home():
 
 @app.route("/callback", methods=["POST"])
 def callback():
-    signature = request.headers["X-Line-Signature"]
+    signature = request.headers.get("X-Line-Signature")
     body = request.get_data(as_text=True)
 
     try:
@@ -34,6 +32,6 @@ def handle_message(event):
         TextSendMessage(text=f"你說的是：{msg}")
     )
 
-# 這是讓 Vercel 執行 Flask 應用的關鍵
+# 給 vercel 用的 handler
 def handler(request, response):
     return app(request.environ, response.start_response)
