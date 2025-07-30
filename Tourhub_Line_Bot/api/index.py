@@ -29,7 +29,7 @@ from linebot.v3.messaging import (
     FlexMessage,
     FlexContainer
 )
-from linebot.v3.webhooks import MessageEvent, TextMessageContent
+from linebot.v3.webhooks import MessageEvent, TextMessageContent, PostbackEvent
 
 # 設定日誌
 logging.basicConfig(level=logging.INFO)
@@ -41,7 +41,7 @@ app = Flask(__name__)
 def create_flex_message(template_type, **kwargs):
     """
     動態創建 Flex Message
-    template_type: 'reminder', 'feature', 'leaderboard', 'meeting_success', 'help'
+    template_type: 'reminder', 'feature', 'leaderboard', 'meeting_success', 'help', 'trip_list', 'trip_detail'
     """
     if template_type == "reminder":
         reminder_type = kwargs.get('reminder_type')
@@ -411,6 +411,198 @@ def create_flex_message(template_type, **kwargs):
                 "paddingAll": "20px"
             }
         }
+    
+    elif template_type == "trip_list":
+        location = kwargs.get('location')
+        trips = kwargs.get('trips')
+        
+        trip_contents = []
+        for i, trip in enumerate(trips[:5]):  # 最多顯示5條行程
+            trip_contents.append({
+                "type": "box",
+                "layout": "horizontal",
+                "contents": [
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": trip["title"],
+                                "weight": "bold",
+                                "size": "sm",
+                                "color": "#555555"
+                            },
+                            {
+                                "type": "text",
+                                "text": f"⏰ {trip['duration']} | ⭐ {trip['rating']}",
+                                "size": "xs",
+                                "color": "#888888",
+                                "marginTop": "sm"
+                            },
+                            {
+                                "type": "text",
+                                "text": f"📍 {trip['highlights']}",
+                                "size": "xs",
+                                "color": "#888888",
+                                "wrap": True,
+                                "marginTop": "sm"
+                            }
+                        ],
+                        "flex": 1
+                    },
+                    {
+                        "type": "button",
+                        "action": {
+                            "type": "postback",
+                            "label": "查看詳情",
+                            "data": f"trip_detail:{trip['id']}"
+                        },
+                        "style": "primary",
+                        "color": "#9B59B6",
+                        "height": "sm",
+                        "marginStart": "md"
+                    }
+                ],
+                "marginBottom": "md",
+                "paddingAll": "sm",
+                "backgroundColor": "#f8f9fa",
+                "cornerRadius": "md"
+            })
+        
+        return {
+            "type": "bubble",
+            "size": "giga",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": f"🗺️ {location} 行程推薦",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#ffffff",
+                        "align": "center"
+                    }
+                ],
+                "backgroundColor": "#9B59B6",
+                "paddingAll": "20px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": trip_contents,
+                "paddingAll": "20px"
+            }
+        }
+    
+    elif template_type == "trip_detail":
+        trip = kwargs.get('trip')
+        
+        itinerary_contents = []
+        for day_key, day_itinerary in trip["itinerary"].items():
+            itinerary_contents.append({
+                "type": "box",
+                "layout": "horizontal",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": day_key.replace("day", "Day "),
+                        "weight": "bold",
+                        "size": "sm",
+                        "color": "#9B59B6",
+                        "flex": 0
+                    },
+                    {
+                        "type": "text",
+                        "text": day_itinerary,
+                        "size": "sm",
+                        "color": "#555555",
+                        "flex": 1,
+                        "wrap": True,
+                        "marginStart": "md"
+                    }
+                ],
+                "marginBottom": "sm"
+            })
+        
+        return {
+            "type": "bubble",
+            "size": "giga",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": trip["title"],
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#ffffff",
+                        "align": "center"
+                    }
+                ],
+                "backgroundColor": "#9B59B6",
+                "paddingAll": "20px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {"type": "text", "text": "⏰", "size": "md", "flex": 0},
+                            {"type": "text", "text": f"行程天數：{trip['duration']}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                        ],
+                        "marginBottom": "sm"
+                    },
+
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {"type": "text", "text": "⭐", "size": "md", "flex": 0},
+                            {"type": "text", "text": f"評分：{trip['rating']}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                        ],
+                        "marginBottom": "sm"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {"type": "text", "text": "📍", "size": "md", "flex": 0},
+                            {"type": "text", "text": f"亮點：{trip['highlights']}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                        ],
+                        "marginBottom": "md"
+                    },
+                    {"type": "separator", "margin": "md"},
+                    {"type": "text", "text": "📋 詳細行程", "weight": "bold", "size": "md", "color": "#555555", "margin": "md"},
+                    *itinerary_contents
+                ],
+                "paddingAll": "20px"
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "button",
+                        "action": {
+                            "type": "uri",
+                            "label": "開始規劃行程",
+                            "uri": "https://tripfrontend.vercel.app/linetrip"
+                        },
+                        "style": "primary",
+                        "color": "#9B59B6",
+                        "height": "sm"
+                    }
+                ],
+                "paddingAll": "20px"
+            }
+        }
 
 def get_message_template(user_message):
     """
@@ -481,6 +673,25 @@ def parse_location(user_message):
     for location in MEETING_LOCATIONS:
         if location in user_message:
             return location
+    return None
+
+def find_location_trips(user_message):
+    """查找地區相關行程"""
+    from api.config import TRIP_DATABASE
+    
+    for location in TRIP_DATABASE.keys():
+        if location in user_message:
+            return location, TRIP_DATABASE[location]
+    return None, None
+
+def find_trip_by_id(trip_id):
+    """根據ID查找行程"""
+    from api.config import TRIP_DATABASE
+    
+    for location_trips in TRIP_DATABASE.values():
+        for trip in location_trips:
+            if trip["id"] == trip_id:
+                return trip
     return None
 
 # 提醒處理函數
@@ -597,34 +808,8 @@ if line_handler:
         try:
             user_message = event.message.text
             
-            # 使用動態模板系統處理消息
-            template_config = get_message_template(user_message)
-            
-            if template_config:
-                # 根據模板配置創建 Flex Message
-                if template_config["template"] == "feature":
-                    flex_message = create_flex_message(
-                        "feature",
-                        feature_name=template_config["feature_name"]
-                    )
-                elif template_config["template"] == "leaderboard":
-                    flex_message = create_flex_message(
-                        "leaderboard",
-                        rank=template_config["rank"]
-                    )
-                elif template_config["template"] == "help":
-                    flex_message = create_flex_message("help")
-                
-                # 發送消息
-                with ApiClient(configuration) as api_client:
-                    line_bot_api = MessagingApi(api_client)
-                    line_bot_api.reply_message_with_http_info(
-                        ReplyMessageRequest(
-                            reply_token=event.reply_token,
-                            messages=[FlexMessage(alt_text="功能回應", contents=FlexContainer.from_dict(flex_message))]
-                        )
-                    )
-            elif re.search(MEETING_TIME_PATTERN, user_message):
+            # 優先檢查是否包含時間地點的集合設定
+            if re.search(MEETING_TIME_PATTERN, user_message):
                 # 解析集合時間和地點
                 meeting_time = parse_time(user_message)
                 meeting_location = parse_location(user_message)
@@ -707,12 +892,93 @@ if line_handler:
                                 messages=[FlexMessage(alt_text="集合功能說明", contents=FlexContainer.from_dict(flex_message))]
                             )
                         )
-
+            
+            # 如果沒有包含時間地點的集合設定，則檢查其他功能
             else:
-                # 遇到不認識的指令時不回應
-                pass
+                # 優先檢查是否為地區查詢
+                location, trips = find_location_trips(user_message)
+                if location and trips:
+                    # 創建行程列表 Flex Message
+                    flex_message = create_flex_message(
+                        "trip_list",
+                        location=location,
+                        trips=trips
+                    )
+                    
+                    # 發送消息
+                    with ApiClient(configuration) as api_client:
+                        line_bot_api = MessagingApi(api_client)
+                        line_bot_api.reply_message_with_http_info(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[FlexMessage(alt_text=f"{location} 行程推薦", contents=FlexContainer.from_dict(flex_message))]
+                            )
+                        )
+                else:
+                    # 檢查其他模板匹配
+                    template_config = get_message_template(user_message)
+                    
+                    if template_config:
+                        # 根據模板配置創建 Flex Message
+                        if template_config["template"] == "feature":
+                            flex_message = create_flex_message(
+                                "feature",
+                                feature_name=template_config["feature_name"]
+                            )
+                        elif template_config["template"] == "leaderboard":
+                            flex_message = create_flex_message(
+                                "leaderboard",
+                                rank=template_config["rank"]
+                            )
+                        elif template_config["template"] == "help":
+                            flex_message = create_flex_message("help")
+                        
+                        # 發送消息
+                        with ApiClient(configuration) as api_client:
+                            line_bot_api = MessagingApi(api_client)
+                            line_bot_api.reply_message_with_http_info(
+                                ReplyMessageRequest(
+                                    reply_token=event.reply_token,
+                                    messages=[FlexMessage(alt_text="功能回應", contents=FlexContainer.from_dict(flex_message))]
+                                )
+                            )
+                    else:
+                        # 遇到不認識的指令時不回應
+                        pass
         except Exception as e:
             logger.error(f"Reply error: {str(e)}")
+
+    @line_handler.add(PostbackEvent)
+    def handle_postback(event):
+        try:
+            postback_data = event.postback.data
+            
+            # 處理行程詳情查詢
+            if postback_data.startswith("trip_detail:"):
+                trip_id = postback_data.split(":")[1]
+                trip = find_trip_by_id(trip_id)
+                
+                if trip:
+                    # 創建行程詳情 Flex Message
+                    flex_message = create_flex_message(
+                        "trip_detail",
+                        trip=trip
+                    )
+                    
+                    # 發送消息
+                    with ApiClient(configuration) as api_client:
+                        line_bot_api = MessagingApi(api_client)
+                        line_bot_api.reply_message_with_http_info(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[FlexMessage(alt_text=f"{trip['title']} 詳細行程", contents=FlexContainer.from_dict(flex_message))]
+                            )
+                        )
+                else:
+                    logger.error(f"找不到行程 ID: {trip_id}")
+            
+        except Exception as e:
+            logger.error(f"Postback error: {str(e)}")
 
 # Vercel 需要的 app 變數
 # 這是關鍵！Vercel 會自動尋找這個變數
