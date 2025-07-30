@@ -42,14 +42,12 @@ def get_leaderboard_from_database():
             t.area,
             t.start_date,
             t.end_date,
-            t.tags,
-            t.budget,
             ts.favorite_count,
             ts.share_count,
             ts.view_count,
             ts.popularity_score,
             DATEDIFF(t.end_date, t.start_date) + 1 as duration_days
-        FROM trip t
+        FROM line_trips t
         LEFT JOIN trip_stats ts ON t.trip_id = ts.trip_id
         WHERE t.trip_id IS NOT NULL
         ORDER BY ts.popularity_score DESC, ts.favorite_count DESC, ts.share_count DESC
@@ -73,7 +71,6 @@ def get_leaderboard_from_database():
             participants = favorite_count + 1
             
             # 構建行程特色描述
-            tags = row.get('tags', '')
             area = row.get('area', '未知地區')
             description = row.get('description', '精彩行程')
             
@@ -124,10 +121,8 @@ def get_trip_details_by_id(trip_id: int):
             t.area,
             t.start_date,
             t.end_date,
-            t.tags,
-            t.budget,
             DATEDIFF(t.end_date, t.start_date) + 1 as duration_days
-        FROM trip t
+        FROM line_trips t
         WHERE t.trip_id = %s
         """
         
@@ -146,7 +141,7 @@ def get_trip_details_by_id(trip_id: int):
             date,
             start_time,
             end_time
-        FROM trip_detail
+        FROM line_trip_details
         WHERE trip_id = %s
         ORDER BY date, start_time
         """
@@ -182,8 +177,6 @@ def get_trip_details_by_id(trip_id: int):
             "description": trip_data.get('description', '精彩行程'),
             "area": trip_data.get('area', '未知地區'),
             "duration": f"{trip_data.get('duration_days', 1)}天",
-            "tags": trip_data.get('tags', ''),
-            "budget": trip_data.get('budget', ''),
             "itinerary": "\n".join(itinerary_parts)
         }
         
