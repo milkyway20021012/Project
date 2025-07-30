@@ -5,6 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import json
+import time
 
 # 導入配置文件
 from api.config import (
@@ -172,7 +173,9 @@ def create_flex_message(template_type, **kwargs):
     
     elif template_type == "leaderboard":
         rank = kwargs.get('rank')
-        data = LEADERBOARD_DATA[rank]
+        # 使用資料庫的排行榜資料
+        leaderboard_data = get_leaderboard_data()
+        data = leaderboard_data.get(rank, LEADERBOARD_DATA.get(rank, {}))
         
         return {
             "type": "bubble",
@@ -693,6 +696,44 @@ def find_trip_by_id(trip_id):
             if trip["id"] == trip_id:
                 return trip
     return None
+
+# 排行榜資料緩存
+_leaderboard_cache = None
+_cache_timestamp = 0
+CACHE_DURATION = 300  # 5分鐘緩存
+
+def get_leaderboard_data():
+    """從資料庫獲取排行榜資料"""
+    global _leaderboard_cache, _cache_timestamp
+    
+    # 檢查緩存是否有效
+    current_time = time.time()
+    if _leaderboard_cache and (current_time - _cache_timestamp) < CACHE_DURATION:
+        logger.info("使用緩存的排行榜資料")
+        return _leaderboard_cache
+    
+    try:
+        # 從資料庫獲取排行榜資料
+        from api.database_utils import get_leaderboard_from_database
+        leaderboard_data = get_leaderboard_from_database()
+        
+        if leaderboard_data:
+            # 更新緩存
+            _leaderboard_cache = leaderboard_data
+            _cache_timestamp = current_time
+            
+            logger.info("成功從資料庫獲取排行榜資料並更新緩存")
+            return leaderboard_data
+        else:
+            logger.warning("資料庫中沒有排行榜資料，使用預設資料")
+            from api.config import LEADERBOARD_DATA
+            return LEADERBOARD_DATA
+        
+    except Exception as e:
+        logger.error(f"從資料庫獲取排行榜資料失敗: {str(e)}")
+        # 如果資料庫獲取失敗，返回預設資料
+        from api.config import LEADERBOARD_DATA
+        return LEADERBOARD_DATA
 
 # 提醒處理函數
 def send_reminder_message(user_id, meeting_time, meeting_location, reminder_type):

@@ -1,0 +1,1715 @@
+{
+  "bill_record": {
+    "structure": [
+      [
+        "bill_id",
+        "int",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment"
+      ],
+      [
+        "bill_name",
+        "varchar(32)",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "amount",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "user_id",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "group_id",
+        "int",
+        "NO",
+        "MUL",
+        null,
+        ""
+      ],
+      [
+        "method",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "note",
+        "varchar(256)",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "create_time",
+        "timestamp",
+        "NO",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+      ],
+      [
+        "rate_id",
+        "int",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "credit_card",
+        "tinyint(1)",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "your_rate_id",
+        "int",
+        "YES",
+        "",
+        null,
+        ""
+      ]
+    ],
+    "sample_data": [
+      {
+        "bill_id": 233,
+        "bill_name": "100",
+        "amount": 100,
+        "user_id": 1,
+        "group_id": 11,
+        "method": 2,
+        "note": "",
+        "create_time": "2025-04-27 03:06:07",
+        "rate_id": 17293,
+        "credit_card": 1,
+        "your_rate_id": 0
+      },
+      {
+        "bill_id": 236,
+        "bill_name": "aaa",
+        "amount": 100,
+        "user_id": 1,
+        "group_id": 11,
+        "method": 2,
+        "note": "",
+        "create_time": "2025-04-27 03:11:38",
+        "rate_id": 1,
+        "credit_card": 0,
+        "your_rate_id": 12
+      },
+      {
+        "bill_id": 238,
+        "bill_name": "aaa",
+        "amount": 100,
+        "user_id": 1,
+        "group_id": 18,
+        "method": 2,
+        "note": null,
+        "create_time": "2025-05-17 05:28:09",
+        "rate_id": 17293,
+        "credit_card": 1,
+        "your_rate_id": null
+      }
+    ]
+  },
+  "friendships": {
+    "structure": [
+      [
+        "my_row_id",
+        "bigint unsigned",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment INVISIBLE"
+      ],
+      [
+        "friendship_id",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "user_id",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "friend_id",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "status",
+        "enum('pending','accepted','rejected')",
+        "YES",
+        "",
+        "pending",
+        ""
+      ],
+      [
+        "created_at",
+        "timestamp",
+        "NO",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED"
+      ]
+    ],
+    "sample_data": [
+      {
+        "friendship_id": 1,
+        "user_id": 1,
+        "friend_id": 2,
+        "status": "accepted",
+        "created_at": "2025-03-04 16:05:28"
+      },
+      {
+        "friendship_id": 2,
+        "user_id": 1,
+        "friend_id": 3,
+        "status": "accepted",
+        "created_at": "2025-03-04 16:05:28"
+      },
+      {
+        "friendship_id": 3,
+        "user_id": 1,
+        "friend_id": 4,
+        "status": "accepted",
+        "created_at": "2025-03-04 16:47:32"
+      }
+    ]
+  },
+  "getprofile": {
+    "structure": [
+      [
+        "id",
+        "int",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment"
+      ],
+      [
+        "UserID",
+        "varchar(255)",
+        "YES",
+        "UNI",
+        null,
+        ""
+      ],
+      [
+        "DisplayName",
+        "varchar(255)",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "PictureURL",
+        "varchar(1024)",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "StatusMessage",
+        "varchar(500)",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "CreatedAt",
+        "datetime",
+        "YES",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED"
+      ],
+      [
+        "UpdatedAt",
+        "datetime",
+        "YES",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+      ]
+    ],
+    "sample_data": [
+      {
+        "id": 1,
+        "UserID": "test123",
+        "DisplayName": "Test",
+        "PictureURL": "https://example.com/pic.jpg",
+        "StatusMessage": null,
+        "CreatedAt": "2025-05-01 03:30:02",
+        "UpdatedAt": "2025-05-23 07:02:27"
+      },
+      {
+        "id": 2,
+        "UserID": "U0b3ebc3114d78d1b0e47a37cf6b90763",
+        "DisplayName": "陳源崧",
+        "PictureURL": "https://profile.line-scdn.net/0hy6DOUGf2JhlpNg45q-9YZhlmJXNKR38LEVRsKFgyfXoBB2JLF1RheFs2cCsBAjQaQABvfVw3eitlJVF_d2DaLW4GeyhVAGNPQ1lg-Q",
+        "StatusMessage": "",
+        "CreatedAt": "2025-05-01 03:30:17",
+        "UpdatedAt": "2025-05-29 16:50:02"
+      },
+      {
+        "id": 3,
+        "UserID": "U2886b57f45c349244caddb9a0dc9e8bd",
+        "DisplayName": "徐子晟",
+        "PictureURL": "https://profile.line-scdn.net/0huTJjJ0G0KntnEzvwWpRURRdDKRFEYnNpHyI3HFpGfRxZIml_SCJtTlBEJxhecGl-HCJnHFZAd01Ffh9EFy8mZC1IDwwkKxErNwItaAhVATITSmUxFB0ETwd9MD8xYjBODS0YWiRkPQwNPxRtCilgeBZhADInXyhdQ0RGLWIhRPgIEV0uSnRjH1IVfULc",
+        "StatusMessage": "",
+        "CreatedAt": "2025-05-01 06:48:48",
+        "UpdatedAt": "2025-05-01 06:49:37"
+      }
+    ]
+  },
+  "group_table": {
+    "structure": [
+      [
+        "group_id",
+        "int",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment"
+      ],
+      [
+        "status",
+        "tinyint(1)",
+        "NO",
+        "",
+        "0",
+        ""
+      ],
+      [
+        "group_name",
+        "varchar(64)",
+        "NO",
+        "",
+        null,
+        ""
+      ]
+    ],
+    "sample_data": [
+      {
+        "group_id": 11,
+        "status": 0,
+        "group_name": "test group"
+      },
+      {
+        "group_id": 18,
+        "status": 0,
+        "group_name": "aaa"
+      },
+      {
+        "group_id": 19,
+        "status": 0,
+        "group_name": "Japan"
+      }
+    ]
+  },
+  "group_user": {
+    "structure": [
+      [
+        "group_id",
+        "int",
+        "NO",
+        "MUL",
+        null,
+        ""
+      ],
+      [
+        "user_id",
+        "int",
+        "NO",
+        "MUL",
+        null,
+        ""
+      ]
+    ],
+    "sample_data": [
+      {
+        "group_id": 11,
+        "user_id": 1
+      },
+      {
+        "group_id": 11,
+        "user_id": 2
+      },
+      {
+        "group_id": 11,
+        "user_id": 3
+      }
+    ]
+  },
+  "item_detail": {
+    "structure": [
+      [
+        "item_id",
+        "int",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment"
+      ],
+      [
+        "bill_id",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "user_id",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "item_name",
+        "varchar(64)",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "item_amount",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ]
+    ],
+    "sample_data": [
+      {
+        "item_id": 1,
+        "bill_id": 1,
+        "user_id": 1,
+        "item_name": "100",
+        "item_amount": 100
+      },
+      {
+        "item_id": 2,
+        "bill_id": 63,
+        "user_id": 1,
+        "item_name": "111",
+        "item_amount": 1111
+      },
+      {
+        "item_id": 3,
+        "bill_id": 64,
+        "user_id": 1,
+        "item_name": "1",
+        "item_amount": 111
+      }
+    ]
+  },
+  "line_trip_collaborators": {
+    "structure": [
+      [
+        "trip_id",
+        "int",
+        "NO",
+        "PRI",
+        null,
+        ""
+      ],
+      [
+        "shared_user_id",
+        "varchar(50)",
+        "NO",
+        "PRI",
+        null,
+        ""
+      ],
+      [
+        "created_at",
+        "timestamp",
+        "YES",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED"
+      ]
+    ],
+    "sample_data": []
+  },
+  "line_trip_details": {
+    "structure": [
+      [
+        "detail_id",
+        "int",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment"
+      ],
+      [
+        "trip_id",
+        "int",
+        "NO",
+        "MUL",
+        null,
+        ""
+      ],
+      [
+        "location",
+        "varchar(255)",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "date",
+        "date",
+        "NO",
+        "MUL",
+        null,
+        ""
+      ],
+      [
+        "start_time",
+        "time",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "end_time",
+        "time",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "description",
+        "text",
+        "YES",
+        "",
+        null,
+        ""
+      ]
+    ],
+    "sample_data": [
+      {
+        "detail_id": 8,
+        "trip_id": 7,
+        "location": "大阪城・天守閣",
+        "date": "2025-08-01",
+        "start_time": "9:00:00",
+        "end_time": "16:00:00",
+        "description": null
+      },
+      {
+        "detail_id": 9,
+        "trip_id": 7,
+        "location": "環球影城",
+        "date": "2025-08-02",
+        "start_time": "8:30:00",
+        "end_time": "21:00:00",
+        "description": null
+      },
+      {
+        "detail_id": 10,
+        "trip_id": 7,
+        "location": "道頓堀・心齋橋",
+        "date": "2025-08-03",
+        "start_time": "11:00:00",
+        "end_time": "20:00:00",
+        "description": null
+      }
+    ]
+  },
+  "line_trip_shares": {
+    "structure": [
+      [
+        "share_id",
+        "int",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment"
+      ],
+      [
+        "trip_id",
+        "int",
+        "NO",
+        "MUL",
+        null,
+        ""
+      ],
+      [
+        "shared_with_user_id",
+        "varchar(50)",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "permission_type",
+        "enum('edit','view')",
+        "NO",
+        "",
+        "view",
+        ""
+      ],
+      [
+        "created_at",
+        "timestamp",
+        "YES",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED"
+      ]
+    ],
+    "sample_data": []
+  },
+  "line_trips": {
+    "structure": [
+      [
+        "trip_id",
+        "int",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment"
+      ],
+      [
+        "line_user_id",
+        "varchar(255)",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "title",
+        "varchar(255)",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "description",
+        "text",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "start_date",
+        "date",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "end_date",
+        "date",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "area",
+        "varchar(255)",
+        "NO",
+        "",
+        null,
+        ""
+      ]
+    ],
+    "sample_data": [
+      {
+        "trip_id": 7,
+        "line_user_id": "Ue480e1bc31f34eef6232029b78e13edb",
+        "title": "大阪美食文化之旅",
+        "description": "體驗關西地區的美食文化與歷史景點",
+        "start_date": "2025-08-01",
+        "end_date": "2025-08-04",
+        "area": "大阪"
+      },
+      {
+        "trip_id": 8,
+        "line_user_id": "Ue480e1bc31f34eef6232029b78e13edb",
+        "title": "北海道夏季清涼之旅",
+        "description": "享受北海道的薰衣草花田與美食饗宴",
+        "start_date": "2025-08-15",
+        "end_date": "2025-08-21",
+        "area": "北海道"
+      },
+      {
+        "trip_id": 14,
+        "line_user_id": "Uf732288f36cf2afa9129b08e2ffbf892",
+        "title": "test",
+        "description": "",
+        "start_date": "2025-07-23",
+        "end_date": "2025-07-31",
+        "area": "tokyo"
+      }
+    ]
+  },
+  "line_trips_backup": {
+    "structure": [
+      [
+        "my_row_id",
+        "bigint unsigned",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment INVISIBLE"
+      ],
+      [
+        "trip_id",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "line_user_id",
+        "varchar(50)",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "title",
+        "varchar(255)",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "description",
+        "text",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "start_date",
+        "date",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "end_date",
+        "date",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "area",
+        "varchar(255)",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "created_at",
+        "timestamp",
+        "NO",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED"
+      ],
+      [
+        "updated_at",
+        "timestamp",
+        "NO",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+      ]
+    ],
+    "sample_data": [
+      {
+        "trip_id": 1,
+        "line_user_id": "Ue480e1bc31f34eef6232029b78e13edb",
+        "title": "test",
+        "description": "hahaha",
+        "start_date": "2025-04-30",
+        "end_date": "2025-05-01",
+        "area": "japan",
+        "created_at": "2025-04-28 15:25:15",
+        "updated_at": "2025-04-28 15:25:15"
+      },
+      {
+        "trip_id": 2,
+        "line_user_id": "Ue480e1bc31f34eef6232029b78e13edb",
+        "title": "test2",
+        "description": "出去玩",
+        "start_date": "2025-05-03",
+        "end_date": "2025-05-10",
+        "area": "大阪",
+        "created_at": "2025-04-29 16:53:25",
+        "updated_at": "2025-04-29 16:53:25"
+      },
+      {
+        "trip_id": 3,
+        "line_user_id": "U5dcb21a8a0d072b04fd29697071e0860",
+        "title": "Tokyo ",
+        "description": "Happy journey ",
+        "start_date": "2025-04-24",
+        "end_date": "2025-04-26",
+        "area": "東京",
+        "created_at": "2025-04-30 14:28:10",
+        "updated_at": "2025-04-30 14:28:10"
+      }
+    ]
+  },
+  "line_users": {
+    "structure": [
+      [
+        "my_row_id",
+        "bigint unsigned",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment INVISIBLE"
+      ],
+      [
+        "line_user_id",
+        "varchar(50)",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "display_name",
+        "varchar(255)",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "picture_url",
+        "varchar(255)",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "created_at",
+        "timestamp",
+        "NO",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED"
+      ]
+    ],
+    "sample_data": [
+      {
+        "line_user_id": "U5dcb21a8a0d072b04fd29697071e0860",
+        "display_name": "展",
+        "picture_url": "https://profile.line-scdn.net/0hxfEd6GNwJ0loHTk8OB9ZdxhNJCNLbH5bRX9seFkeKnFVLjcZQHphfA8fKnlWKDIfQixvKVUbeX1KRDRrDTkMLwJcAxc2LikXGQYzWl50ZQ88JGViEAABWSIdFwpdcCBMIn8JLlxpDhcTfWceIwcRWy1tBD8nWGZYIEpLH20vScoHH1AcRXpuLVgdeHHU",
+        "created_at": "2025-04-30 14:27:08"
+      },
+      {
+        "line_user_id": "Ue480e1bc31f34eef6232029b78e13edb",
+        "display_name": "徐子晟",
+        "picture_url": "https://profile.line-scdn.net/0huTJjx8C3KntnEzvwWpRURRdDKRFEYnNpHyI3HFpGfRxZIml_SCJtTlBEJxhecGl-HCJnHFZAd01Ffh9EFy8mZC1IDwwkKxErNwItaAhVATITSmUxFB0ETwd9MD8xYjBODS0YWiRkPQwNPxRtCilgeBZhADInXyhdQ0RGLWIhRPgIEV0uSnRjH1cTdUPb",
+        "created_at": "2025-04-28 15:24:44"
+      },
+      {
+        "line_user_id": "Uf732288f36cf2afa9129b08e2ffbf892",
+        "display_name": "陳源崧",
+        "picture_url": "https://profile.line-scdn.net/0hy6DOaz-zJhlpNg45q-9YZhlmJXNKR38LEVRsKFgyfXoBB2JLF1RheFs2cCsBAjQaQABvfVw3eitlJVF_d2DaLW4GeyhVAGNKRVFh_g",
+        "created_at": "2025-05-14 14:53:39"
+      }
+    ]
+  },
+  "rate": {
+    "structure": [
+      [
+        "rate_id",
+        "int",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment"
+      ],
+      [
+        "cash_rate",
+        "int",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "spot_rate",
+        "int",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "date",
+        "timestamp",
+        "NO",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+      ]
+    ],
+    "sample_data": [
+      {
+        "rate_id": 1,
+        "cash_rate": 2201,
+        "spot_rate": 2191,
+        "date": "2025-02-07 19:07:29"
+      },
+      {
+        "rate_id": 2,
+        "cash_rate": 2199,
+        "spot_rate": 2189,
+        "date": "2025-02-07 19:56:59"
+      },
+      {
+        "rate_id": 3,
+        "cash_rate": 2200,
+        "spot_rate": 2190,
+        "date": "2025-02-07 20:09:56"
+      }
+    ]
+  },
+  "split_record": {
+    "structure": [
+      [
+        "bill_id",
+        "int",
+        "NO",
+        "MUL",
+        null,
+        ""
+      ],
+      [
+        "user_id",
+        "int",
+        "NO",
+        "MUL",
+        null,
+        ""
+      ],
+      [
+        "percentage",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ]
+    ],
+    "sample_data": [
+      {
+        "bill_id": 233,
+        "user_id": 1,
+        "percentage": 3333
+      },
+      {
+        "bill_id": 233,
+        "user_id": 2,
+        "percentage": 3333
+      },
+      {
+        "bill_id": 233,
+        "user_id": 3,
+        "percentage": 3334
+      }
+    ]
+  },
+  "trip": {
+    "structure": [
+      [
+        "my_row_id",
+        "bigint unsigned",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment INVISIBLE"
+      ],
+      [
+        "trip_id",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "user_id",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "title",
+        "varchar(255)",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "description",
+        "varchar(255)",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "start_date",
+        "date",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "end_date",
+        "date",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "area",
+        "varchar(255)",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "tags",
+        "varchar(255)",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "budget",
+        "varchar(255)",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "created_at",
+        "timestamp",
+        "NO",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED"
+      ],
+      [
+        "updated_at",
+        "timestamp",
+        "NO",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+      ],
+      [
+        "preferred_gender",
+        "enum('any','male','female')",
+        "YES",
+        "",
+        "any",
+        ""
+      ]
+    ],
+    "sample_data": [
+      {
+        "trip_id": 1,
+        "user_id": 1,
+        "title": "日本東京自由行",
+        "description": "探索東京的美食與文化",
+        "start_date": "2025-03-10",
+        "end_date": "2025-03-15",
+        "area": "東京",
+        "tags": "美食, 文化, 觀光",
+        "budget": "50000",
+        "created_at": "2025-02-26 15:01:46",
+        "updated_at": "2025-03-05 14:22:21",
+        "preferred_gender": "any"
+      },
+      {
+        "trip_id": 4,
+        "user_id": 2,
+        "title": "東京行",
+        "description": "尋找美食",
+        "start_date": "2025-03-11",
+        "end_date": "2025-03-16",
+        "area": "東京",
+        "tags": "美食, 觀光",
+        "budget": "100000",
+        "created_at": "2025-02-27 03:59:37",
+        "updated_at": "2025-03-11 16:54:19",
+        "preferred_gender": "male"
+      },
+      {
+        "trip_id": 5,
+        "user_id": 2,
+        "title": "test",
+        "description": "test",
+        "start_date": "2025-03-08",
+        "end_date": "2025-03-12",
+        "area": "京都",
+        "tags": "1,2,3",
+        "budget": "20000",
+        "created_at": "2025-02-27 04:42:03",
+        "updated_at": "2025-02-27 07:44:32",
+        "preferred_gender": "any"
+      }
+    ]
+  },
+  "trip_detail": {
+    "structure": [
+      [
+        "my_row_id",
+        "bigint unsigned",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment INVISIBLE"
+      ],
+      [
+        "detail_id",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "trip_id",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "location",
+        "varchar(255)",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "date",
+        "date",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "start_time",
+        "time",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "end_time",
+        "time",
+        "NO",
+        "",
+        null,
+        ""
+      ]
+    ],
+    "sample_data": [
+      {
+        "detail_id": 7,
+        "trip_id": 1,
+        "location": "淺草寺",
+        "date": "2025-03-10",
+        "start_time": "9:00:00",
+        "end_time": "11:00:00"
+      },
+      {
+        "detail_id": 8,
+        "trip_id": 1,
+        "location": "晴空塔",
+        "date": "2025-03-10",
+        "start_time": "14:00:00",
+        "end_time": "16:00:00"
+      },
+      {
+        "detail_id": 9,
+        "trip_id": 1,
+        "location": "上野公園",
+        "date": "2025-03-11",
+        "start_time": "10:00:00",
+        "end_time": "12:00:00"
+      }
+    ]
+  },
+  "trip_participants": {
+    "structure": [
+      [
+        "my_row_id",
+        "bigint unsigned",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment INVISIBLE"
+      ],
+      [
+        "participant_id",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "trip_id",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "user_id",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "status",
+        "enum('invited','accepted','rejected')",
+        "YES",
+        "",
+        "invited",
+        ""
+      ],
+      [
+        "created_at",
+        "timestamp",
+        "NO",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED"
+      ]
+    ],
+    "sample_data": [
+      {
+        "participant_id": 12,
+        "trip_id": 1,
+        "user_id": 2,
+        "status": "accepted",
+        "created_at": "2025-03-05 14:22:21"
+      },
+      {
+        "participant_id": 13,
+        "trip_id": 1,
+        "user_id": 4,
+        "status": "invited",
+        "created_at": "2025-03-05 14:22:21"
+      },
+      {
+        "participant_id": 14,
+        "trip_id": 1,
+        "user_id": 3,
+        "status": "accepted",
+        "created_at": "2025-03-05 14:22:21"
+      }
+    ]
+  },
+  "trip_stats": {
+    "structure": [
+      [
+        "trip_id",
+        "int",
+        "NO",
+        "PRI",
+        null,
+        ""
+      ],
+      [
+        "favorite_count",
+        "int",
+        "YES",
+        "MUL",
+        "0",
+        ""
+      ],
+      [
+        "share_count",
+        "int",
+        "YES",
+        "MUL",
+        "0",
+        ""
+      ],
+      [
+        "view_count",
+        "int",
+        "YES",
+        "MUL",
+        "0",
+        ""
+      ],
+      [
+        "popularity_score",
+        "decimal(10,2)",
+        "YES",
+        "MUL",
+        "0.00",
+        ""
+      ],
+      [
+        "last_updated",
+        "timestamp",
+        "YES",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+      ]
+    ],
+    "sample_data": [
+      {
+        "trip_id": 7,
+        "favorite_count": 5,
+        "share_count": 1,
+        "view_count": 6,
+        "popularity_score": "0.09",
+        "last_updated": "2025-07-30 07:48:49"
+      },
+      {
+        "trip_id": 8,
+        "favorite_count": 5,
+        "share_count": 5,
+        "view_count": 20,
+        "popularity_score": "0.14",
+        "last_updated": "2025-07-30 07:54:51"
+      },
+      {
+        "trip_id": 14,
+        "favorite_count": 1,
+        "share_count": 0,
+        "view_count": 3,
+        "popularity_score": "0.02",
+        "last_updated": "2025-07-30 07:50:42"
+      }
+    ]
+  },
+  "user": {
+    "structure": [
+      [
+        "user_id",
+        "int",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment"
+      ],
+      [
+        "user_name",
+        "varchar(64)",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "UserID",
+        "varchar(255)",
+        "YES",
+        "UNI",
+        null,
+        ""
+      ],
+      [
+        "PictureURL",
+        "varchar(1024)",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "StatusMessage",
+        "varchar(500)",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "CreatedAt",
+        "datetime",
+        "YES",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED"
+      ],
+      [
+        "UpdatedAt",
+        "datetime",
+        "YES",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+      ]
+    ],
+    "sample_data": [
+      {
+        "user_id": 1,
+        "user_name": "Test",
+        "UserID": "test123",
+        "PictureURL": "https://example.com/pic.jpg",
+        "StatusMessage": null,
+        "CreatedAt": "2025-05-01 03:30:02",
+        "UpdatedAt": "2025-05-23 07:02:27"
+      },
+      {
+        "user_id": 2,
+        "user_name": "陳源崧",
+        "UserID": "U0b3ebc3114d78d1b0e47a37cf6b90763",
+        "PictureURL": "https://profile.line-scdn.net/0hy6DOUGf2JhlpNg45q-9YZhlmJXNKR38LEVRsKFgyfXoBB2JLF1RheFs2cCsBAjQaQABvfVw3eitlJVF_d2DaLW4GeyhVAGNPQ1lg-Q",
+        "StatusMessage": "",
+        "CreatedAt": "2025-05-01 03:30:17",
+        "UpdatedAt": "2025-07-23 03:07:25"
+      },
+      {
+        "user_id": 3,
+        "user_name": "徐子晟",
+        "UserID": "U2886b57f45c349244caddb9a0dc9e8bd",
+        "PictureURL": "https://profile.line-scdn.net/0huTJjJ0G0KntnEzvwWpRURRdDKRFEYnNpHyI3HFpGfRxZIml_SCJtTlBEJxhecGl-HCJnHFZAd01Ffh9EFy8mZC1IDwwkKxErNwItaAhVATITSmUxFB0ETwd9MD8xYjBODS0YWiRkPQwNPxRtCilgeBZhADInXyhdQ0RGLWIhRPgIEV0uSnRjH1IVfULc",
+        "StatusMessage": "",
+        "CreatedAt": "2025-05-01 06:48:48",
+        "UpdatedAt": "2025-05-01 06:49:37"
+      }
+    ]
+  },
+  "user_favorites": {
+    "structure": [
+      [
+        "id",
+        "int",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment"
+      ],
+      [
+        "line_user_id",
+        "varchar(255)",
+        "NO",
+        "MUL",
+        null,
+        ""
+      ],
+      [
+        "trip_id",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "favorited_at",
+        "timestamp",
+        "YES",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED"
+      ]
+    ],
+    "sample_data": [
+      {
+        "id": 6,
+        "line_user_id": "U098dfbcd7ecabb344358a9e98e7dcb70",
+        "trip_id": 6,
+        "favorited_at": "2025-07-02 09:08:55"
+      },
+      {
+        "id": 8,
+        "line_user_id": "U098dfbcd7ecabb344358a9e98e7dcb70",
+        "trip_id": 3,
+        "favorited_at": "2025-07-02 09:18:13"
+      },
+      {
+        "id": 13,
+        "line_user_id": "demo_user_123",
+        "trip_id": 8,
+        "favorited_at": "2025-07-03 09:19:41"
+      }
+    ]
+  },
+  "user_shares": {
+    "structure": [
+      [
+        "id",
+        "int",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment"
+      ],
+      [
+        "line_user_id",
+        "varchar(255)",
+        "NO",
+        "MUL",
+        null,
+        ""
+      ],
+      [
+        "trip_id",
+        "int",
+        "NO",
+        "MUL",
+        null,
+        ""
+      ],
+      [
+        "share_type",
+        "varchar(50)",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "share_content",
+        "json",
+        "YES",
+        "",
+        null,
+        ""
+      ],
+      [
+        "shared_at",
+        "timestamp",
+        "YES",
+        "MUL",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED"
+      ]
+    ],
+    "sample_data": [
+      {
+        "id": 1,
+        "line_user_id": "demo_user_123",
+        "trip_id": 8,
+        "share_type": "text",
+        "share_content": "{\"format\": \"text\", \"items_count\": 7, \"include_basic_info\": true}",
+        "shared_at": "2025-07-03 07:49:40"
+      },
+      {
+        "id": 2,
+        "line_user_id": "demo_user_123",
+        "trip_id": 8,
+        "share_type": "link",
+        "share_content": "{\"format\": \"link\", \"items_count\": 0, \"include_basic_info\": true}",
+        "shared_at": "2025-07-03 11:32:11"
+      },
+      {
+        "id": 3,
+        "line_user_id": "U098dfbcd7ecabb344358a9e98e7dcb70",
+        "trip_id": 8,
+        "share_type": "quick",
+        "share_content": "{\"type\": \"quick\", \"format\": \"text\"}",
+        "shared_at": "2025-07-09 05:05:28"
+      }
+    ]
+  },
+  "users": {
+    "structure": [
+      [
+        "my_row_id",
+        "bigint unsigned",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment INVISIBLE"
+      ],
+      [
+        "user_id",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "username",
+        "varchar(50)",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "password",
+        "varchar(255)",
+        "NO",
+        "",
+        null,
+        ""
+      ]
+    ],
+    "sample_data": [
+      {
+        "user_id": 1,
+        "username": "123",
+        "password": "$2b$12$2Z1ofNDUM7o77PhZ/XYuSeSVng4MfW/OovcnfYySX.mAEATEk3MTS"
+      },
+      {
+        "user_id": 2,
+        "username": "111",
+        "password": "$2b$12$XrVOl1Hd852V9CWGGfCEP.5BVAB8HccGmoZQw.PI4uEkX7bRyTls."
+      },
+      {
+        "user_id": 3,
+        "username": "test",
+        "password": "$2b$12$B8HObAlfKpLLeHfyRrXKZeO84ltuaYXmrxHx5XELvwwxD5SkGgJhq"
+      }
+    ]
+  },
+  "your_rate": {
+    "structure": [
+      [
+        "your_rate_id",
+        "int",
+        "NO",
+        "PRI",
+        null,
+        "auto_increment"
+      ],
+      [
+        "JPY",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "NTD",
+        "int",
+        "NO",
+        "",
+        null,
+        ""
+      ],
+      [
+        "user_id",
+        "int",
+        "NO",
+        "MUL",
+        null,
+        ""
+      ],
+      [
+        "create_time",
+        "timestamp",
+        "NO",
+        "",
+        "CURRENT_TIMESTAMP",
+        "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+      ]
+    ],
+    "sample_data": [
+      {
+        "your_rate_id": 1,
+        "JPY": 2200,
+        "NTD": 100,
+        "user_id": 3,
+        "create_time": "2025-03-20 05:37:09"
+      },
+      {
+        "your_rate_id": 2,
+        "JPY": 1980,
+        "NTD": 100,
+        "user_id": 4,
+        "create_time": "2025-03-20 05:37:09"
+      },
+      {
+        "your_rate_id": 3,
+        "JPY": 100,
+        "NTD": 100,
+        "user_id": 3,
+        "create_time": "2025-03-20 05:37:09"
+      }
+    ]
+  }
+}
