@@ -553,11 +553,27 @@ def create_flex_message(template_type, **kwargs):
 def get_message_template(user_message):
     """
     根據用戶消息獲取對應的模板配置
+    支持完全匹配和部分匹配，優先匹配更具體的關鍵字
     """
+    # 首先嘗試完全匹配
     for key, mapping in KEYWORD_MAPPINGS.items():
         if user_message in mapping["keywords"]:
             return mapping
-    return None
+    
+    # 如果完全匹配失敗，嘗試部分匹配
+    # 優先匹配更具體的關鍵字（如"第一名"優先於"排行榜"）
+    best_match = None
+    best_keyword_length = 0
+    
+    for key, mapping in KEYWORD_MAPPINGS.items():
+        for keyword in mapping["keywords"]:
+            if keyword in user_message:
+                # 選擇最長的關鍵字匹配（更具體）
+                if len(keyword) > best_keyword_length:
+                    best_match = mapping
+                    best_keyword_length = len(keyword)
+    
+    return best_match
 
 def parse_time(user_message):
     """解析各種時間格式"""

@@ -154,27 +154,27 @@ KEYWORD_MAPPINGS = {
         "feature_name": "leaderboard"
     },
     "leaderboard_1": {
-        "keywords": ["排行榜第一", "排行第一", "第一名", "top1", "Top1", "冠軍", "排行榜冠軍"],
+        "keywords": ["排行榜第一", "排行第一", "第一名", "top1", "Top1", "冠軍", "排行榜冠軍", "排行榜第一名"],
         "template": "leaderboard",
         "rank": "1"
     },
     "leaderboard_2": {
-        "keywords": ["第二名", "排行第二", "top2", "Top2", "亞軍", "排行榜亞軍"],
+        "keywords": ["第二名", "排行第二", "top2", "Top2", "亞軍", "排行榜亞軍", "排行榜第二名"],
         "template": "leaderboard",
         "rank": "2"
     },
     "leaderboard_3": {
-        "keywords": ["第三名", "排行第三", "top3", "Top3", "季軍", "排行榜季軍"],
+        "keywords": ["第三名", "排行第三", "top3", "Top3", "季軍", "排行榜季軍", "排行榜第三名"],
         "template": "leaderboard",
         "rank": "3"
     },
     "leaderboard_4": {
-        "keywords": ["第四名", "排行第四", "top4", "Top4"],
+        "keywords": ["第四名", "排行第四", "top4", "Top4", "排行榜第四名"],
         "template": "leaderboard",
         "rank": "4"
     },
     "leaderboard_5": {
-        "keywords": ["第五名", "排行第五", "top5", "Top5"],
+        "keywords": ["第五名", "排行第五", "top5", "Top5", "排行榜第五名"],
         "template": "leaderboard",
         "rank": "5"
     },
