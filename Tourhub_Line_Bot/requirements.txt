@@ -2,3 +2,5 @@ flask==3.0.0
 line-bot-sdk==3.7.0
 requests==2.31.0
 beautifulsoup4==4.12.2
+mysql-connector-python==9.4.0
+pymysql==1.1.1

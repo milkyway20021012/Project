@@ -5,13 +5,15 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+import os
+
 # 資料庫連接配置
 DB_CONFIG = {
-    'host': 'trip.mysql.database.azure.com',
-    'user': 'b1129005',
-    'password': 'Anderson3663',
-    'database': 'tourhub',
-    'port': 3306,
+    'host': os.getenv('MYSQL_HOST', 'trip.mysql.database.azure.com'),
+    'user': os.getenv('MYSQL_USER', 'b1129005'),
+    'password': os.getenv('MYSQL_PASSWORD', 'Anderson3663'),
+    'database': os.getenv('MYSQL_DB', 'tourhub'),
+    'port': int(os.getenv('MYSQL_PORT', '3306')),
     'ssl_disabled': False
 }
 

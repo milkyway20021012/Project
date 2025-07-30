@@ -175,7 +175,73 @@ def create_flex_message(template_type, **kwargs):
         rank = kwargs.get('rank')
         # 使用資料庫的排行榜資料
         leaderboard_data = get_leaderboard_data()
-        data = leaderboard_data.get(rank, LEADERBOARD_DATA.get(rank, {}))
+        
+        # 檢查資料庫中是否有該排名
+        if rank in leaderboard_data:
+            data = leaderboard_data.get(rank)
+        else:
+            # 如果資料庫中沒有該排名，返回空缺訊息
+            return {
+                "type": "bubble",
+                "size": "kilo",
+                "header": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": f"🏆 排行榜第{rank}名",
+                            "weight": "bold",
+                            "size": "lg",
+                            "color": "#ffffff",
+                            "align": "center"
+                        }
+                    ],
+                    "backgroundColor": "#9B59B6",
+                    "paddingAll": "20px"
+                },
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "📭 此排名目前空缺",
+                            "weight": "bold",
+                            "size": "md",
+                            "color": "#555555",
+                            "align": "center"
+                        },
+                        {
+                            "type": "text",
+                            "text": f"排行榜第{rank}名目前沒有資料，請稍後再查看或選擇其他排名。",
+                            "size": "sm",
+                            "color": "#888888",
+                            "align": "center",
+                            "wrap": True
+                        }
+                    ],
+                    "paddingAll": "20px"
+                },
+                "footer": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "uri",
+                                "label": "查看完整排行榜",
+                                "uri": "https://tourhub-ashy.vercel.app/?state=n6sFheuU2eAl&liffClientId=2007678368&liffRedirectUri=https%3A%2F%2Ftourhub-ashy.vercel.app%2F&code=DJhtwXyqmCdyhnBlGs3s"
+                            },
+                            "style": "primary",
+                            "color": "#9B59B6",
+                            "height": "sm"
+                        }
+                    ],
+                    "paddingAll": "20px"
+                }
+            }
         
         return {
             "type": "bubble",
