@@ -9,10 +9,16 @@
     "routes": [
         {
             "src": "/callback",
+            "methods": [
+                "POST"
+            ],
             "dest": "api/index.py"
         },
         {
             "src": "/",
+            "methods": [
+                "GET"
+            ],
             "dest": "api/index.py"
         }
     ]
