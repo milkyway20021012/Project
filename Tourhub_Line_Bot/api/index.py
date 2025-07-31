@@ -17,9 +17,6 @@ from api.config import (
     MEETING_TIME_PATTERN
 )
 
-# 導入本地集合管理器
-from api.meeting_manager import meeting_manager
-
 # LINE Bot imports
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
@@ -38,6 +35,16 @@ from linebot.v3.webhooks import MessageEvent, TextMessageContent, PostbackEvent
 # 設定日誌
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# 導入集合管理器
+try:
+    # 嘗試導入 Vercel 兼容版本
+    from api.vercel_meeting_manager import meeting_manager
+    logger.info("使用 Vercel 兼容的集合管理器")
+except ImportError:
+    # 如果失敗，使用本地版本
+    from api.meeting_manager import meeting_manager
+    logger.info("使用本地集合管理器")
 
 # 建立 Flask app
 app = Flask(__name__)
@@ -1662,11 +1669,16 @@ if line_handler:
         except Exception as e:
             logger.error(f"Postback error: {str(e)}")
 
-# Vercel 需要的 app 變數
-# 這是關鍵！Vercel 會自動尋找這個變數
-if __name__ != "__main__":
-    # 在 Vercel 上運行時
-    pass
-else:
+# Vercel 入口點
+# Vercel 會自動尋找名為 'app' 的 Flask 應用實例
+# 不需要 if __name__ == "__main__" 條件，因為 Vercel 不會直接執行這個文件
+
+# 確保在 Vercel 環境中正確初始化
+def handler(request):
+    """Vercel 的請求處理函數"""
+    return app(request.environ, lambda status, headers: None)
+
+# 為了兼容性，保留原有的條件
+if __name__ == "__main__":
     # 本地開發時
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
