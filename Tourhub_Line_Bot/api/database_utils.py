@@ -1,9 +1,18 @@
-import mysql.connector
 import logging
 from typing import Dict, List, Any
 from datetime import datetime
 
-logger = logging.getLogger(__name__)
+# 嘗試導入 MySQL 連接器，如果失敗則記錄錯誤
+try:
+    import mysql.connector
+    MYSQL_AVAILABLE = True
+    logger = logging.getLogger(__name__)
+    logger.info("MySQL connector imported successfully")
+except ImportError as e:
+    MYSQL_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.error(f"Failed to import MySQL connector: {e}")
+    logger.warning("Database functionality will be disabled")
 
 import os
 
@@ -19,6 +28,10 @@ DB_CONFIG = {
 
 def get_database_connection():
     """獲取資料庫連接"""
+    if not MYSQL_AVAILABLE:
+        logger.warning("MySQL connector not available, cannot connect to database")
+        return None
+
     try:
         connection = mysql.connector.connect(**DB_CONFIG)
         return connection
