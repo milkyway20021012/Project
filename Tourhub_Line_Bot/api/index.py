@@ -1641,14 +1641,8 @@ if line_handler:
         except Exception as e:
             logger.error(f"Postback error: {str(e)}")
 
-# Vercel 入口點
-# Vercel 會自動尋找名為 'app' 的 Flask 應用實例
-# 不需要 if __name__ == "__main__" 條件，因為 Vercel 不會直接執行這個文件
-
-# 確保在 Vercel 環境中正確初始化
-def handler(request):
-    """Vercel 的請求處理函數"""
-    return app(request.environ, lambda status, headers: None)
+# Vercel 會自動檢測名為 'app' 的 Flask 實例
+# 確保 app 在模組級別可用
 
 # 為了兼容性，保留原有的條件
 if __name__ == "__main__":
