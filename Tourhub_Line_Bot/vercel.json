@@ -9,7 +9,7 @@
     "routes": [
         {
             "src": "/(.*)",
-            "dest": "/api/test_vercel.py"
+            "dest": "/api/index.py"
         }
     ]
 }

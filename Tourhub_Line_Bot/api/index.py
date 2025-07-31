@@ -36,15 +36,9 @@ from linebot.v3.webhooks import MessageEvent, TextMessageContent, PostbackEvent
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 導入集合管理器
-try:
-    # 嘗試導入 Vercel 兼容版本
-    from api.vercel_meeting_manager import meeting_manager
-    logger.info("使用 Vercel 兼容的集合管理器")
-except ImportError:
-    # 如果失敗，使用本地版本
-    from api.meeting_manager import meeting_manager
-    logger.info("使用本地集合管理器")
+# 導入集合管理器 - 使用 Vercel 兼容版本
+from api.vercel_meeting_manager import meeting_manager
+logger.info("使用 Vercel 兼容的集合管理器")
 
 # 建立 Flask app
 app = Flask(__name__)
@@ -425,7 +419,7 @@ def create_flex_message(template_type, **kwargs):
     elif template_type == "meeting_success":
         meeting_time = kwargs.get('meeting_time')
         meeting_location = kwargs.get('meeting_location')
-        meeting_id = kwargs.get('meeting_id')
+        meeting_id = kwargs.get('meeting_id')  # 保留以備未來使用
         is_success = kwargs.get('is_success', False)
         template = MESSAGE_TEMPLATES["meeting_success"]
 
@@ -820,16 +814,16 @@ def get_message_template(user_message):
     支持完全匹配和部分匹配，優先匹配更具體的關鍵字
     """
     # 首先嘗試完全匹配
-    for key, mapping in KEYWORD_MAPPINGS.items():
+    for _, mapping in KEYWORD_MAPPINGS.items():
         if user_message in mapping["keywords"]:
             return mapping
-    
+
     # 如果完全匹配失敗，嘗試部分匹配
     # 優先匹配更具體的關鍵字（如"第一名"優先於"排行榜"）
     best_match = None
     best_keyword_length = 0
-    
-    for key, mapping in KEYWORD_MAPPINGS.items():
+
+    for _, mapping in KEYWORD_MAPPINGS.items():
         for keyword in mapping["keywords"]:
             if keyword in user_message:
                 # 選擇最長的關鍵字匹配（更具體）
@@ -1046,30 +1040,7 @@ def get_leaderboard_data():
         from api.config import LEADERBOARD_DATA
         return LEADERBOARD_DATA
 
-# 本地集合管理函數
-def create_local_meeting(meeting_time, meeting_location, user_id, meeting_name=None):
-    """
-    在本地創建集合
-    返回: (success, message, meeting_id)
-    """
-    try:
-        success, message, meeting_id = meeting_manager.create_meeting(
-            user_id=user_id,
-            meeting_time=meeting_time,
-            meeting_location=meeting_location,
-            meeting_name=meeting_name
-        )
-        
-        if success:
-            logger.info(f"成功創建本地集合: ID={meeting_id}, 時間={meeting_time}, 地點={meeting_location}")
-            return True, "集合設定成功！已啟用智能提醒功能", meeting_id
-        else:
-            logger.error(f"創建本地集合失敗: {message}")
-            return False, message, None
-            
-    except Exception as e:
-        logger.error(f"本地集合創建錯誤: {str(e)}")
-        return False, "集合設定失敗", None
+# 集合管理函數已整合到 meeting_manager 中
 
 # 提醒處理函數
 def send_reminder_message(user_id, meeting_time, meeting_location, reminder_type):
@@ -1215,18 +1186,19 @@ if line_handler:
                 meeting_location = parse_location(user_message)
                 
                 if meeting_time and meeting_location:
-                    # 使用本地集合管理系統
-                    success, message, meeting_id = create_local_meeting(
+                    # 使用集合管理系統
+                    success, message, meeting_id = meeting_manager.create_meeting(
+                        user_id=event.source.user_id,
                         meeting_time=meeting_time,
-                        meeting_location=meeting_location,
-                        user_id=event.source.user_id
+                        meeting_location=meeting_location
                     )
-                    
+
                     # 創建回應訊息
                     flex_message = create_flex_message(
                         "meeting_success",
                         meeting_time=meeting_time,
                         meeting_location=meeting_location,
+                        meeting_id=meeting_id,
                         is_success=success
                     )
                     
