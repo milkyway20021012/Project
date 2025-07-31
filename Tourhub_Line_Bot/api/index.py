@@ -725,10 +725,46 @@ def get_message_template(user_message):
 
 def parse_time(user_message):
     """解析各種時間格式"""
-    # 標準時間格式 14:30
-    time_match = re.search(TIME_PATTERNS["standard"], user_message)
-    if time_match:
-        return time_match.group(1)
+    from datetime import datetime
+    
+    # 優先處理上午/下午/晚上/凌晨 (完整格式) - 例如：下午2:35
+    am_pm_match = re.search(TIME_PATTERNS["am_pm"], user_message)
+    if am_pm_match:
+        period = am_pm_match.group(1)
+        hour = int(am_pm_match.group(2))
+        minute = am_pm_match.group(3)
+        
+        # 轉換為24小時制
+        if period == "下午" and hour != 12:
+            hour += 12
+        elif period == "晚上" and hour != 12:
+            hour += 12
+        elif period == "凌晨" and hour == 12:
+            hour = 0
+        
+        return f"{hour:02d}:{minute.zfill(2)}"
+    
+    # 處理上午/下午/晚上/凌晨 (簡化格式) - 例如：下午2點
+    am_pm_simple_match = re.search(TIME_PATTERNS["am_pm_simple"], user_message)
+    if am_pm_simple_match:
+        period = am_pm_simple_match.group(1)
+        hour = int(am_pm_simple_match.group(2))
+        
+        # 轉換為24小時制
+        if period == "下午" and hour != 12:
+            hour += 12
+        elif period == "晚上" and hour != 12:
+            hour += 12
+        elif period == "凌晨" and hour == 12:
+            hour = 0
+        
+        return f"{hour:02d}:00"
+    
+    # 處理 "點半" 或 "點30分"
+    natural_time_match = re.search(TIME_PATTERNS["natural_time"], user_message)
+    if natural_time_match:
+        hour = natural_time_match.group(1) or natural_time_match.group(2)
+        return f"{hour.zfill(2)}:30"
     
     # 中文時間格式 2點30分
     chinese_time = re.search(TIME_PATTERNS["chinese"], user_message)
@@ -743,37 +779,55 @@ def parse_time(user_message):
         hour = simple_chinese_time.group(1)
         return f"{hour.zfill(2)}:00"
     
-    # 處理上午/下午/晚上/凌晨
-    am_pm_match = re.search(TIME_PATTERNS["am_pm"], user_message)
-    if am_pm_match:
-        period = am_pm_match.group(1)
-        hour = int(am_pm_match.group(2))
-        minute = am_pm_match.group(3) if am_pm_match.group(3) else "00"
-        
-        # 轉換為24小時制
-        if period == "下午" and hour != 12:
-            hour += 12
-        elif period == "晚上" and hour != 12:
-            hour += 12
-        elif period == "凌晨" and hour == 12:
-            hour = 0
-        
-        return f"{hour:02d}:{minute.zfill(2)}"
+    # 標準時間格式 14:30 (最後處理，避免與上午/下午格式衝突)
+    time_match = re.search(TIME_PATTERNS["standard"], user_message)
+    if time_match:
+        return time_match.group(1)
+    
+    # 處理冒號格式但沒有前後文的情況
+    colon_time_match = re.search(TIME_PATTERNS["time_with_colon"], user_message)
+    if colon_time_match:
+        hour = colon_time_match.group(1)
+        minute = colon_time_match.group(2)
+        return f"{hour.zfill(2)}:{minute.zfill(2)}"
     
     return None
 
 def parse_location(user_message):
+    """解析集合地點"""
+    # 優先檢查預設地點列表
     for location in MEETING_LOCATIONS:
         if location in user_message:
             return location
-    # 模糊比對
+    
+    # 模糊比對預設地點
     for location in MEETING_LOCATIONS:
         if any(word in user_message for word in location.split()):
             return location
-    # 直接回傳用戶輸入的地點關鍵字（可選）
-    match = re.search(r'(在|到|約在|集合於|見面於)([\u4e00-\u9fa5A-Za-z0-9]+)', user_message)
-    if match:
-        return match.group(2)
+    
+    # 使用正則表達式提取地點
+    # 匹配 "在/到/約在/集合於/見面於 + 地點" 的格式
+    location_patterns = [
+        r'(在|到|約在|集合於|見面於|於)([\u4e00-\u9fa5A-Za-z0-9\s]+?)(集合|見面|碰面|會合|$|\s|，|,|。|！|！)',
+        r'([\u4e00-\u9fa5A-Za-z0-9\s]+?)(集合|見面|碰面|會合)',
+        r'集合.*?([\u4e00-\u9fa5A-Za-z0-9\s]+?)(\s|，|,|。|！|！|$)',
+        r'([\u4e00-\u9fa5A-Za-z0-9\s]{2,10})(車站|寺|公園|廣場|商場|大樓|塔|橋|市場|通|町|村|城|館|園|山|湖|溫泉)'
+    ]
+    
+    for pattern in location_patterns:
+        match = re.search(pattern, user_message)
+        if match:
+            location = match.group(1) if '集合' not in match.group(1) else match.group(2)
+            # 清理地點名稱
+            location = location.strip()
+            if len(location) >= 2:  # 至少2個字符
+                return location
+    
+    # 如果還是找不到，嘗試提取中文地名
+    chinese_location_match = re.search(r'([\u4e00-\u9fa5]{2,10})', user_message)
+    if chinese_location_match:
+        return chinese_location_match.group(1)
+    
     return None
 
 def find_location_trips(user_message):
@@ -847,6 +901,69 @@ def get_leaderboard_data():
         # 如果資料庫獲取失敗，返回預設資料
         from api.config import LEADERBOARD_DATA
         return LEADERBOARD_DATA
+
+# TourClock API 整合函數
+def create_tourclock_meeting(meeting_time, meeting_location, user_id, meeting_name=None):
+    """
+    在 TourClock 中創建集合
+    返回: (success, message, meeting_id)
+    """
+    try:
+        from datetime import datetime
+        
+        # 設定集合名稱
+        if not meeting_name:
+            current_time = datetime.now().strftime("%m月%d日")
+            meeting_name = f"{current_time} {meeting_location}集合"
+        
+        # 準備 TourClock API 數據
+        tourclock_data = {
+            "meeting_name": meeting_name,
+            "meeting_time": meeting_time,
+            "meeting_location": meeting_location,
+            "user_id": user_id,
+            "date": datetime.now().strftime("%Y-%m-%d"),  # 當天日期
+            "reminders": {
+                "10_min_before": True,
+                "5_min_before": True,
+                "on_time": True
+            },
+            "callback_url": f"https://{os.environ.get('VERCEL_URL', 'your-app.vercel.app')}/reminder"
+        }
+        
+        # 發送請求到 TourClock API
+        tourclock_api_url = "https://tourclock.vercel.app/api/meetings"
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "TourHub-LineBot/1.0"
+        }
+        
+        response = requests.post(
+            tourclock_api_url, 
+            json=tourclock_data, 
+            headers=headers,
+            timeout=15
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            return True, "成功同步到 TourClock", result.get("meeting_id")
+        elif response.status_code == 201:
+            result = response.json()
+            return True, "成功同步到 TourClock", result.get("meeting_id")
+        else:
+            logger.warning(f"TourClock API 回應: {response.status_code} - {response.text}")
+            return False, "TourClock 暫時無法連接", None
+            
+    except requests.exceptions.Timeout:
+        logger.error("TourClock API 請求超時")
+        return False, "TourClock 連接超時", None
+    except requests.exceptions.RequestException as e:
+        logger.error(f"TourClock API 請求失敗: {str(e)}")
+        return False, "TourClock 連接失敗", None
+    except Exception as e:
+        logger.error(f"TourClock 整合錯誤: {str(e)}")
+        return False, "TourClock 設定失敗", None
 
 # 提醒處理函數
 def send_reminder_message(user_id, meeting_time, meeting_location, reminder_type):
@@ -969,73 +1086,19 @@ if line_handler:
                 meeting_location = parse_location(user_message)
                 
                 if meeting_time and meeting_location:
+                    # 使用新的 TourClock 整合函數
+                    success, message, meeting_id = create_tourclock_meeting(
+                        meeting_time=meeting_time,
+                        meeting_location=meeting_location,
+                        user_id=event.source.user_id
+                    )
                     
-                    try:
-                        # 向 TourClock 發送集合設定請求
-                        tourclock_url = "https://tourclock.vercel.app/"
-                        tourclock_data = {
-                            "time": meeting_time,
-                            "location": meeting_location,
-                            "action": "create_meeting",
-                            "user_id": event.source.user_id,  # 添加用戶ID
-                            "reminders": {
-                                "10_min_before": True,
-                                "5_min_before": True,
-                                "on_time": True
-                            },
-                            "callback_url": "https://your-vercel-app.vercel.app/reminder"  # 提醒回調URL
-                        }
-                        
-                        # 發送 POST 請求到 TourClock
-                        response = requests.post(tourclock_url, json=tourclock_data, timeout=10)
-                        
-                        if response.status_code == 200:
-                            # 成功設定集合
-                            flex_message = create_flex_message(
-                                "meeting_success",
-                                meeting_time=meeting_time,
-                                meeting_location=meeting_location,
-                                is_success=True
-                            )
-                        else:
-                            # TourClock 設定失敗，但仍顯示本地設定
-                            flex_message = create_flex_message(
-                                "meeting_success",
-                                meeting_time=meeting_time,
-                                meeting_location=meeting_location,
-                                is_success=False
-                            )
-                        
-                        with ApiClient(configuration) as api_client:
-                            line_bot_api = MessagingApi(api_client)
-                            line_bot_api.reply_message_with_http_info(
-                                ReplyMessageRequest(
-                                    reply_token=event.reply_token,
-                                    messages=[FlexMessage(alt_text="集合設定", contents=FlexContainer.from_dict(flex_message))]
-                                )
-                            )
-                    except Exception as e:
-                        # 發生錯誤時的處理
-                        logger.error(f"TourClock 設定錯誤: {str(e)}")
-                        flex_message = create_flex_message(
-                            "meeting_success",
-                            meeting_time=meeting_time,
-                            meeting_location=meeting_location,
-                            is_success=False
-                        )
-                        
-                        with ApiClient(configuration) as api_client:
-                            line_bot_api = MessagingApi(api_client)
-                            line_bot_api.reply_message_with_http_info(
-                                ReplyMessageRequest(
-                                    reply_token=event.reply_token,
-                                    messages=[FlexMessage(alt_text="集合設定", contents=FlexContainer.from_dict(flex_message))]
-                                )
-                            )
-                else:
-                    # 如果沒有找到時間或地點，提供使用說明
+                    # 創建回應訊息
                     flex_message = create_flex_message(
-                        "help"
+                        "meeting_success",
+                        meeting_time=meeting_time,
+                        meeting_location=meeting_location,
+                        is_success=success
                     )
                     
                     with ApiClient(configuration) as api_client:
@@ -1043,7 +1106,188 @@ if line_handler:
                         line_bot_api.reply_message_with_http_info(
                             ReplyMessageRequest(
                                 reply_token=event.reply_token,
-                                messages=[FlexMessage(alt_text="集合功能說明", contents=FlexContainer.from_dict(flex_message))]
+                                messages=[FlexMessage(alt_text="集合設定", contents=FlexContainer.from_dict(flex_message))]
+                            )
+                        )
+                    
+                    # 記錄結果
+                    if success:
+                        logger.info(f"成功設定集合: {meeting_time} @ {meeting_location}, TourClock ID: {meeting_id}")
+                    else:
+                        logger.warning(f"集合設定失敗: {message}")
+                        
+                elif meeting_time and not meeting_location:
+                    # 只有時間沒有地點
+                    flex_message = {
+                        "type": "bubble",
+                        "size": "kilo",
+                        "header": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "⏰ 集合時間已識別",
+                                    "weight": "bold",
+                                    "size": "lg",
+                                    "color": "#ffffff",
+                                    "align": "center"
+                                }
+                            ],
+                            "backgroundColor": "#9B59B6",
+                            "paddingAll": "20px"
+                        },
+                        "body": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": f"✅ 時間：{meeting_time}",
+                                    "size": "md",
+                                    "color": "#27AE60",
+                                    "margin": "md"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": "❌ 地點：未識別",
+                                    "size": "md",
+                                    "color": "#E74C3C",
+                                    "margin": "sm"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": "請明確指定集合地點，例如：淺草寺、新宿車站等",
+                                    "size": "sm",
+                                    "color": "#888888",
+                                    "wrap": True,
+                                    "margin": "md"
+                                }
+                            ],
+                            "paddingAll": "20px"
+                        }
+                    }
+                    
+                    with ApiClient(configuration) as api_client:
+                        line_bot_api = MessagingApi(api_client)
+                        line_bot_api.reply_message_with_http_info(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[FlexMessage(alt_text="集合設定", contents=FlexContainer.from_dict(flex_message))]
+                            )
+                        )
+                        
+                elif meeting_location and not meeting_time:
+                    # 只有地點沒有時間
+                    flex_message = {
+                        "type": "bubble",
+                        "size": "kilo",
+                        "header": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "📍 集合地點已識別",
+                                    "weight": "bold",
+                                    "size": "lg",
+                                    "color": "#ffffff",
+                                    "align": "center"
+                                }
+                            ],
+                            "backgroundColor": "#9B59B6",
+                            "paddingAll": "20px"
+                        },
+                        "body": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "❌ 時間：未識別",
+                                    "size": "md",
+                                    "color": "#E74C3C",
+                                    "margin": "md"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": f"✅ 地點：{meeting_location}",
+                                    "size": "md",
+                                    "color": "#27AE60",
+                                    "margin": "sm"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": "請明確指定集合時間，例如：下午2:35、14:35、2點35分等",
+                                    "size": "sm",
+                                    "color": "#888888",
+                                    "wrap": True,
+                                    "margin": "md"
+                                }
+                            ],
+                            "paddingAll": "20px"
+                        }
+                    }
+                    
+                    with ApiClient(configuration) as api_client:
+                        line_bot_api = MessagingApi(api_client)
+                        line_bot_api.reply_message_with_http_info(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[FlexMessage(alt_text="集合設定", contents=FlexContainer.from_dict(flex_message))]
+                            )
+                        )
+                else:
+                    # 時間和地點都沒有識別到
+                    flex_message = {
+                        "type": "bubble",
+                        "size": "kilo",
+                        "header": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "📝 集合設定說明",
+                                    "weight": "bold",
+                                    "size": "lg",
+                                    "color": "#ffffff",
+                                    "align": "center"
+                                }
+                            ],
+                            "backgroundColor": "#9B59B6",
+                            "paddingAll": "20px"
+                        },
+                        "body": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "請輸入包含時間和地點的集合資訊，例如：",
+                                    "size": "md",
+                                    "color": "#555555",
+                                    "margin": "md"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": "• 下午2:35 淺草寺集合\n• 14:30 新宿車站見面\n• 明天3點 澀谷集合\n• 晚上7點 銀座碰面",
+                                    "size": "sm",
+                                    "color": "#888888",
+                                    "wrap": True,
+                                    "margin": "sm"
+                                }
+                            ],
+                            "paddingAll": "20px"
+                        }
+                    }
+                    
+                    with ApiClient(configuration) as api_client:
+                        line_bot_api = MessagingApi(api_client)
+                        line_bot_api.reply_message_with_http_info(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[FlexMessage(alt_text="集合設定說明", contents=FlexContainer.from_dict(flex_message))]
                             )
                         )
             
