@@ -316,24 +316,37 @@ class MeetingManager:
                 try:
                     # 獲取待發送的提醒
                     reminders = self.get_pending_reminders()
-                    
+
                     # 發送提醒到 LINE Bot
                     for reminder in reminders:
                         logger.info(f"需要發送提醒: {reminder}")
+
+                        # 調用外部回調函數發送提醒
+                        if hasattr(self, 'reminder_callback') and self.reminder_callback:
+                            try:
+                                self.reminder_callback(reminder)
+                            except Exception as e:
+                                logger.error(f"調用提醒回調失敗: {str(e)}")
+
                         # 標記為已發送
                         self.mark_reminder_sent(reminder["meeting_id"], reminder["reminder_type"])
-                    
+
                     # 每分鐘檢查一次
                     time.sleep(60)
-                    
+
                 except Exception as e:
                     logger.error(f"提醒線程錯誤: {str(e)}")
                     time.sleep(60)
-        
+
         # 啟動後台線程
         thread = threading.Thread(target=reminder_worker, daemon=True)
         thread.start()
         logger.info("提醒線程已啟動")
+
+    def set_reminder_callback(self, callback_func):
+        """設定提醒回調函數"""
+        self.reminder_callback = callback_func
+        logger.info("提醒回調函數已設定")
     
     def send_reminder_to_user(self, user_id: str, reminder_data: Dict):
         """發送提醒給用戶（由外部調用）"""

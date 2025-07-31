@@ -418,12 +418,25 @@ def create_flex_message(template_type, **kwargs):
     elif template_type == "meeting_success":
         meeting_time = kwargs.get('meeting_time')
         meeting_location = kwargs.get('meeting_location')
+        meeting_id = kwargs.get('meeting_id')
         is_success = kwargs.get('is_success', False)
         template = MESSAGE_TEMPLATES["meeting_success"]
-        
+
         status_text = template["status_success"] if is_success else template["status_local"]
         status_color = template["status_success_color"] if is_success else template["status_local_color"]
-        
+
+        # 計算提醒時間
+        from datetime import datetime, timedelta
+        try:
+            # 假設是今天的時間
+            today = datetime.now().strftime("%Y-%m-%d")
+            meeting_datetime = datetime.strptime(f"{today} {meeting_time}", "%Y-%m-%d %H:%M")
+            reminder_10min = (meeting_datetime - timedelta(minutes=10)).strftime("%H:%M")
+            reminder_5min = (meeting_datetime - timedelta(minutes=5)).strftime("%H:%M")
+        except:
+            reminder_10min = "提醒前10分鐘"
+            reminder_5min = "提醒前5分鐘"
+
         return {
             "type": "bubble",
             "size": "kilo",
@@ -476,10 +489,19 @@ def create_flex_message(template_type, **kwargs):
                     },
                     {"type": "separator", "margin": "md"},
                     {"type": "text", "text": "🎉 集合設定完成！", "weight": "bold", "size": "sm", "color": "#27AE60", "align": "center", "margin": "md"},
-                    {"type": "text", "text": "已成功設定集合時間和地點，所有成員都會收到通知", "size": "xs", "color": "#888888", "align": "center", "wrap": True, "margin": "sm"},
+                    {"type": "text", "text": "已成功設定集合時間和地點，智能提醒已啟用", "size": "xs", "color": "#888888", "align": "center", "wrap": True, "margin": "sm"},
                     {"type": "separator", "margin": "md"},
-                    {"type": "text", "text": template["reminder_info"], "weight": "bold", "size": "sm", "color": template["color"], "align": "center", "margin": "md"},
-                    {"type": "text", "text": template["reminder_details"], "size": "xs", "color": "#888888", "align": "center", "wrap": True, "margin": "sm"}
+                    {"type": "text", "text": "📱 智能提醒時間", "weight": "bold", "size": "sm", "color": template["color"], "align": "center", "margin": "md"},
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {"type": "text", "text": f"🔔 {reminder_10min} (集合前10分鐘)", "size": "xs", "color": "#888888", "align": "center"},
+                            {"type": "text", "text": f"🔔 {reminder_5min} (集合前5分鐘)", "size": "xs", "color": "#888888", "align": "center", "marginTop": "xs"},
+                            {"type": "text", "text": f"🔔 {meeting_time} (集合時間到)", "size": "xs", "color": "#888888", "align": "center", "marginTop": "xs"}
+                        ],
+                        "margin": "sm"
+                    }
                 ],
                 "paddingAll": "20px"
             },
@@ -813,14 +835,14 @@ def get_message_template(user_message):
 def parse_time(user_message):
     """解析各種時間格式"""
     from datetime import datetime
-    
-    # 優先處理上午/下午/晚上/凌晨 (完整格式) - 例如：下午2:35
-    am_pm_match = re.search(TIME_PATTERNS["am_pm"], user_message)
-    if am_pm_match:
-        period = am_pm_match.group(1)
-        hour = int(am_pm_match.group(2))
-        minute = am_pm_match.group(3)
-        
+
+    # 優先處理上午/下午/晚上/凌晨 (冒號格式) - 例如：下午2:35
+    am_pm_colon_match = re.search(TIME_PATTERNS["am_pm_colon"], user_message)
+    if am_pm_colon_match:
+        period = am_pm_colon_match.group(1)
+        hour = int(am_pm_colon_match.group(2))
+        minute = am_pm_colon_match.group(3)
+
         # 轉換為24小時制
         if period == "下午" and hour != 12:
             hour += 12
@@ -828,7 +850,28 @@ def parse_time(user_message):
             hour += 12
         elif period == "凌晨" and hour == 12:
             hour = 0
-        
+        elif period == "上午" and hour == 12:
+            hour = 0
+
+        return f"{hour:02d}:{minute.zfill(2)}"
+
+    # 處理上午/下午/晚上/凌晨 (點分格式) - 例如：下午2點35分
+    am_pm_match = re.search(TIME_PATTERNS["am_pm"], user_message)
+    if am_pm_match:
+        period = am_pm_match.group(1)
+        hour = int(am_pm_match.group(2))
+        minute = am_pm_match.group(3)
+
+        # 轉換為24小時制
+        if period == "下午" and hour != 12:
+            hour += 12
+        elif period == "晚上" and hour != 12:
+            hour += 12
+        elif period == "凌晨" and hour == 12:
+            hour = 0
+        elif period == "上午" and hour == 12:
+            hour = 0
+
         return f"{hour:02d}:{minute.zfill(2)}"
     
     # 處理上午/下午/晚上/凌晨 (簡化格式) - 例如：下午2點
@@ -877,7 +920,14 @@ def parse_time(user_message):
         hour = colon_time_match.group(1)
         minute = colon_time_match.group(2)
         return f"{hour.zfill(2)}:{minute.zfill(2)}"
-    
+
+    # 處理小數點格式 - 例如：2.35
+    decimal_time_match = re.search(TIME_PATTERNS["decimal_time"], user_message)
+    if decimal_time_match:
+        hour = decimal_time_match.group(1)
+        minute = decimal_time_match.group(2)
+        return f"{hour.zfill(2)}:{minute.zfill(2)}"
+
     return None
 
 def parse_location(user_message):
@@ -1028,7 +1078,7 @@ def send_reminder_message(user_id, meeting_time, meeting_location, reminder_type
             meeting_time=meeting_time,
             meeting_location=meeting_location
         )
-        
+
         with ApiClient(configuration) as api_client:
             line_bot_api = MessagingApi(api_client)
             line_bot_api.push_message_with_http_info(
@@ -1037,11 +1087,30 @@ def send_reminder_message(user_id, meeting_time, meeting_location, reminder_type
                     messages=[FlexMessage(alt_text="集合提醒", contents=FlexContainer.from_dict(flex_message))]
                 )
             )
-            
+
         logger.info(f"已發送 {reminder_type} 提醒給用戶 {user_id}")
-        
+
     except Exception as e:
         logger.error(f"發送提醒訊息失敗: {str(e)}")
+
+def reminder_callback_handler(reminder_data):
+    """
+    處理集合管理器的提醒回調
+    """
+    try:
+        user_id = reminder_data.get('user_id')
+        meeting_time = reminder_data.get('meeting_time')
+        meeting_location = reminder_data.get('meeting_location')
+        reminder_type = reminder_data.get('reminder_type')
+
+        if all([user_id, meeting_time, meeting_location, reminder_type]):
+            send_reminder_message(user_id, meeting_time, meeting_location, reminder_type)
+            logger.info(f"成功處理提醒回調: {reminder_type} for user {user_id}")
+        else:
+            logger.error(f"提醒回調資料不完整: {reminder_data}")
+
+    except Exception as e:
+        logger.error(f"處理提醒回調失敗: {str(e)}")
 
 # 環境變數檢查
 CHANNEL_ACCESS_TOKEN = os.environ.get('CHANNEL_ACCESS_TOKEN')
@@ -1050,6 +1119,10 @@ CHANNEL_SECRET = os.environ.get('CHANNEL_SECRET')
 if CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET:
     configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
     line_handler = WebhookHandler(CHANNEL_SECRET)
+
+    # 設定集合管理器的提醒回調
+    meeting_manager.set_reminder_callback(reminder_callback_handler)
+
     logger.info("LINE Bot 設定成功")
 else:
     configuration = None

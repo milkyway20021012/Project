@@ -227,12 +227,14 @@ MEETING_LOCATIONS = [
 # 時間解析模式
 TIME_PATTERNS = {
     "am_pm": r'(上午|下午|晚上|凌晨)\s*(\d{1,2})[點:](\d{1,2})',
-    "am_pm_simple": r'(上午|下午|晚上|凌晨)\s*(\d{1,2})',
+    "am_pm_simple": r'(上午|下午|晚上|凌晨)\s*(\d{1,2})點?',
     "natural_time": r'(\d{1,2})點半|(\d{1,2})點30分',
     "chinese": r'(\d{1,2})點(\d{1,2})分',
-    "simple_chinese": r'(\d{1,2})點',
+    "simple_chinese": r'(\d{1,2})點(?!半)',
     "standard": r'(\d{1,2}:\d{2})',
-    "time_with_colon": r'(\d{1,2}):(\d{1,2})'
+    "time_with_colon": r'(\d{1,2}):(\d{1,2})',
+    "decimal_time": r'(\d{1,2})\.(\d{1,2})',  # 支援 2.35 格式
+    "am_pm_colon": r'(上午|下午|晚上|凌晨)\s*(\d{1,2}):(\d{1,2})'  # 支援 下午2:35 格式
 }
 
 # 集合時間模式 - 更寬鬆的匹配模式
