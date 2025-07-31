@@ -1,10 +1,7 @@
 from flask import Flask, request, abort
 import os
 import logging
-import requests
-from bs4 import BeautifulSoup
 import re
-import json
 import time
 
 # 導入配置文件
