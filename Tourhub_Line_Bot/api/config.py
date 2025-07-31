@@ -65,7 +65,7 @@ MESSAGE_TEMPLATES = {
     "meeting_success": {
         "title": "📍 集合設定成功",
         "color": "#9B59B6",
-        "status_success": "已同步到 TourClock",
+        "status_success": "智能提醒已啟用",
         "status_success_color": "#27AE60",
         "status_local": "本地設定",
         "status_local_color": "#F39C12",

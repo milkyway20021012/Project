@@ -17,6 +17,9 @@ from api.config import (
     MEETING_TIME_PATTERN
 )
 
+# 導入本地集合管理器
+from api.meeting_manager import meeting_manager
+
 # LINE Bot imports
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
@@ -38,6 +41,90 @@ logger = logging.getLogger(__name__)
 
 # 建立 Flask app
 app = Flask(__name__)
+
+def create_meeting_list_message(meetings):
+    """創建集合列表 Flex Message"""
+    meeting_contents = []
+    
+    for meeting in meetings[:5]:  # 最多顯示5個集合
+        meeting_contents.append({
+            "type": "box",
+            "layout": "horizontal",
+            "contents": [
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": meeting["meeting_name"],
+                            "weight": "bold",
+                            "size": "sm",
+                            "color": "#555555"
+                        },
+                        {
+                            "type": "text",
+                            "text": f"⏰ {meeting['meeting_time']}",
+                            "size": "xs",
+                            "color": "#888888",
+                            "marginTop": "sm"
+                        },
+                        {
+                            "type": "text",
+                            "text": f"📍 {meeting['meeting_location']}",
+                            "size": "xs",
+                            "color": "#888888",
+                            "wrap": True,
+                            "marginTop": "sm"
+                        }
+                    ],
+                    "flex": 1
+                },
+                {
+                    "type": "button",
+                    "action": {
+                        "type": "postback",
+                        "label": "取消",
+                        "data": f"cancel_meeting:{meeting['id']}"
+                    },
+                    "style": "secondary",
+                    "color": "#E74C3C",
+                    "height": "sm",
+                    "marginStart": "md"
+                }
+            ],
+            "marginBottom": "md",
+            "paddingAll": "sm",
+            "backgroundColor": "#f8f9fa",
+            "cornerRadius": "md"
+        })
+    
+    return {
+        "type": "bubble",
+        "size": "giga",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "📝 我的集合列表",
+                    "weight": "bold",
+                    "size": "lg",
+                    "color": "#ffffff",
+                    "align": "center"
+                }
+            ],
+            "backgroundColor": "#9B59B6",
+            "paddingAll": "20px"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": meeting_contents,
+            "paddingAll": "20px"
+        }
+    }
 
 def create_flex_message(template_type, **kwargs):
     """
@@ -403,9 +490,9 @@ def create_flex_message(template_type, **kwargs):
                     {
                         "type": "button",
                         "action": {
-                            "type": "uri",
-                            "label": "查看 TourClock",
-                            "uri": "https://tourclock.vercel.app/"
+                            "type": "postback",
+                            "label": "查看我的集合",
+                            "data": "view_meetings"
                         },
                         "style": "primary",
                         "color": template["color"],
@@ -416,7 +503,7 @@ def create_flex_message(template_type, **kwargs):
                         "action": {
                             "type": "uri",
                             "label": "分享集合資訊",
-                            "uri": f"https://line.me/R/msg/text/?⏰ 集合時間：{meeting_time}%0A📍 集合地點：{meeting_location}%0A%0A🌐 查看詳情：https://tourclock.vercel.app/"
+                            "uri": f"https://line.me/R/msg/text/?⏰ 集合時間：{meeting_time}%0A📍 集合地點：{meeting_location}%0A%0A🤖 由 TourHub Bot 智能管理"
                         },
                         "style": "secondary",
                         "color": template["color"],
@@ -902,68 +989,30 @@ def get_leaderboard_data():
         from api.config import LEADERBOARD_DATA
         return LEADERBOARD_DATA
 
-# TourClock API 整合函數
-def create_tourclock_meeting(meeting_time, meeting_location, user_id, meeting_name=None):
+# 本地集合管理函數
+def create_local_meeting(meeting_time, meeting_location, user_id, meeting_name=None):
     """
-    在 TourClock 中創建集合
+    在本地創建集合
     返回: (success, message, meeting_id)
     """
     try:
-        from datetime import datetime
-        
-        # 設定集合名稱
-        if not meeting_name:
-            current_time = datetime.now().strftime("%m月%d日")
-            meeting_name = f"{current_time} {meeting_location}集合"
-        
-        # 準備 TourClock API 數據
-        tourclock_data = {
-            "meeting_name": meeting_name,
-            "meeting_time": meeting_time,
-            "meeting_location": meeting_location,
-            "user_id": user_id,
-            "date": datetime.now().strftime("%Y-%m-%d"),  # 當天日期
-            "reminders": {
-                "10_min_before": True,
-                "5_min_before": True,
-                "on_time": True
-            },
-            "callback_url": f"https://{os.environ.get('VERCEL_URL', 'your-app.vercel.app')}/reminder"
-        }
-        
-        # 發送請求到 TourClock API
-        tourclock_api_url = "https://tourclock.vercel.app/api/meetings"
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": "TourHub-LineBot/1.0"
-        }
-        
-        response = requests.post(
-            tourclock_api_url, 
-            json=tourclock_data, 
-            headers=headers,
-            timeout=15
+        success, message, meeting_id = meeting_manager.create_meeting(
+            user_id=user_id,
+            meeting_time=meeting_time,
+            meeting_location=meeting_location,
+            meeting_name=meeting_name
         )
         
-        if response.status_code == 200:
-            result = response.json()
-            return True, "成功同步到 TourClock", result.get("meeting_id")
-        elif response.status_code == 201:
-            result = response.json()
-            return True, "成功同步到 TourClock", result.get("meeting_id")
+        if success:
+            logger.info(f"成功創建本地集合: ID={meeting_id}, 時間={meeting_time}, 地點={meeting_location}")
+            return True, "集合設定成功！已啟用智能提醒功能", meeting_id
         else:
-            logger.warning(f"TourClock API 回應: {response.status_code} - {response.text}")
-            return False, "TourClock 暫時無法連接", None
+            logger.error(f"創建本地集合失敗: {message}")
+            return False, message, None
             
-    except requests.exceptions.Timeout:
-        logger.error("TourClock API 請求超時")
-        return False, "TourClock 連接超時", None
-    except requests.exceptions.RequestException as e:
-        logger.error(f"TourClock API 請求失敗: {str(e)}")
-        return False, "TourClock 連接失敗", None
     except Exception as e:
-        logger.error(f"TourClock 整合錯誤: {str(e)}")
-        return False, "TourClock 設定失敗", None
+        logger.error(f"本地集合創建錯誤: {str(e)}")
+        return False, "集合設定失敗", None
 
 # 提醒處理函數
 def send_reminder_message(user_id, meeting_time, meeting_location, reminder_type):
@@ -1086,8 +1135,8 @@ if line_handler:
                 meeting_location = parse_location(user_message)
                 
                 if meeting_time and meeting_location:
-                    # 使用新的 TourClock 整合函數
-                    success, message, meeting_id = create_tourclock_meeting(
+                    # 使用本地集合管理系統
+                    success, message, meeting_id = create_local_meeting(
                         meeting_time=meeting_time,
                         meeting_location=meeting_location,
                         user_id=event.source.user_id
@@ -1374,6 +1423,168 @@ if line_handler:
                         )
                 else:
                     logger.error(f"找不到行程 ID: {trip_id}")
+            
+            # 處理查看集合列表
+            elif postback_data == "view_meetings":
+                user_id = event.source.user_id
+                meetings = meeting_manager.get_user_meetings(user_id)
+                
+                if meetings:
+                    # 創建集合列表 Flex Message
+                    flex_message = create_meeting_list_message(meetings)
+                    
+                    with ApiClient(configuration) as api_client:
+                        line_bot_api = MessagingApi(api_client)
+                        line_bot_api.reply_message_with_http_info(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[FlexMessage(alt_text="我的集合列表", contents=FlexContainer.from_dict(flex_message))]
+                            )
+                        )
+                else:
+                    # 沒有集合時的回應
+                    flex_message = {
+                        "type": "bubble",
+                        "size": "kilo",
+                        "header": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "📝 我的集合",
+                                    "weight": "bold",
+                                    "size": "lg",
+                                    "color": "#ffffff",
+                                    "align": "center"
+                                }
+                            ],
+                            "backgroundColor": "#9B59B6",
+                            "paddingAll": "20px"
+                        },
+                        "body": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "目前沒有設定任何集合",
+                                    "size": "md",
+                                    "color": "#555555",
+                                    "align": "center",
+                                    "margin": "md"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": "試試輸入「下午2:35 淺草寺集合」來設定您的第一個集合！",
+                                    "size": "sm",
+                                    "color": "#888888",
+                                    "align": "center",
+                                    "wrap": True,
+                                    "margin": "sm"
+                                }
+                            ],
+                            "paddingAll": "20px"
+                        }
+                    }
+                    
+                    with ApiClient(configuration) as api_client:
+                        line_bot_api = MessagingApi(api_client)
+                        line_bot_api.reply_message_with_http_info(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[FlexMessage(alt_text="我的集合", contents=FlexContainer.from_dict(flex_message))]
+                            )
+                        )
+            
+            # 處理取消集合
+            elif postback_data.startswith("cancel_meeting:"):
+                meeting_id = int(postback_data.split(":")[1])
+                user_id = event.source.user_id
+                
+                success, message = meeting_manager.cancel_meeting(meeting_id, user_id)
+                
+                if success:
+                    flex_message = {
+                        "type": "bubble",
+                        "size": "kilo",
+                        "header": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "✅ 集合已取消",
+                                    "weight": "bold",
+                                    "size": "lg",
+                                    "color": "#ffffff",
+                                    "align": "center"
+                                }
+                            ],
+                            "backgroundColor": "#27AE60",
+                            "paddingAll": "20px"
+                        },
+                        "body": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": message,
+                                    "size": "md",
+                                    "color": "#555555",
+                                    "align": "center",
+                                    "margin": "md"
+                                }
+                            ],
+                            "paddingAll": "20px"
+                        }
+                    }
+                else:
+                    flex_message = {
+                        "type": "bubble",
+                        "size": "kilo",
+                        "header": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": "❌ 取消失敗",
+                                    "weight": "bold",
+                                    "size": "lg",
+                                    "color": "#ffffff",
+                                    "align": "center"
+                                }
+                            ],
+                            "backgroundColor": "#E74C3C",
+                            "paddingAll": "20px"
+                        },
+                        "body": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": message,
+                                    "size": "md",
+                                    "color": "#555555",
+                                    "align": "center",
+                                    "margin": "md"
+                                }
+                            ],
+                            "paddingAll": "20px"
+                        }
+                    }
+                
+                with ApiClient(configuration) as api_client:
+                    line_bot_api = MessagingApi(api_client)
+                    line_bot_api.reply_message_with_http_info(
+                        ReplyMessageRequest(
+                            reply_token=event.reply_token,
+                            messages=[FlexMessage(alt_text="取消集合", contents=FlexContainer.from_dict(flex_message))]
+                        )
+                    )
             
         except Exception as e:
             logger.error(f"Postback error: {str(e)}")
