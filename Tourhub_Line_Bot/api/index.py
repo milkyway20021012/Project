@@ -1799,6 +1799,42 @@ else:
 # 健康檢查
 @app.route('/')
 def health():
+    # 檢查是否需要顯示設定頁面
+    setup_required = request.args.get('setup')
+
+    if setup_required == 'required':
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>需要完成設定</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+                body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
+                .warning {{ color: #E74C3C; }}
+                .info {{ color: #666; margin-top: 20px; }}
+                .code {{ background: #f4f4f4; padding: 10px; margin: 10px; border-radius: 5px; }}
+            </style>
+        </head>
+        <body>
+            <h1 class="warning">⚠️ LINE Login 未設定</h1>
+            <p>請在 Vercel 中設定以下環境變數：</p>
+            <div class="code">
+                LINE_LOGIN_CHANNEL_ID=你的Channel_ID<br>
+                LINE_LOGIN_CHANNEL_SECRET=你的Channel_Secret<br>
+                LINE_LOGIN_REDIRECT_URI=https://line-bot-theta-dun.vercel.app/auth/line/callback
+            </div>
+            <p class="info">設定完成後重新部署即可使用綁定功能</p>
+            <script>
+                setTimeout(function() {{
+                    window.close();
+                }}, 10000);
+            </script>
+        </body>
+        </html>
+        """
+
     return {
         "status": "running",
         "bot_configured": configuration is not None
