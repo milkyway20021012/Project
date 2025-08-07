@@ -364,16 +364,18 @@ def get_trip_details_by_id(trip_id: int):
 @cached(ttl=900, level="l1")  # 排行榜詳細數據緩存15分鐘，放在L1緩存
 def get_leaderboard_rank_details(rank: int = 1):
     """獲取排行榜指定排名的詳細行程資訊"""
+    start_time = time.time()
+
     if not MYSQL_AVAILABLE:
         logger.warning("MySQL connector not available, cannot get leaderboard rank details")
         return None
 
     try:
-        connection = get_database_connection()
-        if not connection:
-            return None
+        with get_database_connection() as connection:
+            if not connection:
+                return None
 
-        cursor = connection.cursor(dictionary=True)
+            cursor = connection.cursor(dictionary=True, buffered=True)
 
         # 查詢排行榜資料，獲取指定排名的行程
         leaderboard_query = """
@@ -401,7 +403,6 @@ def get_leaderboard_rank_details(rank: int = 1):
 
         if not trip_data:
             cursor.close()
-            connection.close()
             return None
 
         trip_id = trip_data.get('trip_id')
@@ -421,70 +422,68 @@ def get_leaderboard_rank_details(rank: int = 1):
 
         cursor.execute(detail_query, (trip_id,))
         details = cursor.fetchall()
-
         cursor.close()
-        connection.close()
 
         # 構建詳細行程 - 使用實際日期格式
         itinerary_parts = []
 
         for detail in details:
-            location = detail.get('location', '未知地點')
-            date = detail.get('date')
-            start_time = detail.get('start_time', '')
-            end_time = detail.get('end_time', '')
-            description = detail.get('description', '')
+                location = detail.get('location', '未知地點')
+                date = detail.get('date')
+                start_time = detail.get('start_time', '')
+                end_time = detail.get('end_time', '')
+                description = detail.get('description', '')
 
-            # 格式化日期和星期
-            date_text = ""
-            if date:
-                try:
-                    from datetime import datetime
-                    date_obj = datetime.strptime(str(date), '%Y-%m-%d')
-                    weekdays = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
-                    weekday = weekdays[date_obj.weekday()]
-                    date_text = f"{date_obj.strftime('%Y年%m月%d日')} {weekday}"
-                except:
-                    date_text = str(date) if date else "未知日期"
+                # 格式化日期和星期
+                date_text = ""
+                if date:
+                    try:
+                        from datetime import datetime
+                        date_obj = datetime.strptime(str(date), '%Y-%m-%d')
+                        weekdays = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
+                        weekday = weekdays[date_obj.weekday()]
+                        date_text = f"{date_obj.strftime('%Y年%m月%d日')} {weekday}"
+                    except:
+                        date_text = str(date) if date else "未知日期"
 
-            # 格式化時間 - 處理 timedelta 類型
-            time_text = ""
-            if start_time and end_time:
-                # 處理 timedelta 類型的時間
-                if hasattr(start_time, 'total_seconds'):
-                    # timedelta 類型
-                    start_hours = int(start_time.total_seconds() // 3600)
-                    start_minutes = int((start_time.total_seconds() % 3600) // 60)
-                    start_formatted = f"{start_hours:02d}:{start_minutes:02d}"
+                # 格式化時間 - 處理 timedelta 類型
+                time_text = ""
+                if start_time and end_time:
+                    # 處理 timedelta 類型的時間
+                    if hasattr(start_time, 'total_seconds'):
+                        # timedelta 類型
+                        start_hours = int(start_time.total_seconds() // 3600)
+                        start_minutes = int((start_time.total_seconds() % 3600) // 60)
+                        start_formatted = f"{start_hours:02d}:{start_minutes:02d}"
+                    else:
+                        # 字串類型
+                        start_formatted = str(start_time)[:5]
+
+                    if hasattr(end_time, 'total_seconds'):
+                        # timedelta 類型
+                        end_hours = int(end_time.total_seconds() // 3600)
+                        end_minutes = int((end_time.total_seconds() % 3600) // 60)
+                        end_formatted = f"{end_hours:02d}:{end_minutes:02d}"
+                    else:
+                        # 字串類型
+                        end_formatted = str(end_time)[:5]
+
+                    time_text = f"{start_formatted} - {end_formatted}"
+                elif start_time:
+                    if hasattr(start_time, 'total_seconds'):
+                        start_hours = int(start_time.total_seconds() // 3600)
+                        start_minutes = int((start_time.total_seconds() % 3600) // 60)
+                        time_text = f"{start_hours:02d}:{start_minutes:02d}"
+                    else:
+                        time_text = str(start_time)[:5]
+
+                # 構建完整的行程項目
+                if date_text and time_text and location:
+                    itinerary_parts.append(f"{date_text}\n{time_text}\n{location}")
+                elif date_text and location:
+                    itinerary_parts.append(f"{date_text}\n{location}")
                 else:
-                    # 字串類型
-                    start_formatted = str(start_time)[:5]
-
-                if hasattr(end_time, 'total_seconds'):
-                    # timedelta 類型
-                    end_hours = int(end_time.total_seconds() // 3600)
-                    end_minutes = int((end_time.total_seconds() % 3600) // 60)
-                    end_formatted = f"{end_hours:02d}:{end_minutes:02d}"
-                else:
-                    # 字串類型
-                    end_formatted = str(end_time)[:5]
-
-                time_text = f"{start_formatted} - {end_formatted}"
-            elif start_time:
-                if hasattr(start_time, 'total_seconds'):
-                    start_hours = int(start_time.total_seconds() // 3600)
-                    start_minutes = int((start_time.total_seconds() % 3600) // 60)
-                    time_text = f"{start_hours:02d}:{start_minutes:02d}"
-                else:
-                    time_text = str(start_time)[:5]
-
-            # 構建完整的行程項目
-            if date_text and time_text and location:
-                itinerary_parts.append(f"{date_text}\n{time_text}\n{location}")
-            elif date_text and location:
-                itinerary_parts.append(f"{date_text}\n{location}")
-            else:
-                itinerary_parts.append(f"{location}")
+                    itinerary_parts.append(f"{location}")
 
         # 如果沒有詳細行程，使用預設
         if not itinerary_parts:
@@ -502,26 +501,31 @@ def get_leaderboard_rank_details(rank: int = 1):
         rank_titles = {1: "🥇 第一名", 2: "🥈 第二名", 3: "🥉 第三名", 4: "🏅 第四名", 5: "🎖️ 第五名"}
         rank_title = rank_titles.get(rank, f"🎖️ 第{rank}名")
 
-        return {
-            "trip_id": trip_data.get('trip_id'),
-            "rank": rank,
-            "rank_title": rank_title,
-            "title": trip_data.get('title', '未知行程'),
-            "description": trip_data.get('description', '精彩行程'),
-            "area": trip_data.get('area', '未知地區'),
-            "duration": f"{trip_data.get('duration_days', 1)}天",
-            "start_date": str(trip_data.get('start_date', '')),
-            "end_date": str(trip_data.get('end_date', '')),
-            "favorite_count": trip_data.get('favorite_count', 0) or 0,
-            "share_count": trip_data.get('share_count', 0) or 0,
-            "view_count": trip_data.get('view_count', 0) or 0,
-            "popularity_score": float(trip_data.get('popularity_score', 0) or 0),
-            "itinerary": "\n".join(itinerary_parts),
-            "itinerary_list": itinerary_parts
-        }
+        result = {
+                "trip_id": trip_data.get('trip_id'),
+                "rank": rank,
+                "rank_title": rank_title,
+                "title": trip_data.get('title', '未知行程'),
+                "description": trip_data.get('description', '精彩行程'),
+                "area": trip_data.get('area', '未知地區'),
+                "duration": f"{trip_data.get('duration_days', 1)}天",
+                "start_date": str(trip_data.get('start_date', '')),
+                "end_date": str(trip_data.get('end_date', '')),
+                "favorite_count": trip_data.get('favorite_count', 0) or 0,
+                "share_count": trip_data.get('share_count', 0) or 0,
+                "view_count": trip_data.get('view_count', 0) or 0,
+                "popularity_score": float(trip_data.get('popularity_score', 0) or 0),
+                "itinerary": "\n".join(itinerary_parts),
+                "itinerary_list": itinerary_parts
+            }
+
+        query_time = time.time() - start_time
+        logger.info(f"成功獲取排行榜第{rank}名詳細資訊，耗時 {query_time:.3f}s")
+        return result
 
     except Exception as e:
-        logger.error(f"獲取排行榜第{rank}名詳細行程失敗: {e}")
+        query_time = time.time() - start_time
+        logger.error(f"獲取排行榜第{rank}名詳細行程失敗: {e}，耗時 {query_time:.3f}s")
         return None
 
 # 獨立行程管理函數已移除
