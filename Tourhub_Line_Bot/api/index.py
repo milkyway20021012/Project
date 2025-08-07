@@ -77,6 +77,168 @@ def get_message_template(user_message):
 
     return None
 
+def create_optimized_flex_itinerary(data):
+    """創建優化的 Flex Message 詳細行程"""
+    try:
+        # 處理行程詳細資料，分割成多個短文本
+        itinerary_items = []
+
+        if data.get("details"):
+            for detail in data["details"][:6]:  # 限制最多6個項目
+                # 處理日期
+                date_text = ""
+                if detail['date']:
+                    date_obj = detail['date']
+                    weekdays = ['一', '二', '三', '四', '五', '六', '日']
+                    weekday = weekdays[date_obj.weekday()]
+                    date_text = f"{date_obj.month}/{date_obj.day} ({weekday})"
+
+                # 處理時間
+                time_text = ""
+                if detail['start_time'] and detail['end_time']:
+                    start_time = str(detail['start_time'])[:5]  # HH:MM
+                    end_time = str(detail['end_time'])[:5]
+                    time_text = f"{start_time}-{end_time}"
+
+                # 處理地點（移除特殊字符）
+                location = detail['location'] or "未知地點"
+                location = location.replace('・', '-')  # 替換特殊字符
+
+                # 創建單個行程項目
+                if date_text and time_text and location:
+                    itinerary_items.extend([
+                        {
+                            "type": "text",
+                            "text": f"📅 {date_text}",
+                            "size": "sm",
+                            "color": "#666666",
+                            "margin": "md"
+                        },
+                        {
+                            "type": "text",
+                            "text": f"🕐 {time_text}",
+                            "size": "sm",
+                            "color": "#333333"
+                        },
+                        {
+                            "type": "text",
+                            "text": f"📍 {location}",
+                            "size": "sm",
+                            "color": "#333333",
+                            "wrap": True
+                        }
+                    ])
+
+                    # 限制項目數量，避免過長
+                    if len(itinerary_items) >= 15:  # 5個行程 x 3行 = 15項
+                        break
+
+        # 如果沒有詳細資料，顯示提示
+        if not itinerary_items:
+            itinerary_items = [
+                {
+                    "type": "text",
+                    "text": "暫無詳細行程安排",
+                    "size": "sm",
+                    "color": "#666666",
+                    "align": "center"
+                }
+            ]
+
+        # 添加查看更多提示
+        if len(data.get("details", [])) > 6:
+            itinerary_items.append({
+                "type": "text",
+                "text": "...",
+                "size": "sm",
+                "color": "#999999",
+                "align": "center",
+                "margin": "md"
+            })
+
+        # 清理標題中的特殊字符
+        clean_title = data['title'].replace('・', '-') if data['title'] else f"第{data['rank']}名行程"
+        clean_area = data['area'].replace('・', '-') if data['area'] else "未知地區"
+
+        return {
+            "type": "bubble",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": f"{data['rank_title']} 詳細行程",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#ffffff",
+                        "align": "center"
+                    },
+                    {
+                        "type": "text",
+                        "text": f"{clean_title} - {clean_area}",
+                        "size": "sm",
+                        "color": "#ffffff",
+                        "align": "center",
+                        "margin": "sm",
+                        "wrap": True
+                    }
+                ],
+                "backgroundColor": data["color"],
+                "paddingAll": "20px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "📅 行程安排",
+                        "weight": "bold",
+                        "size": "md",
+                        "color": "#555555",
+                        "marginBottom": "md"
+                    }
+                ] + itinerary_items,
+                "paddingAll": "20px"
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "💡 完整行程請查看 TourHub 網站",
+                        "size": "xs",
+                        "color": "#666666",
+                        "align": "center"
+                    }
+                ],
+                "paddingAll": "15px"
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"創建優化 Flex Message 失敗: {e}")
+        # 返回簡單的錯誤訊息
+        return {
+            "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": f"抱歉，第{data.get('rank', '?')}名的詳細行程暫時無法提供。",
+                        "wrap": True,
+                        "color": "#666666",
+                        "align": "center"
+                    }
+                ],
+                "paddingAll": "20px"
+            }
+        }
+
 def create_text_itinerary_response(rank):
     """創建文字格式的詳細行程回應"""
     try:
@@ -589,83 +751,8 @@ def create_simple_flex_message(template_type, **kwargs):
 
             return '\n'.join(formatted_lines)
 
-        formatted_itinerary = format_database_itinerary(data.get("details", []))
-
-        return {
-            "type": "bubble",
-            "size": "giga",
-            "header": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": f"{data['rank_title']} 詳細行程",
-                        "weight": "bold",
-                        "size": "lg",
-                        "color": "#ffffff",
-                        "align": "center"
-                    },
-                    {
-                        "type": "text",
-                        "text": f"{data['title']} - {data['area']}",
-                        "size": "sm",
-                        "color": "#ffffff",
-                        "align": "center",
-                        "margin": "sm"
-                    }
-                ],
-                "backgroundColor": data["color"],
-                "paddingAll": "20px"
-            },
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": "📅 行程安排",
-                        "weight": "bold",
-                        "size": "md",
-                        "color": "#555555",
-                        "marginBottom": "md"
-                    },
-                    {
-                        "type": "box",
-                        "layout": "vertical",
-                        "contents": [
-                            {
-                                "type": "text",
-                                "text": formatted_itinerary,
-                                "size": "sm",
-                                "color": "#333333",
-                                "wrap": True,
-                                "lineSpacing": "sm"
-                            }
-                        ],
-                        "backgroundColor": "#f8f9fa",
-                        "cornerRadius": "md",
-                        "paddingAll": "md"
-                    }
-                ],
-                "paddingAll": "20px"
-            },
-            "footer": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": "💡 完整行程資訊請查看 TourHub 網站",
-                        "size": "xs",
-                        "color": "#666666",
-                        "align": "center",
-                        "wrap": True
-                    }
-                ],
-                "paddingAll": "20px"
-            }
-        }
+        # 創建優化的 Flex Message 結構
+        return create_optimized_flex_itinerary(data)
 
     elif template_type == "location_trips":
         # 地區行程查詢模板 - 從資料庫獲取資料
@@ -894,28 +981,12 @@ if line_handler:
                     flex_message = create_simple_flex_message("leaderboard_list")
                     logger.info(f"🔧 leaderboard_list Flex Message 創建結果: {bool(flex_message)}")
                 elif template_config["template"] == "leaderboard_details":
-                    logger.info(f"🔧 創建 leaderboard_details 文字回應, rank: {template_config['rank']}")
-
-                    # 使用文字訊息而不是 Flex Message
-                    text_response = create_text_itinerary_response(template_config["rank"])
-
-                    if text_response:
-                        logger.info(f"📤 準備發送文字訊息")
-                        with ApiClient(configuration) as api_client:
-                            line_bot_api = MessagingApi(api_client)
-                            line_bot_api.reply_message_with_http_info(
-                                ReplyMessageRequest(
-                                    reply_token=event.reply_token,
-                                    messages=[TextMessage(text=text_response)]
-                                )
-                            )
-                            logger.info("✅ 文字訊息發送成功")
-                        return  # 直接返回，不繼續執行 Flex Message 邏輯
-                    else:
-                        logger.error("❌ 無法創建文字回應")
-                        flex_message = create_simple_flex_message("default")
-
-                    logger.info(f"🔧 leaderboard_details 處理完成")
+                    logger.info(f"🔧 創建 leaderboard_details 優化 Flex Message, rank: {template_config['rank']}")
+                    flex_message = create_simple_flex_message(
+                        "leaderboard_details",
+                        rank=template_config["rank"]
+                    )
+                    logger.info(f"🔧 leaderboard_details Flex Message 創建結果: {bool(flex_message)}")
                 elif template_config["template"] == "location_trips":
                     flex_message = create_simple_flex_message(
                         "location_trips",
