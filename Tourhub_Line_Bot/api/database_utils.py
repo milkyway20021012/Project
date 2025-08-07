@@ -23,7 +23,11 @@ DB_CONFIG = {
     'password': os.getenv('MYSQL_PASSWORD', 'Anderson3663'),
     'database': os.getenv('MYSQL_DB', 'tourhub'),
     'port': int(os.getenv('MYSQL_PORT', '3306')),
-    'ssl_disabled': False
+    'ssl_disabled': False,
+    'autocommit': True,  # 自動提交，減少事務開銷
+    'connect_timeout': 5,  # 連接超時5秒
+    'use_unicode': True,
+    'charset': 'utf8mb4'
 }
 
 def get_database_connection():

@@ -1002,29 +1002,48 @@ def create_flex_message(template_type, **kwargs):
             }
         }
 
+# 預建立關鍵字索引以提高匹配速度
+_keyword_index = None
+
+def build_keyword_index():
+    """建立關鍵字索引"""
+    global _keyword_index
+    if _keyword_index is not None:
+        return _keyword_index
+
+    _keyword_index = {}
+    for mapping_key, mapping in KEYWORD_MAPPINGS.items():
+        for keyword in mapping["keywords"]:
+            if keyword not in _keyword_index:
+                _keyword_index[keyword] = []
+            _keyword_index[keyword].append((mapping, len(keyword)))
+
+    # 按關鍵字長度排序，優先匹配更長的關鍵字
+    for keyword in _keyword_index:
+        _keyword_index[keyword].sort(key=lambda x: x[1], reverse=True)
+
+    return _keyword_index
+
 def get_message_template(user_message):
     """
-    根據用戶消息獲取對應的模板配置
+    根據用戶消息獲取對應的模板配置（優化版本）
     支持完全匹配和部分匹配，優先匹配更具體的關鍵字
     """
-    # 首先嘗試完全匹配
-    for _, mapping in KEYWORD_MAPPINGS.items():
-        if user_message in mapping["keywords"]:
-            return mapping
+    keyword_index = build_keyword_index()
 
-    # 如果完全匹配失敗，嘗試部分匹配
-    # 優先匹配更具體的關鍵字（如"第一名"優先於"排行榜"）
+    # 首先嘗試完全匹配
+    if user_message in keyword_index:
+        return keyword_index[user_message][0][0]  # 返回第一個匹配的模板
+
+    # 部分匹配 - 找到最長的匹配關鍵字
     best_match = None
     best_keyword_length = 0
 
-    for _, mapping in KEYWORD_MAPPINGS.items():
-        for keyword in mapping["keywords"]:
-            if keyword in user_message:
-                # 選擇最長的關鍵字匹配（更具體）
-                if len(keyword) > best_keyword_length:
-                    best_match = mapping
-                    best_keyword_length = len(keyword)
-    
+    for keyword, mappings in keyword_index.items():
+        if keyword in user_message and len(keyword) > best_keyword_length:
+            best_match = mappings[0][0]  # 取第一個（最長的）匹配
+            best_keyword_length = len(keyword)
+
     return best_match
 
 def parse_time(user_message):
@@ -1186,28 +1205,32 @@ def find_location_trips(user_message):
     return None, []
 
 def find_trip_by_id(trip_id):
-    """根據ID查找行程"""
-    from api.database_utils import get_trip_details_by_id
-    
+    """根據ID查找行程（使用緩存）"""
     try:
         trip_id_int = int(trip_id)
-        return get_trip_details_by_id(trip_id_int)
+        return get_cached_trip_details(trip_id_int)
     except (ValueError, TypeError):
         logger.error(f"無效的行程ID: {trip_id}")
         return None
 
-# 排行榜資料緩存
+# 緩存系統
 _leaderboard_cache = None
-_cache_timestamp = 0
+_leaderboard_cache_timestamp = 0
+_rank_details_cache = {}  # 存儲不同排名的詳細資料
+_rank_details_cache_timestamp = {}
+_trip_details_cache = {}  # 存儲行程詳細資料
+_trip_details_cache_timestamp = {}
+
 CACHE_DURATION = 300  # 5分鐘緩存
+DETAILS_CACHE_DURATION = 600  # 詳細資料緩存10分鐘（更新頻率較低）
 
 def get_leaderboard_data():
     """從資料庫獲取排行榜資料"""
-    global _leaderboard_cache, _cache_timestamp
-    
+    global _leaderboard_cache, _leaderboard_cache_timestamp
+
     # 檢查緩存是否有效
     current_time = time.time()
-    if _leaderboard_cache and (current_time - _cache_timestamp) < CACHE_DURATION:
+    if _leaderboard_cache and (current_time - _leaderboard_cache_timestamp) < CACHE_DURATION:
         logger.info("使用緩存的排行榜資料")
         return _leaderboard_cache
     
@@ -1219,7 +1242,7 @@ def get_leaderboard_data():
         if leaderboard_data:
             # 更新緩存
             _leaderboard_cache = leaderboard_data
-            _cache_timestamp = current_time
+            _leaderboard_cache_timestamp = current_time
             
             logger.info("成功從資料庫獲取排行榜資料並更新緩存")
             return leaderboard_data
@@ -1233,6 +1256,88 @@ def get_leaderboard_data():
         # 如果資料庫獲取失敗，返回預設資料
         from api.config import LEADERBOARD_DATA
         return LEADERBOARD_DATA
+
+def get_cached_rank_details(rank: int):
+    """獲取緩存的排行榜詳細資料"""
+    global _rank_details_cache, _rank_details_cache_timestamp
+
+    current_time = time.time()
+    cache_key = str(rank)
+
+    # 檢查緩存是否有效
+    if (cache_key in _rank_details_cache and
+        cache_key in _rank_details_cache_timestamp and
+        (current_time - _rank_details_cache_timestamp[cache_key]) < DETAILS_CACHE_DURATION):
+        logger.info(f"使用緩存的第{rank}名詳細資料")
+        return _rank_details_cache[cache_key]
+
+    # 緩存無效，從資料庫獲取
+    try:
+        from api.database_utils import get_leaderboard_rank_details
+        rank_data = get_leaderboard_rank_details(rank)
+
+        if rank_data:
+            # 更新緩存
+            _rank_details_cache[cache_key] = rank_data
+            _rank_details_cache_timestamp[cache_key] = current_time
+            logger.info(f"成功獲取並緩存第{rank}名詳細資料")
+            return rank_data
+        else:
+            logger.warning(f"無法獲取第{rank}名詳細資料")
+            return None
+
+    except Exception as e:
+        logger.error(f"獲取第{rank}名詳細資料失敗: {e}")
+        return None
+
+def get_cached_trip_details(trip_id: int):
+    """獲取緩存的行程詳細資料"""
+    global _trip_details_cache, _trip_details_cache_timestamp
+
+    current_time = time.time()
+    cache_key = str(trip_id)
+
+    # 檢查緩存是否有效
+    if (cache_key in _trip_details_cache and
+        cache_key in _trip_details_cache_timestamp and
+        (current_time - _trip_details_cache_timestamp[cache_key]) < DETAILS_CACHE_DURATION):
+        logger.info(f"使用緩存的行程{trip_id}詳細資料")
+        return _trip_details_cache[cache_key]
+
+    # 緩存無效，從資料庫獲取
+    try:
+        from api.database_utils import get_trip_details_by_id
+        trip_data = get_trip_details_by_id(trip_id)
+
+        if trip_data:
+            # 更新緩存
+            _trip_details_cache[cache_key] = trip_data
+            _trip_details_cache_timestamp[cache_key] = current_time
+            logger.info(f"成功獲取並緩存行程{trip_id}詳細資料")
+            return trip_data
+        else:
+            logger.warning(f"無法獲取行程{trip_id}詳細資料")
+            return None
+
+    except Exception as e:
+        logger.error(f"獲取行程{trip_id}詳細資料失敗: {e}")
+        return None
+
+def warm_up_cache():
+    """預熱緩存 - 預先加載常用資料"""
+    logger.info("開始預熱緩存...")
+
+    try:
+        # 預熱排行榜資料
+        get_leaderboard_data()
+
+        # 預熱前3名的詳細資料
+        for rank in range(1, 4):
+            get_cached_rank_details(rank)
+
+        logger.info("緩存預熱完成")
+    except Exception as e:
+        logger.error(f"緩存預熱失敗: {e}")
 
 # 集合管理函數已整合到 meeting_manager 中
 
@@ -1294,6 +1399,9 @@ if CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET:
 
     # 設定集合管理器的提醒回調
     meeting_manager.set_reminder_callback(reminder_callback_handler)
+
+    # 預熱緩存以提高響應速度
+    warm_up_cache()
 
     logger.info("LINE Bot 設定成功")
 else:
@@ -1624,10 +1732,9 @@ if line_handler:
                                 rank=template_config["rank"]
                             )
                         elif template_config["template"] == "leaderboard_details":
-                            # 獲取排行榜詳細行程資料
-                            from api.database_utils import get_leaderboard_rank_details
+                            # 獲取排行榜詳細行程資料（使用緩存）
                             rank = int(template_config["rank"])
-                            rank_data = get_leaderboard_rank_details(rank)
+                            rank_data = get_cached_rank_details(rank)
 
                             flex_message = create_flex_message(
                                 "leaderboard_details",
