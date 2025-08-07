@@ -849,3 +849,270 @@ def update_trip_with_line_profile(trip_id: int, line_user_id: str):
     except Exception as e:
         logger.error(f"更新行程 LINE 用戶關聯失敗: {e}")
         return None
+
+def get_trip_by_title(user_id: str, trip_title: str):
+    """根據標題獲取用戶的行程"""
+    if not MYSQL_AVAILABLE:
+        logger.warning("MySQL connector not available, cannot get trip")
+        return None
+
+    try:
+        connection = get_database_connection()
+        if not connection:
+            return None
+
+        cursor = connection.cursor(dictionary=True)
+
+        query = """
+        SELECT
+            t.trip_id,
+            t.title,
+            t.description,
+            t.area,
+            t.start_date,
+            t.end_date,
+            DATEDIFF(t.end_date, t.start_date) + 1 as duration_days,
+            COUNT(td.detail_id) as detail_count
+        FROM line_trips t
+        LEFT JOIN line_trip_details td ON t.trip_id = td.trip_id
+        WHERE (t.line_user_id = %s OR t.created_by_line_user = %s)
+          AND t.title LIKE %s
+        GROUP BY t.trip_id
+        ORDER BY t.trip_id DESC
+        LIMIT 1
+        """
+
+        cursor.execute(query, (user_id, user_id, f"%{trip_title}%"))
+        result = cursor.fetchone()
+
+        cursor.close()
+        connection.close()
+
+        if result:
+            return {
+                "trip_id": result.get('trip_id'),
+                "title": result.get('title'),
+                "description": result.get('description'),
+                "area": result.get('area'),
+                "duration": f"{result.get('duration_days', 1)}天",
+                "start_date": str(result.get('start_date', '')),
+                "end_date": str(result.get('end_date', '')),
+                "detail_count": result.get('detail_count', 0)
+            }
+
+        return None
+
+    except Exception as e:
+        logger.error(f"獲取行程失敗: {e}")
+        return None
+
+def get_trip_details_by_title(user_id: str, trip_title: str):
+    """根據標題獲取行程的詳細安排"""
+    if not MYSQL_AVAILABLE:
+        logger.warning("MySQL connector not available, cannot get trip details")
+        return None
+
+    try:
+        connection = get_database_connection()
+        if not connection:
+            return None
+
+        cursor = connection.cursor(dictionary=True)
+
+        # 先獲取行程基本資訊
+        trip_query = """
+        SELECT trip_id, title, description, area, start_date, end_date
+        FROM line_trips
+        WHERE (line_user_id = %s OR created_by_line_user = %s)
+          AND title LIKE %s
+        ORDER BY trip_id DESC
+        LIMIT 1
+        """
+
+        cursor.execute(trip_query, (user_id, user_id, f"%{trip_title}%"))
+        trip_data = cursor.fetchone()
+
+        if not trip_data:
+            cursor.close()
+            connection.close()
+            return None
+
+        trip_id = trip_data['trip_id']
+
+        # 獲取詳細行程
+        detail_query = """
+        SELECT
+            location,
+            date,
+            start_time,
+            end_time,
+            description
+        FROM line_trip_details
+        WHERE trip_id = %s
+        ORDER BY date, start_time
+        """
+
+        cursor.execute(detail_query, (trip_id,))
+        details = cursor.fetchall()
+
+        cursor.close()
+        connection.close()
+
+        # 格式化詳細行程
+        formatted_details = []
+        for detail in details:
+            # 處理時間格式
+            start_time = ""
+            end_time = ""
+
+            if detail.get('start_time'):
+                if hasattr(detail['start_time'], 'total_seconds'):
+                    hours = int(detail['start_time'].total_seconds() // 3600)
+                    minutes = int((detail['start_time'].total_seconds() % 3600) // 60)
+                    start_time = f"{hours:02d}:{minutes:02d}"
+                else:
+                    start_time = str(detail['start_time'])[:5]
+
+            if detail.get('end_time'):
+                if hasattr(detail['end_time'], 'total_seconds'):
+                    hours = int(detail['end_time'].total_seconds() // 3600)
+                    minutes = int((detail['end_time'].total_seconds() % 3600) // 60)
+                    end_time = f"{hours:02d}:{minutes:02d}"
+                else:
+                    end_time = str(detail['end_time'])[:5]
+
+            # 格式化日期
+            date_str = ""
+            if detail.get('date'):
+                try:
+                    from datetime import datetime
+                    if isinstance(detail['date'], str):
+                        date_obj = datetime.strptime(detail['date'], '%Y-%m-%d')
+                    else:
+                        date_obj = detail['date']
+
+                    weekdays = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
+                    weekday = weekdays[date_obj.weekday()]
+                    date_str = f"{date_obj.strftime('%Y年%m月%d日')} {weekday}"
+                except:
+                    date_str = str(detail['date'])
+
+            formatted_details.append({
+                "date": date_str,
+                "time": f"{start_time} - {end_time}" if start_time and end_time else start_time,
+                "location": detail.get('location', ''),
+                "description": detail.get('description', '')
+            })
+
+        return {
+            "trip_id": trip_data.get('trip_id'),
+            "title": trip_data.get('title'),
+            "description": trip_data.get('description'),
+            "area": trip_data.get('area'),
+            "start_date": str(trip_data.get('start_date', '')),
+            "end_date": str(trip_data.get('end_date', '')),
+            "details": formatted_details
+        }
+
+    except Exception as e:
+        logger.error(f"獲取行程詳細失敗: {e}")
+        return None
+
+def update_trip_title(user_id: str, old_title: str, new_title: str):
+    """更新行程標題"""
+    if not MYSQL_AVAILABLE:
+        logger.warning("MySQL connector not available, cannot update trip")
+        return None
+
+    try:
+        connection = get_database_connection()
+        if not connection:
+            return None
+
+        cursor = connection.cursor(dictionary=True)
+
+        # 更新行程標題
+        update_query = """
+        UPDATE line_trips
+        SET title = %s
+        WHERE (line_user_id = %s OR created_by_line_user = %s)
+          AND title LIKE %s
+        LIMIT 1
+        """
+
+        cursor.execute(update_query, (new_title, user_id, user_id, f"%{old_title}%"))
+        affected_rows = cursor.rowcount
+
+        cursor.close()
+        connection.close()
+
+        if affected_rows > 0:
+            logger.info(f"成功更新行程標題: {old_title} -> {new_title}")
+            return True
+        else:
+            logger.warning(f"找不到要更新的行程: {old_title}")
+            return False
+
+    except Exception as e:
+        logger.error(f"更新行程標題失敗: {e}")
+        return None
+
+def delete_trip_by_title(user_id: str, trip_title: str):
+    """刪除行程"""
+    if not MYSQL_AVAILABLE:
+        logger.warning("MySQL connector not available, cannot delete trip")
+        return None
+
+    try:
+        connection = get_database_connection()
+        if not connection:
+            return None
+
+        cursor = connection.cursor(dictionary=True)
+
+        # 先獲取行程ID
+        find_query = """
+        SELECT trip_id, title
+        FROM line_trips
+        WHERE (line_user_id = %s OR created_by_line_user = %s)
+          AND title LIKE %s
+        LIMIT 1
+        """
+
+        cursor.execute(find_query, (user_id, user_id, f"%{trip_title}%"))
+        trip_data = cursor.fetchone()
+
+        if not trip_data:
+            cursor.close()
+            connection.close()
+            return False
+
+        trip_id = trip_data['trip_id']
+        actual_title = trip_data['title']
+
+        # 刪除行程詳細資料
+        delete_details_query = "DELETE FROM line_trip_details WHERE trip_id = %s"
+        cursor.execute(delete_details_query, (trip_id,))
+        deleted_details = cursor.rowcount
+
+        # 刪除行程統計資料
+        delete_stats_query = "DELETE FROM trip_stats WHERE trip_id = %s"
+        cursor.execute(delete_stats_query, (trip_id,))
+
+        # 刪除行程
+        delete_trip_query = "DELETE FROM line_trips WHERE trip_id = %s"
+        cursor.execute(delete_trip_query, (trip_id,))
+
+        cursor.close()
+        connection.close()
+
+        logger.info(f"成功刪除行程: {actual_title} (ID: {trip_id}), 包含 {deleted_details} 個詳細項目")
+        return {
+            "trip_id": trip_id,
+            "title": actual_title,
+            "deleted_details": deleted_details
+        }
+
+    except Exception as e:
+        logger.error(f"刪除行程失敗: {e}")
+        return None

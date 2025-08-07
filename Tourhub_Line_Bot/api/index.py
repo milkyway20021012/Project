@@ -1350,6 +1350,255 @@ def create_flex_message(template_type, **kwargs):
             }
         }
 
+    elif template_type == "view_trip_details":
+        trip_data = kwargs.get('trip_data')
+
+        if not trip_data:
+            return {
+                "type": "bubble",
+                "size": "kilo",
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "找不到該行程，請確認行程名稱是否正確。",
+                            "size": "sm",
+                            "color": "#888888",
+                            "align": "center",
+                            "wrap": True
+                        }
+                    ],
+                    "paddingAll": "20px"
+                }
+            }
+
+        # 構建詳細行程內容
+        detail_contents = []
+        details = trip_data.get('details', [])
+
+        if details:
+            for i, detail in enumerate(details):
+                if i > 0:
+                    detail_contents.append({
+                        "type": "separator",
+                        "margin": "md"
+                    })
+
+                # 日期
+                if detail.get('date'):
+                    detail_contents.append({
+                        "type": "text",
+                        "text": detail['date'],
+                        "size": "sm",
+                        "color": "#333333",
+                        "weight": "bold",
+                        "margin": "md"
+                    })
+
+                # 時間
+                if detail.get('time'):
+                    detail_contents.append({
+                        "type": "text",
+                        "text": detail['time'],
+                        "size": "sm",
+                        "color": "#666666",
+                        "margin": "xs"
+                    })
+
+                # 地點
+                if detail.get('location'):
+                    detail_contents.append({
+                        "type": "text",
+                        "text": detail['location'],
+                        "size": "sm",
+                        "color": "#444444",
+                        "margin": "xs",
+                        "wrap": True
+                    })
+        else:
+            detail_contents.append({
+                "type": "text",
+                "text": "尚未添加詳細行程安排",
+                "size": "sm",
+                "color": "#888888",
+                "align": "center",
+                "margin": "md"
+            })
+
+        return {
+            "type": "bubble",
+            "size": "giga",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "📋 行程詳細",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#ffffff",
+                        "align": "center"
+                    },
+                    {
+                        "type": "text",
+                        "text": trip_data.get('title', '未知行程'),
+                        "size": "sm",
+                        "color": "#ffffff",
+                        "align": "center",
+                        "margin": "sm"
+                    }
+                ],
+                "backgroundColor": "#3498DB",
+                "paddingAll": "20px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {"type": "text", "text": "📍", "size": "md", "flex": 0},
+                            {"type": "text", "text": f"目的地：{trip_data.get('area', '未知')}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                        ],
+                        "marginBottom": "sm"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {"type": "text", "text": "🗓️", "size": "md", "flex": 0},
+                            {"type": "text", "text": f"日期：{trip_data.get('start_date')} ~ {trip_data.get('end_date')}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                        ],
+                        "marginBottom": "md"
+                    },
+                    {"type": "separator", "margin": "md"},
+                    {
+                        "type": "text",
+                        "text": "📅 詳細行程安排",
+                        "weight": "bold",
+                        "size": "md",
+                        "color": "#555555",
+                        "margin": "md"
+                    },
+                    *detail_contents
+                ],
+                "paddingAll": "20px"
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": f"💡 輸入「{trip_data.get('title')}第X天詳細行程為...」來添加更多行程安排",
+                        "size": "xs",
+                        "color": "#666666",
+                        "wrap": True,
+                        "align": "center"
+                    }
+                ],
+                "paddingAll": "20px"
+            }
+        }
+
+    elif template_type == "edit_trip_success":
+        old_title = kwargs.get('old_title')
+        new_title = kwargs.get('new_title')
+
+        return {
+            "type": "bubble",
+            "size": "kilo",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "✅ 行程標題更新成功！",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#ffffff",
+                        "align": "center"
+                    }
+                ],
+                "backgroundColor": "#27AE60",
+                "paddingAll": "20px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": f"原標題：{old_title}",
+                        "size": "sm",
+                        "color": "#666666",
+                        "wrap": True
+                    },
+                    {
+                        "type": "text",
+                        "text": f"新標題：{new_title}",
+                        "size": "sm",
+                        "color": "#333333",
+                        "weight": "bold",
+                        "wrap": True,
+                        "margin": "sm"
+                    }
+                ],
+                "paddingAll": "20px"
+            }
+        }
+
+    elif template_type == "delete_trip_success":
+        trip_info = kwargs.get('trip_info')
+
+        return {
+            "type": "bubble",
+            "size": "kilo",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "🗑️ 行程刪除成功",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#ffffff",
+                        "align": "center"
+                    }
+                ],
+                "backgroundColor": "#E74C3C",
+                "paddingAll": "20px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": f"已刪除行程：{trip_info.get('title')}",
+                        "size": "sm",
+                        "color": "#333333",
+                        "wrap": True
+                    },
+                    {
+                        "type": "text",
+                        "text": f"包含 {trip_info.get('deleted_details', 0)} 個詳細行程項目",
+                        "size": "xs",
+                        "color": "#666666",
+                        "margin": "sm"
+                    }
+                ],
+                "paddingAll": "20px"
+            }
+        }
+
 # 預建立關鍵字索引以提高匹配速度
 _keyword_index = None
 
@@ -1587,6 +1836,65 @@ def parse_trip_detail_message(user_message):
             return trip_title, day_number, detail_content
 
     return None, None, None
+
+def parse_view_trip_message(user_message):
+    """解析查看行程消息"""
+    import re
+
+    patterns = [
+        r'查看(.+?)(?:行程|的行程)?$',
+        r'顯示(.+?)(?:行程|的行程)?$',
+        r'(.+?)(?:行程內容|的內容)$'
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, user_message)
+        if match:
+            trip_title = match.group(1).strip()
+            if trip_title and len(trip_title) > 1:
+                return trip_title
+
+    return None
+
+def parse_edit_trip_message(user_message):
+    """解析編輯行程消息"""
+    import re
+
+    patterns = [
+        r'修改(.+?)標題為(.+)$',
+        r'更改(.+?)標題為(.+)$',
+        r'編輯(.+?)標題為(.+)$',
+        r'(.+?)改名為(.+)$'
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, user_message)
+        if match:
+            old_title = match.group(1).strip()
+            new_title = match.group(2).strip()
+            if old_title and new_title:
+                return old_title, new_title
+
+    return None, None
+
+def parse_delete_trip_message(user_message):
+    """解析刪除行程消息"""
+    import re
+
+    patterns = [
+        r'刪除(.+?)(?:行程)?$',
+        r'移除(.+?)(?:行程)?$',
+        r'取消(.+?)(?:行程)?$'
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, user_message)
+        if match:
+            trip_title = match.group(1).strip()
+            if trip_title and len(trip_title) > 1:
+                return trip_title
+
+    return None
 
 def get_line_user_profile(user_id: str):
     """獲取 LINE 用戶資料"""
@@ -2351,9 +2659,120 @@ if line_handler:
                             )
                         )
 
-                # 檢查是否為地區查詢
-                elif True:
-                    location, trips = find_location_trips(user_message)
+                # 檢查是否為查看行程
+                else:
+                    trip_title = parse_view_trip_message(user_message)
+                    if trip_title:
+                        from api.database_utils import get_trip_details_by_title
+                        trip_data = get_trip_details_by_title(event.source.user_id, trip_title)
+
+                        if trip_data:
+                            flex_message = create_flex_message("view_trip_details", trip_data=trip_data)
+                        else:
+                            flex_message = {
+                                "type": "bubble",
+                                "body": {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": f"找不到行程「{trip_title}」\n\n請確認：\n1. 行程名稱是否正確\n2. 是否已創建該行程\n\n您可以輸入「我的行程」查看已創建的行程。",
+                                            "wrap": True,
+                                            "color": "#666666"
+                                        }
+                                    ],
+                                    "paddingAll": "20px"
+                                }
+                            }
+
+                        # 發送消息
+                        with ApiClient(configuration) as api_client:
+                            line_bot_api = MessagingApi(api_client)
+                            line_bot_api.reply_message_with_http_info(
+                                ReplyMessageRequest(
+                                    reply_token=event.reply_token,
+                                    messages=[FlexMessage(alt_text="行程詳細", contents=FlexContainer.from_dict(flex_message))]
+                                )
+                            )
+
+                    # 檢查是否為編輯行程
+                    else:
+                        old_title, new_title = parse_edit_trip_message(user_message)
+                        if old_title and new_title:
+                            from api.database_utils import update_trip_title
+                            result = update_trip_title(event.source.user_id, old_title, new_title)
+
+                            if result:
+                                flex_message = create_flex_message("edit_trip_success", old_title=old_title, new_title=new_title)
+                            else:
+                                flex_message = {
+                                    "type": "bubble",
+                                    "body": {
+                                        "type": "box",
+                                        "layout": "vertical",
+                                        "contents": [
+                                            {
+                                                "type": "text",
+                                                "text": f"找不到行程「{old_title}」或更新失敗\n\n請確認行程名稱是否正確。",
+                                                "wrap": True,
+                                                "color": "#666666"
+                                            }
+                                        ],
+                                        "paddingAll": "20px"
+                                    }
+                                }
+
+                            # 發送消息
+                            with ApiClient(configuration) as api_client:
+                                line_bot_api = MessagingApi(api_client)
+                                line_bot_api.reply_message_with_http_info(
+                                    ReplyMessageRequest(
+                                        reply_token=event.reply_token,
+                                        messages=[FlexMessage(alt_text="編輯行程", contents=FlexContainer.from_dict(flex_message))]
+                                    )
+                                )
+
+                        # 檢查是否為刪除行程
+                        else:
+                            trip_title = parse_delete_trip_message(user_message)
+                            if trip_title:
+                                from api.database_utils import delete_trip_by_title
+                                result = delete_trip_by_title(event.source.user_id, trip_title)
+
+                                if result:
+                                    flex_message = create_flex_message("delete_trip_success", trip_info=result)
+                                else:
+                                    flex_message = {
+                                        "type": "bubble",
+                                        "body": {
+                                            "type": "box",
+                                            "layout": "vertical",
+                                            "contents": [
+                                                {
+                                                    "type": "text",
+                                                    "text": f"找不到行程「{trip_title}」\n\n請確認行程名稱是否正確。",
+                                                    "wrap": True,
+                                                    "color": "#666666"
+                                                }
+                                            ],
+                                            "paddingAll": "20px"
+                                        }
+                                    }
+
+                                # 發送消息
+                                with ApiClient(configuration) as api_client:
+                                    line_bot_api = MessagingApi(api_client)
+                                    line_bot_api.reply_message_with_http_info(
+                                        ReplyMessageRequest(
+                                            reply_token=event.reply_token,
+                                            messages=[FlexMessage(alt_text="刪除行程", contents=FlexContainer.from_dict(flex_message))]
+                                        )
+                                    )
+
+                            # 檢查是否為地區查詢
+                            else:
+                                location, trips = find_location_trips(user_message)
                 if location and trips:
                     # 創建行程列表 Flex Message
                     flex_message = create_flex_message(

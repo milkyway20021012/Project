@@ -236,6 +236,18 @@ KEYWORD_MAPPINGS = {
     "add_trip_detail": {
         "keywords": ["第一天", "第二天", "第三天", "第四天", "第五天", "第六天", "第七天", "詳細行程", "行程安排"],
         "template": "add_trip_detail"
+    },
+    "view_trip": {
+        "keywords": ["查看", "顯示行程", "行程內容"],
+        "template": "view_trip"
+    },
+    "edit_trip": {
+        "keywords": ["修改", "編輯", "更改標題", "改名"],
+        "template": "edit_trip"
+    },
+    "delete_trip": {
+        "keywords": ["刪除", "移除", "取消行程"],
+        "template": "delete_trip"
     }
 }
 
