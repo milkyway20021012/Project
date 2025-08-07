@@ -2392,7 +2392,7 @@ if line_handler:
             
             # 如果沒有包含時間地點的集合設定，則檢查其他功能
             else:
-                # 優先檢查是否為行程詳細添加
+                # 快速檢查：優先處理行程詳細添加（最常用功能）
                 trip_title, day_number, detail_content = parse_trip_detail_message(user_message)
                 if trip_title and day_number and detail_content:
                     # 處理行程詳細添加
@@ -2425,7 +2425,7 @@ if line_handler:
                             }
                         }
 
-                    # 發送消息
+                    # 快速發送消息
                     with ApiClient(configuration) as api_client:
                         line_bot_api = MessagingApi(api_client)
                         line_bot_api.reply_message_with_http_info(
@@ -2434,8 +2434,63 @@ if line_handler:
                                 messages=[FlexMessage(alt_text="行程詳細添加", contents=FlexContainer.from_dict(flex_message))]
                             )
                         )
+                    return  # 立即返回，提高響應速度
 
-                # 檢查是否為查看行程
+                # 快速檢查：行程創建（第二常用功能）
+                elif any(keyword in user_message for keyword in ["創建", "建立", "新增行程"]):
+                    trip_title = user_message.replace("創建", "").replace("建立", "").replace("新增行程", "").replace("創建行程", "").replace("建立行程", "").strip()
+                    if trip_title and len(trip_title) > 1:
+                        from api.database_utils import create_trip_from_line
+                        trip_data = create_trip_from_line(event.source.user_id, trip_title)
+                        if trip_data:
+                            flex_message = create_flex_message("create_trip_success", trip_data=trip_data)
+                        else:
+                            flex_message = {
+                                "type": "bubble",
+                                "body": {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "行程創建失敗，請稍後再試。",
+                                            "wrap": True,
+                                            "color": "#666666"
+                                        }
+                                    ],
+                                    "paddingAll": "20px"
+                                }
+                            }
+
+                        # 快速發送消息
+                        with ApiClient(configuration) as api_client:
+                            line_bot_api = MessagingApi(api_client)
+                            line_bot_api.reply_message_with_http_info(
+                                ReplyMessageRequest(
+                                    reply_token=event.reply_token,
+                                    messages=[FlexMessage(alt_text="創建行程", contents=FlexContainer.from_dict(flex_message))]
+                                )
+                            )
+                        return  # 立即返回，提高響應速度
+
+                # 快速檢查：查看我的行程
+                elif any(keyword in user_message for keyword in ["我的行程", "查看我的行程", "行程列表"]):
+                    from api.database_utils import get_user_created_trips
+                    user_trips = get_user_created_trips(event.source.user_id)
+                    flex_message = create_flex_message("my_trips", trips=user_trips)
+
+                    # 快速發送消息
+                    with ApiClient(configuration) as api_client:
+                        line_bot_api = MessagingApi(api_client)
+                        line_bot_api.reply_message_with_http_info(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[FlexMessage(alt_text="我的行程", contents=FlexContainer.from_dict(flex_message))]
+                            )
+                        )
+                    return  # 立即返回，提高響應速度
+
+                # 快速檢查：查看行程詳細
                 else:
                     trip_title = parse_view_trip_message(user_message)
                     if trip_title:
@@ -2462,7 +2517,7 @@ if line_handler:
                                 }
                             }
 
-                        # 發送消息
+                        # 快速發送消息
                         with ApiClient(configuration) as api_client:
                             line_bot_api = MessagingApi(api_client)
                             line_bot_api.reply_message_with_http_info(
@@ -2471,84 +2526,84 @@ if line_handler:
                                     messages=[FlexMessage(alt_text="行程詳細", contents=FlexContainer.from_dict(flex_message))]
                                 )
                             )
+                        return  # 立即返回，提高響應速度
 
-                    # 檢查是否為編輯行程
-                    else:
-                        old_title, new_title = parse_edit_trip_message(user_message)
-                        if old_title and new_title:
-                            from api.database_utils import update_trip_title
-                            result = update_trip_title(event.source.user_id, old_title, new_title)
+                    # 快速檢查：編輯行程
+                    old_title, new_title = parse_edit_trip_message(user_message)
+                    if old_title and new_title:
+                        from api.database_utils import update_trip_title
+                        result = update_trip_title(event.source.user_id, old_title, new_title)
 
-                            if result:
-                                flex_message = create_flex_message("edit_trip_success", old_title=old_title, new_title=new_title)
-                            else:
-                                flex_message = {
-                                    "type": "bubble",
-                                    "body": {
-                                        "type": "box",
-                                        "layout": "vertical",
-                                        "contents": [
-                                            {
-                                                "type": "text",
-                                                "text": f"找不到行程「{old_title}」或更新失敗\n\n請確認行程名稱是否正確。",
-                                                "wrap": True,
-                                                "color": "#666666"
-                                            }
-                                        ],
-                                        "paddingAll": "20px"
-                                    }
-                                }
-
-                            # 發送消息
-                            with ApiClient(configuration) as api_client:
-                                line_bot_api = MessagingApi(api_client)
-                                line_bot_api.reply_message_with_http_info(
-                                    ReplyMessageRequest(
-                                        reply_token=event.reply_token,
-                                        messages=[FlexMessage(alt_text="編輯行程", contents=FlexContainer.from_dict(flex_message))]
-                                    )
-                                )
-
-                        # 檢查是否為刪除行程
+                        if result:
+                            flex_message = create_flex_message("edit_trip_success", old_title=old_title, new_title=new_title)
                         else:
-                            trip_title = parse_delete_trip_message(user_message)
-                            if trip_title:
-                                from api.database_utils import delete_trip_by_title
-                                result = delete_trip_by_title(event.source.user_id, trip_title)
-
-                                if result:
-                                    flex_message = create_flex_message("delete_trip_success", trip_info=result)
-                                else:
-                                    flex_message = {
-                                        "type": "bubble",
-                                        "body": {
-                                            "type": "box",
-                                            "layout": "vertical",
-                                            "contents": [
-                                                {
-                                                    "type": "text",
-                                                    "text": f"找不到行程「{trip_title}」\n\n請確認行程名稱是否正確。",
-                                                    "wrap": True,
-                                                    "color": "#666666"
-                                                }
-                                            ],
-                                            "paddingAll": "20px"
+                            flex_message = {
+                                "type": "bubble",
+                                "body": {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": f"找不到行程「{old_title}」或更新失敗\n\n請確認行程名稱是否正確。",
+                                            "wrap": True,
+                                            "color": "#666666"
                                         }
-                                    }
+                                    ],
+                                    "paddingAll": "20px"
+                                }
+                            }
 
-                                # 發送消息
-                                with ApiClient(configuration) as api_client:
-                                    line_bot_api = MessagingApi(api_client)
-                                    line_bot_api.reply_message_with_http_info(
-                                        ReplyMessageRequest(
-                                            reply_token=event.reply_token,
-                                            messages=[FlexMessage(alt_text="刪除行程", contents=FlexContainer.from_dict(flex_message))]
-                                        )
-                                    )
+                        # 快速發送消息
+                        with ApiClient(configuration) as api_client:
+                            line_bot_api = MessagingApi(api_client)
+                            line_bot_api.reply_message_with_http_info(
+                                ReplyMessageRequest(
+                                    reply_token=event.reply_token,
+                                    messages=[FlexMessage(alt_text="編輯行程", contents=FlexContainer.from_dict(flex_message))]
+                                )
+                            )
+                        return  # 立即返回，提高響應速度
 
-                            # 檢查是否為地區查詢
-                            else:
-                                location, trips = find_location_trips(user_message)
+                    # 快速檢查：刪除行程
+                    trip_title = parse_delete_trip_message(user_message)
+                    if trip_title:
+                        from api.database_utils import delete_trip_by_title
+                        result = delete_trip_by_title(event.source.user_id, trip_title)
+
+                        if result:
+                            flex_message = create_flex_message("delete_trip_success", trip_info=result)
+                        else:
+                            flex_message = {
+                                "type": "bubble",
+                                "body": {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": f"找不到行程「{trip_title}」\n\n請確認行程名稱是否正確。",
+                                            "wrap": True,
+                                            "color": "#666666"
+                                        }
+                                    ],
+                                    "paddingAll": "20px"
+                                }
+                            }
+
+                        # 快速發送消息
+                        with ApiClient(configuration) as api_client:
+                            line_bot_api = MessagingApi(api_client)
+                            line_bot_api.reply_message_with_http_info(
+                                ReplyMessageRequest(
+                                    reply_token=event.reply_token,
+                                    messages=[FlexMessage(alt_text="刪除行程", contents=FlexContainer.from_dict(flex_message))]
+                                )
+                            )
+                        return  # 立即返回，提高響應速度
+
+                    # 最後檢查：地區查詢（較少使用的功能）
+                    location, trips = find_location_trips(user_message)
                 if location and trips:
                     # 創建行程列表 Flex Message
                     flex_message = create_flex_message(
