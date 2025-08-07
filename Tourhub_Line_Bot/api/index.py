@@ -312,13 +312,80 @@ def create_simple_flex_message(template_type, **kwargs):
         }
 
     elif template_type == "leaderboard_details":
-        # 動態獲取詳細行程，並優化顯示格式
+        # 直接從資料庫獲取詳細行程
         rank = kwargs.get('rank', '1')
         rank_int = int(rank)
 
-        # 從網站抓取詳細行程
-        from api.web_scraper import scrape_trip_details
-        data = scrape_trip_details(rank_int)
+        # 直接從資料庫查詢詳細行程
+        try:
+            from api.database import get_database_connection
+            connection = get_database_connection()
+            if not connection:
+                raise Exception("資料庫連接失敗")
+
+            cursor = connection.cursor(dictionary=True)
+
+            # 查詢排行榜中指定排名的行程
+            leaderboard_query = """
+            SELECT
+                t.trip_id,
+                t.title,
+                t.area,
+                t.start_date,
+                t.end_date
+            FROM line_trips t
+            LEFT JOIN trip_stats ts ON t.trip_id = ts.trip_id
+            WHERE t.trip_id IS NOT NULL
+            ORDER BY ts.popularity_score DESC, ts.favorite_count DESC, ts.share_count DESC
+            LIMIT %s, 1
+            """
+
+            cursor.execute(leaderboard_query, (rank_int - 1,))
+            trip_data = cursor.fetchone()
+
+            if not trip_data:
+                cursor.close()
+                connection.close()
+                raise Exception(f"找不到第{rank_int}名的行程")
+
+            trip_id = trip_data['trip_id']
+
+            # 查詢詳細行程安排
+            details_query = """
+            SELECT
+                location,
+                date,
+                start_time,
+                end_time,
+                description
+            FROM line_trip_details
+            WHERE trip_id = %s
+            ORDER BY date, start_time
+            """
+
+            cursor.execute(details_query, (trip_id,))
+            details = cursor.fetchall()
+
+            cursor.close()
+            connection.close()
+
+            # 組織資料
+            rank_titles = {1: "🥇 第一名", 2: "🥈 第二名", 3: "🥉 第三名", 4: "🏅 第四名", 5: "🎖️ 第五名"}
+            rank_colors = {1: "#FFD700", 2: "#C0C0C0", 3: "#CD7F32", 4: "#4ECDC4", 5: "#FF6B9D"}
+
+            data = {
+                "trip_id": trip_data['trip_id'],
+                "rank": rank_int,
+                "rank_title": rank_titles.get(rank_int, f"🎖️ 第{rank_int}名"),
+                "title": trip_data['title'] or f"第{rank_int}名行程",
+                "color": rank_colors.get(rank_int, "#9B59B6"),
+                "area": trip_data['area'] or "未知地區",
+                "details": details
+            }
+
+        except Exception as e:
+            logger.error(f"資料庫查詢失敗: {e}")
+            data = None
 
         if not data:
             # 如果沒有詳細行程，顯示提示訊息
@@ -341,49 +408,68 @@ def create_simple_flex_message(template_type, **kwargs):
                 }
             }
 
-        # 優化行程格式 - 簡化顯示
-        def format_itinerary(itinerary_text):
-            """格式化行程文本，使其更簡潔"""
-            if not itinerary_text:
-                return "行程安排待更新"
+        # 格式化資料庫的詳細行程資料
+        def format_database_itinerary(details):
+            """格式化資料庫的行程詳細資料"""
+            if not details:
+                return "暫無詳細行程安排"
 
-            lines = itinerary_text.split('\n')
             formatted_lines = []
 
-            for line in lines:
-                line = line.strip()
-                if not line:
-                    continue
+            for detail in details:
+                # 處理日期
+                if detail['date']:
+                    date_obj = detail['date']
+                    weekdays = ['一', '二', '三', '四', '五', '六', '日']
+                    weekday = weekdays[date_obj.weekday()]
+                    date_str = f"📅 {date_obj.month}/{date_obj.day} ({weekday})"
+                    formatted_lines.append(date_str)
 
-                # 簡化日期格式
-                if '年' in line and '月' in line and '日' in line:
-                    # 將 "2025年08月15日 (星期五)" 簡化為 "8/15 (五)"
-                    import re
-                    date_match = re.search(r'(\d+)年(\d+)月(\d+)日.*?\((.*?)\)', line)
-                    if date_match:
-                        month = int(date_match.group(2))
-                        day = int(date_match.group(3))
-                        weekday = date_match.group(4).replace('星期', '')
-                        formatted_lines.append(f"📅 {month}/{day} ({weekday})")
-                        continue
+                # 處理時間和地點
+                time_str = ""
+                if detail['start_time'] and detail['end_time']:
+                    start_time = str(detail['start_time'])
+                    end_time = str(detail['end_time'])
 
-                # 簡化時間和地點
-                if ':' in line and '-' in line:
-                    # 時間行
-                    formatted_lines.append(f"🕐 {line}")
-                elif line and not line.startswith('Day'):
-                    # 地點行
-                    formatted_lines.append(f"📍 {line}")
+                    # 如果是 timedelta 格式，轉換為時間格式
+                    if ':' in start_time and len(start_time) > 8:
+                        start_time = start_time[:8]  # 取 HH:MM:SS
+                    if ':' in end_time and len(end_time) > 8:
+                        end_time = end_time[:8]
+
+                    time_str = f"🕐 {start_time} - {end_time}"
+                elif detail['start_time']:
+                    start_time = str(detail['start_time'])
+                    if ':' in start_time and len(start_time) > 8:
+                        start_time = start_time[:8]
+                    time_str = f"🕐 {start_time}"
+
+                # 地點
+                location = detail['location'] or "未知地點"
+                location_str = f"📍 {location}"
+
+                # 添加時間和地點
+                if time_str:
+                    formatted_lines.append(f"{time_str} {location}")
+                else:
+                    formatted_lines.append(location_str)
+
+                # 添加空行分隔
+                formatted_lines.append("")
+
+            # 移除最後的空行
+            if formatted_lines and formatted_lines[-1] == "":
+                formatted_lines.pop()
 
             # 限制行數，避免內容過長
-            if len(formatted_lines) > 20:
-                formatted_lines = formatted_lines[:20]
+            if len(formatted_lines) > 25:
+                formatted_lines = formatted_lines[:25]
                 formatted_lines.append("...")
-                formatted_lines.append("💡 完整行程請查看網站")
+                formatted_lines.append("💡 完整行程請查看 TourHub 網站")
 
             return '\n'.join(formatted_lines)
 
-        formatted_itinerary = format_itinerary(data.get("itinerary", ""))
+        formatted_itinerary = format_database_itinerary(data.get("details", []))
 
         return {
             "type": "bubble",
