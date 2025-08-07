@@ -130,8 +130,7 @@ LEADERBOARD_DATA = {
 KEYWORD_MAPPINGS = {
     "leaderboard": {
         "keywords": ["排行榜", "排名", "排行", "top", "Top", "leaderboard", "Leaderboard", "排名榜", "熱門", "熱門排行"],
-        "template": "feature",
-        "feature_name": "leaderboard"
+        "template": "leaderboard_list"
     },
     "leaderboard_1": {
         "keywords": ["排行榜第一", "排行第一", "第一名", "top1", "Top1", "冠軍", "排行榜冠軍", "排行榜第一名"],
@@ -168,9 +167,19 @@ KEYWORD_MAPPINGS = {
         "template": "leaderboard",
         "rank": "4"
     },
+    "leaderboard_4_details": {
+        "keywords": ["第四名詳細行程", "第四名行程", "第四名詳細", "排行榜第四名詳細", "top4詳細", "Top4詳細"],
+        "template": "leaderboard_details",
+        "rank": "4"
+    },
     "leaderboard_5": {
         "keywords": ["第五名", "排行第五", "top5", "Top5", "排行榜第五名"],
         "template": "leaderboard",
+        "rank": "5"
+    },
+    "leaderboard_5_details": {
+        "keywords": ["第五名詳細行程", "第五名行程", "第五名詳細", "排行榜第五名詳細", "top5詳細", "Top5詳細"],
+        "template": "leaderboard_details",
         "rank": "5"
     },
     "trip_management": {
