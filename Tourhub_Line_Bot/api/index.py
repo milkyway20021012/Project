@@ -829,27 +829,62 @@ def create_flex_message(template_type, **kwargs):
                 }
             }
 
-        # 構建行程詳細內容
+        # 構建行程詳細內容 - 使用新的格式
         itinerary_contents = []
-        for day_info in rank_data.get('itinerary_list', []):
-            itinerary_contents.append({
-                "type": "text",
-                "text": day_info,
-                "size": "xs",
-                "color": "#666666",
-                "wrap": True,
-                "margin": "sm"
-            })
+        itinerary_list = rank_data.get('itinerary_list', [])
 
-        # 如果沒有詳細行程，顯示基本行程
+        if itinerary_list:
+            for i, day_info in enumerate(itinerary_list):
+                # 每個行程項目之間添加分隔線（除了第一個）
+                if i > 0:
+                    itinerary_contents.append({
+                        "type": "separator",
+                        "margin": "md"
+                    })
+
+                # 分割日期、時間、地點
+                lines = day_info.split('\n')
+
+                # 添加日期（第一行）
+                if len(lines) >= 1:
+                    itinerary_contents.append({
+                        "type": "text",
+                        "text": lines[0],  # 日期和星期
+                        "size": "sm",
+                        "color": "#333333",
+                        "weight": "bold",
+                        "margin": "md"
+                    })
+
+                # 添加時間（第二行）
+                if len(lines) >= 2:
+                    itinerary_contents.append({
+                        "type": "text",
+                        "text": lines[1],  # 時間
+                        "size": "sm",
+                        "color": "#666666",
+                        "margin": "xs"
+                    })
+
+                # 添加地點（第三行）
+                if len(lines) >= 3:
+                    itinerary_contents.append({
+                        "type": "text",
+                        "text": lines[2],  # 地點
+                        "size": "sm",
+                        "color": "#444444",
+                        "margin": "xs"
+                    })
+
+        # 如果沒有詳細行程，顯示提示
         if not itinerary_contents:
             itinerary_contents.append({
                 "type": "text",
-                "text": rank_data.get('itinerary', '暫無詳細行程資料'),
-                "size": "xs",
-                "color": "#666666",
-                "wrap": True,
-                "margin": "sm"
+                "text": "暫無詳細行程資料",
+                "size": "sm",
+                "color": "#888888",
+                "align": "center",
+                "margin": "md"
             })
 
         # 根據排名設定顏色

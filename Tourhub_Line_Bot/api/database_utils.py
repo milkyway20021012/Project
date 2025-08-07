@@ -311,10 +311,8 @@ def get_leaderboard_rank_details(rank: int = 1):
         cursor.close()
         connection.close()
 
-        # 構建詳細行程
+        # 構建詳細行程 - 使用實際日期格式
         itinerary_parts = []
-        current_day = 1
-        last_date = None
 
         for detail in details:
             location = detail.get('location', '未知地點')
@@ -323,23 +321,56 @@ def get_leaderboard_rank_details(rank: int = 1):
             end_time = detail.get('end_time', '')
             description = detail.get('description', '')
 
-            # 檢查是否是新的一天
-            if date != last_date:
-                if last_date is not None:
-                    current_day += 1
-                last_date = date
+            # 格式化日期和星期
+            date_text = ""
+            if date:
+                try:
+                    from datetime import datetime
+                    date_obj = datetime.strptime(str(date), '%Y-%m-%d')
+                    weekdays = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
+                    weekday = weekdays[date_obj.weekday()]
+                    date_text = f"{date_obj.strftime('%Y年%m月%d日')} {weekday}"
+                except:
+                    date_text = str(date) if date else "未知日期"
 
-            # 格式化時間
+            # 格式化時間 - 處理 timedelta 類型
             time_text = ""
             if start_time and end_time:
-                time_text = f" ({start_time} - {end_time})"
+                # 處理 timedelta 類型的時間
+                if hasattr(start_time, 'total_seconds'):
+                    # timedelta 類型
+                    start_hours = int(start_time.total_seconds() // 3600)
+                    start_minutes = int((start_time.total_seconds() % 3600) // 60)
+                    start_formatted = f"{start_hours:02d}:{start_minutes:02d}"
+                else:
+                    # 字串類型
+                    start_formatted = str(start_time)[:5]
+
+                if hasattr(end_time, 'total_seconds'):
+                    # timedelta 類型
+                    end_hours = int(end_time.total_seconds() // 3600)
+                    end_minutes = int((end_time.total_seconds() % 3600) // 60)
+                    end_formatted = f"{end_hours:02d}:{end_minutes:02d}"
+                else:
+                    # 字串類型
+                    end_formatted = str(end_time)[:5]
+
+                time_text = f"{start_formatted} - {end_formatted}"
             elif start_time:
-                time_text = f" ({start_time})"
+                if hasattr(start_time, 'total_seconds'):
+                    start_hours = int(start_time.total_seconds() // 3600)
+                    start_minutes = int((start_time.total_seconds() % 3600) // 60)
+                    time_text = f"{start_hours:02d}:{start_minutes:02d}"
+                else:
+                    time_text = str(start_time)[:5]
 
-            # 添加描述
-            desc_text = f" - {description}" if description else ""
-
-            itinerary_parts.append(f"Day {current_day}: {location}{time_text}{desc_text}")
+            # 構建完整的行程項目
+            if date_text and time_text and location:
+                itinerary_parts.append(f"{date_text}\n{time_text}\n{location}")
+            elif date_text and location:
+                itinerary_parts.append(f"{date_text}\n{location}")
+            else:
+                itinerary_parts.append(f"{location}")
 
         # 如果沒有詳細行程，使用預設
         if not itinerary_parts:
