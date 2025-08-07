@@ -517,9 +517,6 @@ def create_trip_from_line(user_id: str, trip_title: str, area: str = None, durat
         cursor.close()
         connection.close()
 
-        # 確保用戶資料同步，以便前端能正確識別
-        sync_line_user_profile(user_id)
-
         logger.info(f"成功創建行程: ID={trip_id}, 標題={trip_title}, 地區={area}, 天數={duration_days}")
 
         return {

@@ -1118,15 +1118,12 @@ def create_flex_message(template_type, **kwargs):
                 "layout": "vertical",
                 "contents": [
                     {
-                        "type": "button",
-                        "action": {
-                            "type": "uri",
-                            "label": "在網頁中編輯",
-                            "uri": "https://tripfrontend.vercel.app/linetrip"
-                        },
-                        "style": "primary",
-                        "color": "#27AE60",
-                        "height": "sm"
+                        "type": "text",
+                        "text": "💡 輸入「我的行程」查看所有行程，或繼續添加詳細安排",
+                        "size": "xs",
+                        "color": "#666666",
+                        "wrap": True,
+                        "align": "center"
                     }
                 ],
                 "paddingAll": "20px"
@@ -1896,26 +1893,7 @@ def parse_delete_trip_message(user_message):
 
     return None
 
-def get_line_user_profile(user_id: str):
-    """獲取 LINE 用戶資料"""
-    if not configuration:
-        logger.warning("LINE Bot 未配置，無法獲取用戶資料")
-        return None
-
-    try:
-        with ApiClient(configuration) as api_client:
-            line_bot_api = MessagingApi(api_client)
-            profile = line_bot_api.get_profile(user_id)
-
-            return {
-                'userId': profile.user_id,
-                'displayName': profile.display_name,
-                'pictureUrl': profile.picture_url,
-                'statusMessage': profile.status_message
-            }
-    except Exception as e:
-        logger.error(f"獲取用戶資料失敗: {e}")
-        return None
+# 移除用戶資料獲取功能 - LINE Bot 現在專注於行程管理，不需要用戶資料同步
 
 def find_trip_by_id(trip_id):
     """根據ID查找行程（使用緩存）"""
@@ -2130,212 +2108,10 @@ def health():
         "bot_configured": configuration is not None
     }
 
-@app.route('/api/verify-user-trip', methods=['GET'])
-def verify_user_trip():
-    """驗證用戶和行程的關聯"""
-    try:
-        line_user_id = request.args.get('line_user_id')
-        trip_id = request.args.get('trip_id')
+# 移除所有網頁相關的 API 端點
+# LINE Bot 現在完全獨立運作，不需要網頁整合
 
-        if not line_user_id or not trip_id:
-            return {"error": "Missing line_user_id or trip_id"}, 400
 
-        from api.database_utils import get_database_connection, MYSQL_AVAILABLE
-
-        if not MYSQL_AVAILABLE:
-            return {"error": "Database not available"}, 500
-
-        connection = get_database_connection()
-        if not connection:
-            return {"error": "Database connection failed"}, 500
-
-        cursor = connection.cursor(dictionary=True)
-
-        # 查詢行程是否屬於該用戶
-        query = """
-        SELECT t.trip_id, t.title, t.area, t.line_user_id, t.created_by_line_user,
-               lu.display_name, lu.picture_url
-        FROM line_trips t
-        LEFT JOIN line_users lu ON t.line_user_id = lu.line_user_id
-        WHERE t.trip_id = %s AND (t.line_user_id = %s OR t.created_by_line_user = %s)
-        """
-
-        cursor.execute(query, (trip_id, line_user_id, line_user_id))
-        result = cursor.fetchone()
-
-        cursor.close()
-        connection.close()
-
-        if result:
-            return {
-                "verified": True,
-                "trip": {
-                    "trip_id": result.get('trip_id'),
-                    "title": result.get('title'),
-                    "area": result.get('area'),
-                    "line_user_id": result.get('line_user_id'),
-                    "created_by_line_user": result.get('created_by_line_user')
-                },
-                "user": {
-                    "display_name": result.get('display_name'),
-                    "picture_url": result.get('picture_url')
-                }
-            }
-        else:
-            return {"verified": False, "message": "Trip not found or not owned by user"}
-
-    except Exception as e:
-        logger.error(f"驗證用戶行程失敗: {e}")
-        return {"error": str(e)}, 500
-
-@app.route('/api/user-trips/<line_user_id>', methods=['GET'])
-def get_user_trips_api(line_user_id):
-    """API 端點：獲取用戶的所有行程"""
-    try:
-        from api.database_utils import get_user_created_trips
-
-        trips = get_user_created_trips(line_user_id, limit=50)
-
-        return {
-            "success": True,
-            "line_user_id": line_user_id,
-            "trips": trips,
-            "count": len(trips)
-        }
-
-    except Exception as e:
-        logger.error(f"獲取用戶行程 API 失敗: {e}")
-        return {"error": str(e)}, 500
-
-@app.route('/api/liff/user-trips', methods=['POST'])
-def get_liff_user_trips():
-    """LIFF 專用 API：獲取當前登入用戶的行程"""
-    try:
-        # 從 LIFF 前端接收用戶資訊
-        data = request.get_json()
-        if not data or 'userId' not in data:
-            return {"error": "Missing userId in request body"}, 400
-
-        line_user_id = data['userId']
-
-        # 同步用戶資料（如果有提供的話）
-        if 'displayName' in data or 'pictureUrl' in data:
-            from api.database_utils import sync_line_user_profile
-            profile_data = {
-                'displayName': data.get('displayName', ''),
-                'pictureUrl': data.get('pictureUrl', ''),
-                'statusMessage': data.get('statusMessage', '')
-            }
-            sync_line_user_profile(line_user_id, profile_data)
-
-        # 獲取用戶行程
-        from api.database_utils import get_user_created_trips
-        trips = get_user_created_trips(line_user_id, limit=50)
-
-        return {
-            "success": True,
-            "line_user_id": line_user_id,
-            "trips": trips,
-            "count": len(trips),
-            "message": f"找到 {len(trips)} 個行程"
-        }
-
-    except Exception as e:
-        logger.error(f"LIFF 用戶行程 API 失敗: {e}")
-        return {"error": str(e)}, 500
-
-@app.route('/api/liff/trip-details', methods=['POST'])
-def get_liff_trip_details():
-    """LIFF 專用 API：獲取特定行程的詳細資料"""
-    try:
-        data = request.get_json()
-        if not data or 'userId' not in data or 'tripId' not in data:
-            return {"error": "Missing userId or tripId in request body"}, 400
-
-        line_user_id = data['userId']
-        trip_id = data['tripId']
-
-        from api.database_utils import get_database_connection, MYSQL_AVAILABLE
-
-        if not MYSQL_AVAILABLE:
-            return {"error": "Database not available"}, 500
-
-        connection = get_database_connection()
-        if not connection:
-            return {"error": "Database connection failed"}, 500
-
-        cursor = connection.cursor(dictionary=True)
-
-        # 驗證行程所有權並獲取詳細資料
-        query = """
-        SELECT
-            t.trip_id,
-            t.title,
-            t.description,
-            t.area,
-            t.start_date,
-            t.end_date,
-            DATEDIFF(t.end_date, t.start_date) + 1 as duration_days
-        FROM line_trips t
-        WHERE t.trip_id = %s AND (t.line_user_id = %s OR t.created_by_line_user = %s)
-        """
-
-        cursor.execute(query, (trip_id, line_user_id, line_user_id))
-        trip_data = cursor.fetchone()
-
-        if not trip_data:
-            cursor.close()
-            connection.close()
-            return {"error": "Trip not found or access denied"}, 404
-
-        # 獲取行程詳細安排
-        detail_query = """
-        SELECT
-            location,
-            date,
-            start_time,
-            end_time,
-            description
-        FROM line_trip_details
-        WHERE trip_id = %s
-        ORDER BY date, start_time
-        """
-
-        cursor.execute(detail_query, (trip_id,))
-        details = cursor.fetchall()
-
-        cursor.close()
-        connection.close()
-
-        # 格式化詳細資料
-        formatted_details = []
-        for detail in details:
-            formatted_details.append({
-                "location": detail.get('location'),
-                "date": str(detail.get('date')) if detail.get('date') else None,
-                "start_time": str(detail.get('start_time')) if detail.get('start_time') else None,
-                "end_time": str(detail.get('end_time')) if detail.get('end_time') else None,
-                "description": detail.get('description')
-            })
-
-        return {
-            "success": True,
-            "trip": {
-                "trip_id": trip_data.get('trip_id'),
-                "title": trip_data.get('title'),
-                "description": trip_data.get('description'),
-                "area": trip_data.get('area'),
-                "start_date": str(trip_data.get('start_date')),
-                "end_date": str(trip_data.get('end_date')),
-                "duration_days": trip_data.get('duration_days')
-            },
-            "details": formatted_details,
-            "detail_count": len(formatted_details)
-        }
-
-    except Exception as e:
-        logger.error(f"LIFF 行程詳細 API 失敗: {e}")
-        return {"error": str(e)}, 500
 
 # 除錯端點
 @app.route('/debug')
@@ -2826,20 +2602,8 @@ if line_handler:
                             # 處理行程創建請求
                             trip_title = user_message.replace("創建", "").replace("建立", "").replace("新增行程", "").replace("創建行程", "").replace("建立行程", "").strip()
                             if trip_title:
-                                # 獲取用戶資料並同步到資料庫
-                                user_profile = get_line_user_profile(event.source.user_id)
-                                if user_profile:
-                                    from api.database_utils import sync_line_user_profile
-                                    sync_line_user_profile(event.source.user_id, user_profile)
-
                                 from api.database_utils import create_trip_from_line
                                 trip_data = create_trip_from_line(event.source.user_id, trip_title)
-
-                                if trip_data:
-                                    # 確保行程與用戶正確關聯
-                                    from api.database_utils import update_trip_with_line_profile
-                                    update_trip_with_line_profile(trip_data.get('trip_id'), event.source.user_id)
-
                                 flex_message = create_flex_message("create_trip_success", trip_data=trip_data)
                             else:
                                 # 如果沒有提供行程標題，提示用戶
