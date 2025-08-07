@@ -22,14 +22,20 @@ from api.config import (
     KEYWORD_MAPPINGS
 )
 
-# 導入資料庫功能
-from api.database import (
-    get_leaderboard_data,
-    get_trip_details,
-    get_trips_by_location,
-    get_leaderboard_rank_details,
-    get_simple_itinerary_by_rank
+# 導入網頁爬蟲功能
+from api.web_scraper import (
+    scrape_leaderboard_data,
+    scrape_trip_details
 )
+
+# 導入資料庫功能（作為備用）
+try:
+    from api.database import (
+        get_leaderboard_data,
+        get_trips_by_location
+    )
+except ImportError:
+    logger.warning("資料庫模組導入失敗，將只使用網頁爬蟲")
 
 # LINE Bot imports
 from linebot.v3 import WebhookHandler
@@ -178,15 +184,16 @@ def create_simple_flex_message(template_type, **kwargs):
         }
     
     elif template_type == "leaderboard":
-        # 從資料庫獲取排行榜詳細資料
+        # 從網站抓取排行榜詳細資料
         rank = kwargs.get('rank', '1')
         rank_int = int(rank)
 
-        # 嘗試從資料庫獲取詳細資料
-        data = get_leaderboard_rank_details(rank_int)
+        # 從網站抓取排行榜資料
+        leaderboard_data = scrape_leaderboard_data()
+        data = leaderboard_data.get(rank)
 
         if not data:
-            # 如果資料庫失敗，使用配置文件的備用資料
+            # 如果網站抓取失敗，使用配置文件的備用資料
             from api.config import LEADERBOARD_DATA
             data = LEADERBOARD_DATA.get(rank, LEADERBOARD_DATA["1"])
 
@@ -293,10 +300,10 @@ def create_simple_flex_message(template_type, **kwargs):
             }
 
     elif template_type == "leaderboard_list":
-        # 排行榜列表模板 - 從資料庫獲取資料
-        leaderboard_data = get_leaderboard_data()
+        # 排行榜列表模板 - 從網站抓取資料
+        leaderboard_data = scrape_leaderboard_data()
 
-        # 如果資料庫失敗，使用配置文件的備用資料
+        # 如果網站抓取失敗，使用配置文件的備用資料
         if not leaderboard_data:
             from api.config import LEADERBOARD_DATA
             leaderboard_data = LEADERBOARD_DATA
@@ -408,12 +415,12 @@ def create_simple_flex_message(template_type, **kwargs):
         }
 
     elif template_type == "leaderboard_details":
-        # 排行榜詳細行程模板 - 只顯示純粹的行程安排
+        # 排行榜詳細行程模板 - 從網站抓取純粹的行程安排
         rank = kwargs.get('rank', '1')
         rank_int = int(rank)
 
-        # 從資料庫獲取簡潔的行程安排
-        data = get_simple_itinerary_by_rank(rank_int)
+        # 從網站抓取詳細行程
+        data = scrape_trip_details(rank_int)
 
         if not data:
             # 如果沒有詳細行程，顯示提示訊息
