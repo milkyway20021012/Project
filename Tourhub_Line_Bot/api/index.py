@@ -7,7 +7,6 @@ import time
 # 導入配置文件
 from api.config import (
     MESSAGE_TEMPLATES,
-    LEADERBOARD_DATA,
     KEYWORD_MAPPINGS
 )
 
@@ -1779,10 +1778,39 @@ if CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET:
     configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
     line_handler = WebhookHandler(CHANNEL_SECRET)
 
-    # 集合管理器已移除
+    # 初始化數據庫連接池
+    try:
+        from api.database_utils import initialize_connection_pool
+        if initialize_connection_pool():
+            logger.info("數據庫連接池初始化成功")
+        else:
+            logger.warning("數據庫連接池初始化失敗")
+    except Exception as e:
+        logger.error(f"數據庫連接池初始化錯誤: {e}")
+
+    # 運行數據庫優化（僅在生產環境）
+    try:
+        if os.environ.get('ENVIRONMENT') == 'production':
+            from api.database_optimization import run_database_optimization
+            run_database_optimization()
+    except Exception as e:
+        logger.warning(f"數據庫優化失敗: {e}")
 
     # 預熱緩存以提高響應速度
-    warm_up_cache()
+    try:
+        from api.advanced_cache import warm_up_cache_advanced
+        from api.async_processor import preload_data
+
+        # 異步預加載數據
+        preload_data()
+
+        # 同步預熱緩存
+        warm_up_cache_advanced()
+
+        logger.info("所有優化系統已啟動")
+    except Exception as e:
+        logger.warning(f"高級緩存預熱失敗，使用基礎緩存: {e}")
+        warm_up_cache()
 
     logger.info("LINE Bot 設定成功")
 else:
@@ -1790,15 +1818,91 @@ else:
     line_handler = None
     logger.warning("LINE Bot 環境變數未設定")
 
-# 健康檢查
+# 排行榜頁面
 @app.route('/')
+def leaderboard():
+    """排行榜主頁面"""
+    return {"message": "TourHub Line Bot API", "status": "running"}
+
+# 健康檢查 API
+@app.route('/api/health')
 def health():
-
-
     return {
         "status": "running",
         "bot_configured": configuration is not None
     }
+
+# 緩存統計 API
+@app.route('/api/cache/stats')
+def cache_stats():
+    """獲取緩存統計信息"""
+    try:
+        from api.advanced_cache import get_cache_stats
+        stats = get_cache_stats()
+        return {
+            "status": "success",
+            "cache_stats": stats
+        }
+    except Exception as e:
+        logger.error(f"獲取緩存統計失敗: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+# 清空緩存 API
+@app.route('/api/cache/clear', methods=['POST'])
+def clear_cache_api():
+    """清空所有緩存"""
+    try:
+        from api.advanced_cache import clear_cache
+        clear_cache()
+        return {
+            "status": "success",
+            "message": "緩存已清空"
+        }
+    except Exception as e:
+        logger.error(f"清空緩存失敗: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+# 性能統計 API
+@app.route('/api/performance/stats')
+def performance_stats():
+    """獲取性能統計信息"""
+    try:
+        from api.performance_monitor import get_performance_stats
+        stats = get_performance_stats()
+        return {
+            "status": "success",
+            "performance_stats": stats
+        }
+    except Exception as e:
+        logger.error(f"獲取性能統計失敗: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+# 健康檢查 API
+@app.route('/api/health/detailed')
+def detailed_health():
+    """詳細健康檢查"""
+    try:
+        from api.performance_monitor import get_health_status
+        health = get_health_status()
+        return {
+            "status": "success",
+            "health": health
+        }
+    except Exception as e:
+        logger.error(f"健康檢查失敗: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 # 移除所有網頁相關的 API 端點
 # LINE Bot 現在完全獨立運作，不需要網頁整合
@@ -1847,6 +1951,19 @@ def callback():
 if line_handler:
     @line_handler.add(MessageEvent, message=TextMessageContent)
     def handle_message(event):
+        from api.performance_monitor import monitor_performance
+
+        @monitor_performance("line_message_handler")
+        def _handle_message_with_monitoring():
+            return _process_message(event)
+
+        try:
+            return _handle_message_with_monitoring()
+        except Exception as e:
+            logger.error(f"訊息處理錯誤: {str(e)}")
+
+    def _process_message(event):
+        """處理訊息的核心邏輯"""
         try:
             user_message = event.message.text
             
@@ -1855,38 +1972,77 @@ if line_handler:
             template_config = get_message_template(user_message)
 
             if template_config:
-                # 根據模板配置創建 Flex Message
-                if template_config["template"] == "feature":
-                    flex_message = create_flex_message(
-                        "feature",
-                        feature_name=template_config["feature_name"]
-                    )
-                elif template_config["template"] == "leaderboard":
-                    flex_message = create_flex_message(
-                        "leaderboard",
-                        rank=template_config["rank"]
-                    )
-                elif template_config["template"] == "leaderboard_details":
-                    # 獲取排行榜詳細行程資料（使用緩存）
-                    rank = int(template_config["rank"])
-                    rank_data = get_cached_rank_details(rank)
+                # 使用優化的模板系統創建 Flex Message
+                try:
+                    from api.flex_templates import create_optimized_flex_message
+                    from api.config import MESSAGE_TEMPLATES
 
-                    flex_message = create_flex_message(
-                        "leaderboard_details",
-                        rank_data=rank_data
-                    )
-                elif template_config["template"] == "help":
-                    flex_message = create_flex_message("help")
-                elif template_config["template"] == "account_binding":
-                    flex_message = create_flex_message(
-                        "account_binding",
-                        line_user_id=event.source.user_id
-                    )
-                elif template_config["template"] == "website_operations":
-                    flex_message = create_flex_message(
-                        "website_operations",
-                        line_user_id=event.source.user_id
-                    )
+                    if template_config["template"] == "feature":
+                        feature_name = template_config["feature_name"]
+                        template_data = MESSAGE_TEMPLATES["features"][feature_name]
+                        flex_message = create_optimized_flex_message("feature", **template_data)
+
+                    elif template_config["template"] == "tour_clock":
+                        # TourClock 集合功能
+                        template_data = MESSAGE_TEMPLATES["features"]["tour_clock"]
+                        flex_message = create_optimized_flex_message("feature", **template_data)
+
+                    elif template_config["template"] == "location_trips":
+                        # 地區行程查詢
+                        location = template_config.get("location", "未知地區")
+                        try:
+                            from api.database_utils import get_trips_by_location
+                            trips = get_trips_by_location(location, 5)
+                            flex_message = create_optimized_flex_message("location_trips",
+                                trips=trips, location=location)
+                        except Exception as e:
+                            logger.error(f"獲取 {location} 行程失敗: {e}")
+                            flex_message = create_optimized_flex_message("error",
+                                message=f"抱歉，獲取 {location} 行程時發生錯誤，請稍後再試。")
+
+                    elif template_config["template"] == "leaderboard":
+                        rank = template_config["rank"]
+                        rank_data = get_cached_rank_details(int(rank))
+                        if rank_data:
+                            flex_message = create_optimized_flex_message("leaderboard", **rank_data)
+                        else:
+                            flex_message = create_optimized_flex_message("error",
+                                message=f"無法獲取第{rank}名的資料")
+
+                    elif template_config["template"] == "leaderboard_details":
+                        rank = int(template_config["rank"])
+                        rank_data = get_cached_rank_details(rank)
+                        if rank_data:
+                            flex_message = create_flex_message("leaderboard_details", rank_data=rank_data)
+                        else:
+                            flex_message = create_optimized_flex_message("error",
+                                message=f"無法獲取第{rank}名的詳細資料")
+
+                    elif template_config["template"] == "help":
+                        flex_message = create_flex_message("help")
+
+                    else:
+                        # 使用舊的創建方式作為後備
+                        flex_message = create_flex_message(
+                            template_config["template"],
+                            **template_config
+                        )
+
+                except Exception as e:
+                    logger.error(f"優化模板創建失敗，使用舊版本: {e}")
+                    # 後備到舊的模板系統
+                    if template_config["template"] == "feature":
+                        flex_message = create_flex_message(
+                            "feature",
+                            feature_name=template_config["feature_name"]
+                        )
+                    elif template_config["template"] == "leaderboard":
+                        flex_message = create_flex_message(
+                            "leaderboard",
+                            rank=template_config["rank"]
+                        )
+                    else:
+                        flex_message = create_flex_message(template_config["template"])
                 else:
                     # 預設回應
                     flex_message = {

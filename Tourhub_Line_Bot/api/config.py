@@ -34,13 +34,13 @@ MESSAGE_TEMPLATES = {
             "color": "#28A745",
             "url": "https://liff.line.me/2007317887-Dq8Rorg5"
         },
-        "tourclock": {
+        "tour_clock": {
             "title": "⏰ TourClock",
             "description": "智能集合時間管理工具",
             "sub_description": "設定集合時間，自動發送提醒通知",
             "button_text": "開啟 TourClock",
             "color": "#9B59B6",
-            "url": "https://tourclock-dvf2.vercel.app/"
+            "url": "https://tourclock-dvf2.vercel.app/?state=EICy1YHneLoC&liffClientId=2007488134&liffRedirectUri=https%3A%2F%2Ftourclock-dvf2.vercel.app&code=uj41KyebQrmS2IzWredf"
         }
     },
     # 集合成功模板已移除
@@ -58,7 +58,11 @@ MESSAGE_TEMPLATES = {
                 "name": "行程管理 (Trip Management)",
                 "description": "建立屬於您的專屬行程內容"
             },
-            # 集合功能已移除
+            {
+                "emoji": "⏰",
+                "name": "集合管理 (TourClock)",
+                "description": "智能集合時間管理工具，設定集合時間並自動發送提醒"
+            },
             {
                 "emoji": "🛅",
                 "name": "置物櫃 (Locker)",
@@ -184,7 +188,39 @@ KEYWORD_MAPPINGS = {
         "template": "feature",
         "feature_name": "split_bill"
     },
-    # TourClock集合功能已移除
+    # TourClock集合功能
+    "tour_clock": {
+        "keywords": ["集合", "集合時間", "集合地點", "約時間", "約地點", "約見面", "見面", "會合", "聚集", "tour clock", "TourClock", "集合管理", "時間管理"],
+        "template": "tour_clock"
+    },
+
+    # 地區行程查詢
+    "tokyo_trips": {
+        "keywords": ["東京", "東京行程", "東京旅遊", "東京景點", "tokyo", "Tokyo", "東京相關", "東京推薦"],
+        "template": "location_trips",
+        "location": "東京"
+    },
+    "osaka_trips": {
+        "keywords": ["大阪", "大阪行程", "大阪旅遊", "大阪景點", "osaka", "Osaka", "大阪相關", "大阪推薦"],
+        "template": "location_trips",
+        "location": "大阪"
+    },
+    "kyoto_trips": {
+        "keywords": ["京都", "京都行程", "京都旅遊", "京都景點", "kyoto", "Kyoto", "京都相關", "京都推薦"],
+        "template": "location_trips",
+        "location": "京都"
+    },
+    "okinawa_trips": {
+        "keywords": ["沖繩", "沖繩行程", "沖繩旅遊", "沖繩景點", "okinawa", "Okinawa", "沖繩相關", "沖繩推薦"],
+        "template": "location_trips",
+        "location": "沖繩"
+    },
+    "hokkaido_trips": {
+        "keywords": ["北海道", "北海道行程", "北海道旅遊", "北海道景點", "hokkaido", "Hokkaido", "北海道相關", "北海道推薦"],
+        "template": "location_trips",
+        "location": "北海道"
+    },
+
     "help": {
         "keywords": ["功能介紹", "功能", "介紹", "說明", "help", "Help", "功能說明", "使用說明","Tourhub功能介紹","Tourhub功能","Tourhub介紹","Tourhub說明"],
         "template": "help"
