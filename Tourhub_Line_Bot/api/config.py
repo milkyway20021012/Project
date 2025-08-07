@@ -40,7 +40,7 @@ MESSAGE_TEMPLATES = {
             "sub_description": "設定集合時間，自動發送提醒通知",
             "button_text": "開啟 TourClock",
             "color": "#9B59B6",
-            "url": "https://tourclock.vercel.app"
+            "url": "https://tourclock-dvf2.vercel.app/"
         }
     },
     # 集合成功模板已移除
@@ -189,10 +189,7 @@ KEYWORD_MAPPINGS = {
         "keywords": ["功能介紹", "功能", "介紹", "說明", "help", "Help", "功能說明", "使用說明","Tourhub功能介紹","Tourhub功能","Tourhub介紹","Tourhub說明"],
         "template": "help"
     },
-    "account_binding": {
-        "keywords": ["綁定帳號", "帳號綁定", "登入", "login", "Login", "綁定", "帳號", "我的帳號", "個人資料"],
-        "template": "account_binding"
-    },
+
     "website_operations": {
         "keywords": ["網站操作", "操作網站", "使用網站", "網站功能", "我的操作"],
         "template": "website_operations"

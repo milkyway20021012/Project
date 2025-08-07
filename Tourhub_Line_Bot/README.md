@@ -2,11 +2,11 @@
 
 ## 🎯 系統概述
 
-TourHub LINE Bot 提供統一的用戶綁定系統，讓用戶只需綁定一次就能無縫使用所有 TourHub 相關網站。
+TourHub LINE Bot 提供便捷的旅遊資訊查詢和功能導航，讓用戶輕鬆使用所有 TourHub 相關網站。
 
 ## 🌐 整合的網站
 
-1. **🏆 TourHub排行榜** - https://tourhubashy.vercel.app/
+1. **🏆 TourHub排行榜** - https://tourhub-ashy.vercel.app/
 2. **📋 行程管理** - https://tripfrontend.vercel.app/linetrip
 3. **⏰ 集合管理** - https://tourclock-dvf2.vercel.app/
 4. **🔍 置物櫃查找** - https://tripfrontend.vercel.app/linelocker
@@ -14,13 +14,7 @@ TourHub LINE Bot 提供統一的用戶綁定系統，讓用戶只需綁定一次
 
 ## 🚀 功能特色
 
-### 統一綁定
-- 用戶只需在 LINE Bot 中完成一次 LINE Login 綁定
-- 自動獲得所有網站的訪問權限
-- 無需重複登入各個網站
-
 ### 關鍵字功能
-- `綁定帳號` - 開始統一綁定流程
 - `網站操作` - 查看可用網站並進行操作
 - `功能介紹` - 查看 Bot 功能說明
 - `第一名`、`第二名`、`第三名` - 查看排行榜
@@ -30,7 +24,6 @@ TourHub LINE Bot 提供統一的用戶綁定系統，讓用戶只需綁定一次
 
 ### 核心組件
 - **統一用戶管理** (`unified_user_manager.py`)
-- **LINE Login處理** (`line_login_handler.py`)
 - **網站API代理** (`website_proxy.py`)
 - **資料庫系統** (`database/unified_user_system.sql`)
 
@@ -48,11 +41,6 @@ TourHub LINE Bot 提供統一的用戶綁定系統，讓用戶只需綁定一次
 CHANNEL_ACCESS_TOKEN=你的LINE_Bot_Token
 CHANNEL_SECRET=你的LINE_Bot_Secret
 
-# LINE Login
-LINE_LOGIN_CHANNEL_ID=你的LINE_Login_Channel_ID
-LINE_LOGIN_CHANNEL_SECRET=你的LINE_Login_Channel_Secret
-LINE_LOGIN_REDIRECT_URI=https://line-bot-theta-dun.vercel.app/auth/line/callback
-
 # 資料庫
 MYSQL_HOST=trip.mysql.database.azure.com
 MYSQL_USER=b1129005
@@ -63,29 +51,26 @@ MYSQL_PORT=3306
 
 ## 🔄 用戶使用流程
 
-1. **綁定帳號**
+1. **使用網站功能**
    ```
-   用戶輸入「綁定帳號」→ 點擊綁定按鈕 → 完成LINE Login → 綁定成功
+   用戶輸入「網站操作」→ 選擇網站 → 點擊按鈕 → 跳轉到對應網站
    ```
 
-2. **使用網站功能**
+2. **查詢排行榜**
    ```
-   用戶輸入「網站操作」→ 選擇網站 → 選擇操作 → 自動跳轉並登入
+   用戶輸入「第一名」→ 查看排行榜第一名詳細資訊
    ```
 
 ## 📋 API 端點
 
 - `POST /callback` - LINE Bot Webhook
-- `GET /auth/line/callback` - LINE Login 回調
-- `POST /api/verify-token` - 統一Token驗證
 - `GET /debug` - 系統狀態檢查
 
 ## 🔐 安全特性
 
-- 使用 LINE 官方認證確保安全性
-- 統一Token機制管理用戶身份
+- 使用 LINE 官方 Webhook 驗證
 - 完整的操作日誌記錄
-- 自動Token過期管理
+- 安全的資料庫連接
 
 ## 📊 部署資訊
 

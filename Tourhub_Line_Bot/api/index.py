@@ -1,4 +1,4 @@
-from flask import Flask, request, abort, jsonify
+from flask import Flask, request, abort
 import os
 import logging
 import re
@@ -13,7 +13,6 @@ from api.config import (
 
 # 導入統一用戶管理系統
 from api.unified_user_manager import unified_user_manager
-from api.line_login_handler import line_login_handler
 from api.website_proxy import website_proxy
 
 # LINE Bot imports
@@ -385,12 +384,7 @@ def create_flex_message(template_type, **kwargs):
             }
         }
 
-    elif template_type == "account_binding":
-        line_user_id = kwargs.get('line_user_id')
-        if line_user_id:
-            return line_login_handler.create_binding_message(line_user_id)
-        else:
-            return create_default_error_message("無法獲取用戶資訊")
+
 
     elif template_type == "website_operations":
         line_user_id = kwargs.get('line_user_id')
@@ -1799,41 +1793,7 @@ else:
 # 健康檢查
 @app.route('/')
 def health():
-    # 檢查是否需要顯示設定頁面
-    setup_required = request.args.get('setup')
 
-    if setup_required == 'required':
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>需要完成設定</title>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>
-                body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
-                .warning {{ color: #E74C3C; }}
-                .info {{ color: #666; margin-top: 20px; }}
-                .code {{ background: #f4f4f4; padding: 10px; margin: 10px; border-radius: 5px; }}
-            </style>
-        </head>
-        <body>
-            <h1 class="warning">⚠️ LINE Login 未設定</h1>
-            <p>請在 Vercel 中設定以下環境變數：</p>
-            <div class="code">
-                LINE_LOGIN_CHANNEL_ID=你的Channel_ID<br>
-                LINE_LOGIN_CHANNEL_SECRET=你的Channel_Secret<br>
-                LINE_LOGIN_REDIRECT_URI=https://line-bot-theta-dun.vercel.app/auth/line/callback
-            </div>
-            <p class="info">設定完成後重新部署即可使用綁定功能</p>
-            <script>
-                setTimeout(function() {{
-                    window.close();
-                }}, 10000);
-            </script>
-        </body>
-        </html>
-        """
 
     return {
         "status": "running",
@@ -1854,144 +1814,11 @@ def debug():
         "token_length": len(CHANNEL_ACCESS_TOKEN) if CHANNEL_ACCESS_TOKEN else 0
     }
 
-@app.route("/api/verify-token", methods=['POST'])
-def verify_unified_token():
-    """驗證統一Token"""
-    try:
-        data = request.get_json()
-        unified_token = data.get('unified_token')
 
-        if not unified_token:
-            return jsonify({'success': False, 'error': 'Token required'}), 400
 
-        # 驗證Token
-        user_data = unified_user_manager.get_user_by_token(unified_token)
-        # 
-        if user_data:
-            return jsonify({
-                'success': True,
-                'user': {
-                    'id': user_data['id'],
-                    'line_user_id': user_data['line_user_id'],
-                    'display_name': user_data['display_name'],
-                    'picture_url': user_data['picture_url'],
-                    'unified_token': user_data['unified_token']
-                }
-            })
-        else:
-            return jsonify({'success': False, 'error': 'Invalid token'}), 401
 
-    except Exception as e:
-        logger.error(f"Token驗證失敗: {e}")
-        return jsonify({'success': False, 'error': 'Server error'}), 500
 
-@app.route("/auth/line/callback")
-def line_login_callback():
-    """處理LINE Login回調"""
-    try:
-        code = request.args.get('code')
-        state = request.args.get('state')
 
-        if not code or not state:
-            return "Missing required parameters", 400
-
-        # 處理LINE Login回調
-        result = line_login_handler.handle_callback(code, state)
-
-        if result.get('success'):
-            # 綁定成功，返回成功頁面
-            return f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>綁定成功</title>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <style>
-                    body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
-                    .success {{ color: #00B900; }}
-                    .info {{ color: #666; margin-top: 20px; }}
-                </style>
-            </head>
-            <body>
-                <h1 class="success">✅ 帳號綁定成功！</h1>
-                <p>您的LINE帳號已成功綁定到TourHub系統</p>
-                <p class="info">現在您可以回到LINE Bot使用所有功能</p>
-                <script>
-                    setTimeout(function() {{
-                        window.close();
-                    }}, 3000);
-                </script>
-            </body>
-            </html>
-            """
-        else:
-            # 綁定失敗，返回錯誤頁面
-            error_message = result.get('error', '未知錯誤')
-            return f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>綁定失敗</title>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <style>
-                    body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
-                    .error {{ color: #E74C3C; }}
-                    .info {{ color: #666; margin-top: 20px; }}
-                </style>
-            </head>
-            <body>
-                <h1 class="error">❌ 綁定失敗</h1>
-                <p>錯誤：{error_message}</p>
-                <p class="info">請回到LINE Bot重新嘗試綁定</p>
-                <script>
-                    setTimeout(function() {{
-                        window.close();
-                    }}, 5000);
-                </script>
-            </body>
-            </html>
-            """
-
-    except Exception as e:
-        logger.error(f"LINE Login callback error: {e}")
-        return "Internal server error", 500
-
-@app.route("/setup-required")
-def setup_required():
-    """顯示設定需求頁面"""
-    return f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>需要完成設定</title>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-            body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
-            .warning {{ color: #E74C3C; }}
-            .info {{ color: #666; margin-top: 20px; }}
-            .code {{ background: #f4f4f4; padding: 10px; margin: 10px; border-radius: 5px; }}
-        </style>
-    </head>
-    <body>
-        <h1 class="warning">⚠️ LINE Login 未設定</h1>
-        <p>請在 Vercel 中設定以下環境變數：</p>
-        <div class="code">
-            LINE_LOGIN_CHANNEL_ID=你的Channel_ID<br>
-            LINE_LOGIN_CHANNEL_SECRET=你的Channel_Secret<br>
-            LINE_LOGIN_REDIRECT_URI=https://line-bot-theta-dun.vercel.app/auth/line/callback
-        </div>
-        <p class="info">設定完成後重新部署即可使用綁定功能</p>
-        <script>
-            setTimeout(function() {{
-                window.close();
-            }}, 10000);
-        </script>
-    </body>
-    </html>
-    """
 
 # 提醒回調端點已移除
 
