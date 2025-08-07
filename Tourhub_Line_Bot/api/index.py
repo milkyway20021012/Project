@@ -233,7 +233,7 @@ def create_flex_message(template_type, **kwargs):
                             "action": {
                                 "type": "uri",
                                 "label": "查看完整排行榜",
-                                "uri": "https://tourhub-ashy.vercel.app/?state=n6sFheuU2eAl&liffClientId=2007678368&liffRedirectUri=https%3A%2F%2Ftourhub-ashy.vercel.app%2F&code=DJhtwXyqmCdyhnBlGs3s"
+                                "uri": "https://tourhub-ashy.vercel.app/"
                             },
                             "style": "primary",
                             "color": "#9B59B6",
@@ -318,7 +318,7 @@ def create_flex_message(template_type, **kwargs):
                         "action": {
                             "type": "uri",
                             "label": "查看完整排行榜",
-                            "uri": "https://tourhub-ashy.vercel.app/?state=n6sFheuU2eAl&liffClientId=2007678368&liffRedirectUri=https%3A%2F%2Ftourhub-ashy.vercel.app%2F&code=DJhtwXyqmCdyhnBlGs3s"
+                            "uri": "https://tourhub-ashy.vercel.app/"
                         },
                         "style": "primary",
                         "color": data["color"],
@@ -796,7 +796,7 @@ def create_flex_message(template_type, **kwargs):
                         "action": {
                             "type": "uri",
                             "label": "查看完整排行榜",
-                            "uri": "https://tourhub-ashy.vercel.app/?state=n6sFheuU2eAl&liffClientId=2007678368&liffRedirectUri=https%3A%2F%2Ftourhub-ashy.vercel.app%2F&code=DJhtwXyqmCdyhnBlGs3s"
+                            "uri": "https://tourhub-ashy.vercel.app/"
                         },
                         "style": "primary",
                         "color": color,

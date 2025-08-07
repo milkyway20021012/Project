@@ -8,7 +8,7 @@ MESSAGE_TEMPLATES = {
             "sub_description": "點擊下方按鈕查看詳細排名",
             "button_text": "查看排行榜",
             "color": "#FF6B6B",
-            "url": "https://tourhub-ashy.vercel.app/?state=n6sFheuU2eAl&liffClientId=2007678368&liffRedirectUri=https%3A%2F%2Ftourhub-ashy.vercel.app%2F&code=DJhtwXyqmCdyhnBlGs3s"
+            "url": "https://tourhub-ashy.vercel.app/"
         },
         "trip_management": {
             "title": "🗓️ 行程管理",

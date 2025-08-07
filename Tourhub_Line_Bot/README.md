@@ -81,8 +81,7 @@ MYSQL_PORT=3306
 
 ## 📚 相關文檔
 
-- [統一登入系統指南](UNIFIED_LOGIN_GUIDE.md)
-- [實際網站整合報告](ACTUAL_WEBSITES_INTEGRATION.md)
+本專案為 TourHub LINE Bot 主要功能實現。
 
 ---
 
