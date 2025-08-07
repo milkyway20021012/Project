@@ -312,11 +312,154 @@ def create_simple_flex_message(template_type, **kwargs):
         }
 
     elif template_type == "leaderboard_details":
-        # 使用分頁系統顯示詳細行程
+        # 動態獲取詳細行程，並優化顯示格式
         rank = kwargs.get('rank', '1')
-        page = kwargs.get('page', 1)
+        rank_int = int(rank)
 
-        return create_paginated_itinerary(int(rank), page)
+        # 從網站抓取詳細行程
+        from api.web_scraper import scrape_trip_details
+        data = scrape_trip_details(rank_int)
+
+        if not data:
+            # 如果沒有詳細行程，顯示提示訊息
+            rank_titles = {1: "🥇 第一名", 2: "🥈 第二名", 3: "🥉 第三名", 4: "🏅 第四名", 5: "🎖️ 第五名"}
+            return {
+                "type": "bubble",
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": f"抱歉，{rank_titles.get(rank_int, f'第{rank_int}名')}的詳細行程安排暫時無法提供。",
+                            "wrap": True,
+                            "color": "#666666",
+                            "align": "center"
+                        }
+                    ],
+                    "paddingAll": "20px"
+                }
+            }
+
+        # 優化行程格式 - 簡化顯示
+        def format_itinerary(itinerary_text):
+            """格式化行程文本，使其更簡潔"""
+            if not itinerary_text:
+                return "行程安排待更新"
+
+            lines = itinerary_text.split('\n')
+            formatted_lines = []
+
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+
+                # 簡化日期格式
+                if '年' in line and '月' in line and '日' in line:
+                    # 將 "2025年08月15日 (星期五)" 簡化為 "8/15 (五)"
+                    import re
+                    date_match = re.search(r'(\d+)年(\d+)月(\d+)日.*?\((.*?)\)', line)
+                    if date_match:
+                        month = int(date_match.group(2))
+                        day = int(date_match.group(3))
+                        weekday = date_match.group(4).replace('星期', '')
+                        formatted_lines.append(f"📅 {month}/{day} ({weekday})")
+                        continue
+
+                # 簡化時間和地點
+                if ':' in line and '-' in line:
+                    # 時間行
+                    formatted_lines.append(f"🕐 {line}")
+                elif line and not line.startswith('Day'):
+                    # 地點行
+                    formatted_lines.append(f"📍 {line}")
+
+            # 限制行數，避免內容過長
+            if len(formatted_lines) > 20:
+                formatted_lines = formatted_lines[:20]
+                formatted_lines.append("...")
+                formatted_lines.append("💡 完整行程請查看網站")
+
+            return '\n'.join(formatted_lines)
+
+        formatted_itinerary = format_itinerary(data.get("itinerary", ""))
+
+        return {
+            "type": "bubble",
+            "size": "giga",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": f"{data['rank_title']} 詳細行程",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#ffffff",
+                        "align": "center"
+                    },
+                    {
+                        "type": "text",
+                        "text": f"{data['title']} - {data['area']}",
+                        "size": "sm",
+                        "color": "#ffffff",
+                        "align": "center",
+                        "margin": "sm"
+                    }
+                ],
+                "backgroundColor": data["color"],
+                "paddingAll": "20px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "📅 行程安排",
+                        "weight": "bold",
+                        "size": "md",
+                        "color": "#555555",
+                        "marginBottom": "md"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": formatted_itinerary,
+                                "size": "sm",
+                                "color": "#333333",
+                                "wrap": True,
+                                "lineSpacing": "sm"
+                            }
+                        ],
+                        "backgroundColor": "#f8f9fa",
+                        "cornerRadius": "md",
+                        "paddingAll": "md"
+                    }
+                ],
+                "paddingAll": "20px"
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "💡 完整行程資訊請查看 TourHub 網站",
+                        "size": "xs",
+                        "color": "#666666",
+                        "align": "center",
+                        "wrap": True
+                    }
+                ],
+                "paddingAll": "20px"
+            }
+        }
 
     elif template_type == "location_trips":
         # 地區行程查詢模板 - 從資料庫獲取資料
