@@ -683,32 +683,22 @@ def health():
 # LINE Bot callback
 @app.route('/callback', methods=['POST'])
 def callback():
-    logger.info("📥 收到 callback 請求")
-
     if not line_handler:
-        logger.error("❌ Line handler 未設定")
         return "Bot not configured", 500
-
+    
     try:
         signature = request.headers.get('X-Line-Signature')
         if not signature:
-            logger.error("❌ 缺少 X-Line-Signature")
             abort(400)
-
+        
         body = request.get_data(as_text=True)
-        logger.info(f"📥 收到請求 body 長度: {len(body)}")
-
         line_handler.handle(body, signature)
-        logger.info("✅ Callback 處理完成")
         return 'OK'
-
+        
     except InvalidSignatureError:
-        logger.error("❌ 無效的簽名")
         abort(400)
     except Exception as e:
-        logger.error(f"❌ Callback 錯誤: {str(e)}")
-        import traceback
-        logger.error(f"❌ 錯誤詳情: {traceback.format_exc()}")
+        logger.error(f"Error: {str(e)}")
         return "Internal error", 500
 
 # 訊息處理
@@ -717,15 +707,13 @@ if line_handler:
     def handle_message(event):
         try:
             user_message = event.message.text
-            logger.info(f"🔍 收到訊息: '{user_message}'")
-            logger.info(f"🔍 訊息長度: {len(user_message)}")
-            logger.info(f"🔍 訊息類型: {type(user_message)}")
-
+            logger.info(f"收到訊息: {user_message}")
+            
             # 檢查模板匹配
             template_config = get_message_template(user_message)
-
+            
             if template_config:
-                logger.info(f"✅ 匹配到模板: {template_config['template']}, rank: {template_config.get('rank', 'N/A')}")
+                logger.info(f"匹配到模板: {template_config['template']}")
 
                 # 創建 Flex Message
                 if template_config["template"] == "feature":
@@ -734,23 +722,17 @@ if line_handler:
                         feature_name=template_config["feature_name"]
                     )
                 elif template_config["template"] == "leaderboard":
-                    logger.info(f"🔧 創建 leaderboard Flex Message, rank: {template_config['rank']}")
                     flex_message = create_simple_flex_message(
                         "leaderboard",
                         rank=template_config["rank"]
                     )
-                    logger.info(f"🔧 leaderboard Flex Message 創建結果: {bool(flex_message)}")
                 elif template_config["template"] == "leaderboard_list":
-                    logger.info(f"🔧 創建 leaderboard_list Flex Message")
                     flex_message = create_simple_flex_message("leaderboard_list")
-                    logger.info(f"🔧 leaderboard_list Flex Message 創建結果: {bool(flex_message)}")
                 elif template_config["template"] == "leaderboard_details":
-                    logger.info(f"🔧 創建 leaderboard_details Flex Message, rank: {template_config['rank']}")
                     flex_message = create_simple_flex_message(
                         "leaderboard_details",
                         rank=template_config["rank"]
                     )
-                    logger.info(f"🔧 leaderboard_details Flex Message 創建結果: {bool(flex_message)}")
                 elif template_config["template"] == "location_trips":
                     flex_message = create_simple_flex_message(
                         "location_trips",
@@ -768,14 +750,10 @@ if line_handler:
                     # 預設回應
                     flex_message = create_simple_flex_message("default")
             else:
-                logger.info("❌ 沒有匹配的模板，使用預設回應")
+                logger.info("沒有匹配的模板，使用預設回應")
                 flex_message = create_simple_flex_message("default")
 
             # 發送消息
-            logger.info(f"📤 準備發送訊息，Flex Message 存在: {bool(flex_message)}")
-            if flex_message:
-                logger.info(f"📤 Flex Message 類型: {flex_message.get('type', 'N/A')}")
-
             with ApiClient(configuration) as api_client:
                 line_bot_api = MessagingApi(api_client)
                 line_bot_api.reply_message_with_http_info(
@@ -784,27 +762,10 @@ if line_handler:
                         messages=[FlexMessage(alt_text="TourHub Bot", contents=FlexContainer.from_dict(flex_message))]
                     )
                 )
-                logger.info("✅ 訊息發送成功")
+                logger.info("訊息發送成功")
                 
         except Exception as e:
-            logger.error(f"❌ 處理訊息錯誤: {str(e)}")
-            import traceback
-            logger.error(f"❌ 錯誤詳情: {traceback.format_exc()}")
-
-            # 嘗試發送錯誤訊息給用戶
-            try:
-                error_message = create_simple_flex_message("default")
-                with ApiClient(configuration) as api_client:
-                    line_bot_api = MessagingApi(api_client)
-                    line_bot_api.reply_message_with_http_info(
-                        ReplyMessageRequest(
-                            reply_token=event.reply_token,
-                            messages=[FlexMessage(alt_text="TourHub Bot Error", contents=FlexContainer.from_dict(error_message))]
-                        )
-                    )
-                    logger.info("🔧 錯誤回應發送成功")
-            except Exception as send_error:
-                logger.error(f"❌ 發送錯誤回應也失敗: {send_error}")
+            logger.error(f"處理訊息錯誤: {str(e)}")
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
