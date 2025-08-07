@@ -488,8 +488,8 @@ def create_trip_from_line(user_id: str, trip_title: str, area: str = None, durat
 
         # 插入新行程到 line_trips 表
         insert_query = """
-        INSERT INTO line_trips (title, description, area, start_date, end_date, created_by_line_user)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        INSERT INTO line_trips (title, description, area, start_date, end_date, line_user_id, created_by_line_user)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
 
         description = f"透過 LINE Bot 創建的{area}{duration_days}日遊行程"
@@ -500,7 +500,8 @@ def create_trip_from_line(user_id: str, trip_title: str, area: str = None, durat
             area,
             start_date,
             end_date,
-            user_id
+            user_id,  # line_user_id
+            user_id   # created_by_line_user
         ))
 
         # 獲取新創建的行程ID
