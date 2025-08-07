@@ -517,6 +517,9 @@ def create_trip_from_line(user_id: str, trip_title: str, area: str = None, durat
         cursor.close()
         connection.close()
 
+        # 確保用戶資料同步，以便前端能正確識別
+        sync_line_user_profile(user_id)
+
         logger.info(f"成功創建行程: ID={trip_id}, 標題={trip_title}, 地區={area}, 天數={duration_days}")
 
         return {
@@ -526,7 +529,8 @@ def create_trip_from_line(user_id: str, trip_title: str, area: str = None, durat
             "area": area,
             "duration_days": duration_days,
             "start_date": str(start_date),
-            "end_date": str(end_date)
+            "end_date": str(end_date),
+            "line_user_id": user_id
         }
 
     except Exception as e:
@@ -708,3 +712,140 @@ def get_user_created_trips(user_id: str, limit: int = 10):
     except Exception as e:
         logger.error(f"獲取用戶行程失敗: {e}")
         return []
+
+def sync_line_user_profile(line_user_id: str, profile_data: dict = None):
+    """同步 LINE 用戶資料到資料庫，確保前端能正確識別"""
+    if not MYSQL_AVAILABLE:
+        logger.warning("MySQL connector not available, cannot sync user profile")
+        return None
+
+    try:
+        connection = get_database_connection()
+        if not connection:
+            return None
+
+        cursor = connection.cursor(dictionary=True)
+
+        # 檢查是否存在 line_users 表，如果不存在則創建
+        create_table_query = """
+        CREATE TABLE IF NOT EXISTS line_users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            line_user_id VARCHAR(255) UNIQUE NOT NULL,
+            display_name VARCHAR(255),
+            picture_url TEXT,
+            status_message TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_line_user_id (line_user_id)
+        )
+        """
+        cursor.execute(create_table_query)
+
+        # 插入或更新用戶資料
+        if profile_data:
+            # 檢查 status_message 欄位是否存在
+            try:
+                upsert_query = """
+                INSERT INTO line_users (line_user_id, display_name, picture_url, status_message)
+                VALUES (%s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    display_name = VALUES(display_name),
+                    picture_url = VALUES(picture_url),
+                    status_message = VALUES(status_message),
+                    updated_at = CURRENT_TIMESTAMP
+                """
+                cursor.execute(upsert_query, (
+                    line_user_id,
+                    profile_data.get('displayName', ''),
+                    profile_data.get('pictureUrl', ''),
+                    profile_data.get('statusMessage', '')
+                ))
+            except Exception as e:
+                if "Unknown column 'status_message'" in str(e):
+                    # 如果 status_message 欄位不存在，使用簡化版本
+                    upsert_query = """
+                    INSERT INTO line_users (line_user_id, display_name, picture_url)
+                    VALUES (%s, %s, %s)
+                    ON DUPLICATE KEY UPDATE
+                        display_name = VALUES(display_name),
+                        picture_url = VALUES(picture_url),
+                        updated_at = CURRENT_TIMESTAMP
+                    """
+                    cursor.execute(upsert_query, (
+                        line_user_id,
+                        profile_data.get('displayName', ''),
+                        profile_data.get('pictureUrl', '')
+                    ))
+                else:
+                    raise e
+        else:
+            # 只插入 user_id，其他資料為空
+            upsert_query = """
+            INSERT IGNORE INTO line_users (line_user_id)
+            VALUES (%s)
+            """
+            cursor.execute(upsert_query, (line_user_id,))
+
+        cursor.close()
+        connection.close()
+
+        logger.info(f"成功同步 LINE 用戶資料: {line_user_id}")
+        return True
+
+    except Exception as e:
+        logger.error(f"同步 LINE 用戶資料失敗: {e}")
+        return None
+
+def update_trip_with_line_profile(trip_id: int, line_user_id: str):
+    """更新行程，確保與 LINE 用戶資料正確關聯"""
+    if not MYSQL_AVAILABLE:
+        logger.warning("MySQL connector not available, cannot update trip")
+        return None
+
+    try:
+        connection = get_database_connection()
+        if not connection:
+            return None
+
+        cursor = connection.cursor(dictionary=True)
+
+        # 確保用戶資料存在
+        sync_line_user_profile(line_user_id)
+
+        # 檢查並添加必要的欄位到 line_trips 表
+        alter_queries = [
+            """
+            ALTER TABLE line_trips
+            ADD COLUMN IF NOT EXISTS line_user_id VARCHAR(255),
+            ADD INDEX IF NOT EXISTS idx_line_user_id (line_user_id)
+            """,
+            """
+            ALTER TABLE line_trips
+            ADD COLUMN IF NOT EXISTS created_by_line_user VARCHAR(255),
+            ADD INDEX IF NOT EXISTS idx_created_by_line_user (created_by_line_user)
+            """
+        ]
+
+        for query in alter_queries:
+            try:
+                cursor.execute(query)
+            except Exception as e:
+                logger.debug(f"欄位可能已存在: {e}")
+
+        # 更新行程的 LINE 用戶關聯
+        update_query = """
+        UPDATE line_trips
+        SET line_user_id = %s, created_by_line_user = %s
+        WHERE trip_id = %s
+        """
+        cursor.execute(update_query, (line_user_id, line_user_id, trip_id))
+
+        cursor.close()
+        connection.close()
+
+        logger.info(f"成功更新行程 {trip_id} 的 LINE 用戶關聯: {line_user_id}")
+        return True
+
+    except Exception as e:
+        logger.error(f"更新行程 LINE 用戶關聯失敗: {e}")
+        return None
