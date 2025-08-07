@@ -26,7 +26,9 @@ from api.config import (
 from api.database import (
     get_leaderboard_data,
     get_trip_details,
-    get_trips_by_location
+    get_trips_by_location,
+    get_leaderboard_rank_details,
+    get_simple_itinerary_by_rank
 )
 
 # LINE Bot imports
@@ -47,11 +49,19 @@ app = Flask(__name__)
 
 def get_message_template(user_message):
     """根據用戶消息獲取對應的模板配置"""
-    # 簡單的關鍵字匹配
+    # 按關鍵字長度排序，優先匹配更具體的關鍵字
+    all_mappings = []
+
     for mapping_key, mapping in KEYWORD_MAPPINGS.items():
         for keyword in mapping["keywords"]:
             if keyword in user_message:
-                return mapping
+                all_mappings.append((len(keyword), mapping))
+
+    # 如果有匹配，返回最長的關鍵字對應的模板
+    if all_mappings:
+        all_mappings.sort(key=lambda x: x[0], reverse=True)  # 按長度降序排列
+        return all_mappings[0][1]
+
     return None
 
 def create_simple_flex_message(template_type, **kwargs):
@@ -168,19 +178,19 @@ def create_simple_flex_message(template_type, **kwargs):
         }
     
     elif template_type == "leaderboard":
-        # 從資料庫獲取排行榜資料
+        # 從資料庫獲取排行榜詳細資料
         rank = kwargs.get('rank', '1')
+        rank_int = int(rank)
 
-        # 嘗試從資料庫獲取資料
-        leaderboard_data = get_leaderboard_data()
-        if leaderboard_data and rank in leaderboard_data:
-            data = leaderboard_data[rank]
-        else:
+        # 嘗試從資料庫獲取詳細資料
+        data = get_leaderboard_rank_details(rank_int)
+
+        if not data:
             # 如果資料庫失敗，使用配置文件的備用資料
             from api.config import LEADERBOARD_DATA
             data = LEADERBOARD_DATA.get(rank, LEADERBOARD_DATA["1"])
 
-            return {
+        return {
                 "type": "bubble",
                 "size": "giga",
                 "header": {
@@ -225,14 +235,40 @@ def create_simple_flex_message(template_type, **kwargs):
                             "type": "box",
                             "layout": "horizontal",
                             "contents": [
-                                {"type": "text", "text": "👥", "size": "md", "flex": 0},
-                                {"type": "text", "text": f"參與人數：{data['participants']}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                                {"type": "text", "text": "❤️", "size": "md", "flex": 0},
+                                {"type": "text", "text": f"收藏數：{data.get('favorite_count', 0)}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                            ],
+                            "marginBottom": "sm"
+                        },
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "contents": [
+                                {"type": "text", "text": "⭐", "size": "md", "flex": 0},
+                                {"type": "text", "text": f"人氣分數：{data.get('popularity_score', 0):.2f}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
                             ],
                             "marginBottom": "md"
                         },
                         {"type": "separator", "margin": "md"},
-                        {"type": "text", "text": "📋 詳細行程", "weight": "bold", "size": "md", "color": "#555555", "margin": "md"},
-                        {"type": "text", "text": data["itinerary"], "size": "xs", "color": "#888888", "wrap": True, "margin": "sm"}
+                        {"type": "text", "text": "📋 詳細行程安排", "weight": "bold", "size": "md", "color": "#555555", "margin": "md"},
+                        {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": data.get("itinerary", "精彩行程安排"),
+                                    "size": "xs",
+                                    "color": "#666666",
+                                    "wrap": True,
+                                    "lineSpacing": "sm"
+                                }
+                            ],
+                            "backgroundColor": "#f8f9fa",
+                            "cornerRadius": "md",
+                            "paddingAll": "md",
+                            "margin": "sm"
+                        }
                     ],
                     "paddingAll": "20px"
                 },
@@ -364,6 +400,110 @@ def create_simple_flex_message(template_type, **kwargs):
                         "style": "primary",
                         "color": "#FF6B6B",
                         "height": "sm"
+                    }
+                ],
+                "paddingAll": "20px"
+            }
+        }
+
+    elif template_type == "leaderboard_details":
+        # 排行榜詳細行程模板 - 只顯示純粹的行程安排
+        rank = kwargs.get('rank', '1')
+        rank_int = int(rank)
+
+        # 從資料庫獲取簡潔的行程安排
+        data = get_simple_itinerary_by_rank(rank_int)
+
+        if not data:
+            # 如果沒有詳細行程，顯示提示訊息
+            return {
+                "type": "bubble",
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": f"抱歉，第{rank}名的詳細行程安排暫時無法提供。",
+                            "wrap": True,
+                            "color": "#666666",
+                            "align": "center"
+                        }
+                    ],
+                    "paddingAll": "20px"
+                }
+            }
+
+        return {
+            "type": "bubble",
+            "size": "giga",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": f"{data['rank_title']} 詳細行程",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#ffffff",
+                        "align": "center"
+                    },
+                    {
+                        "type": "text",
+                        "text": f"{data['title']} - {data['area']}",
+                        "size": "sm",
+                        "color": "#ffffff",
+                        "align": "center",
+                        "margin": "sm"
+                    }
+                ],
+                "backgroundColor": data["color"],
+                "paddingAll": "20px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "📅 行程安排",
+                        "weight": "bold",
+                        "size": "md",
+                        "color": "#555555",
+                        "marginBottom": "md"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": data["itinerary"],
+                                "size": "sm",
+                                "color": "#333333",
+                                "wrap": True,
+                                "lineSpacing": "md"
+                            }
+                        ],
+                        "backgroundColor": "#f8f9fa",
+                        "cornerRadius": "md",
+                        "paddingAll": "md"
+                    }
+                ],
+                "paddingAll": "20px"
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "💡 想了解更多資訊？輸入對應排名查看完整介紹",
+                        "size": "xs",
+                        "color": "#666666",
+                        "align": "center",
+                        "wrap": True
                     }
                 ],
                 "paddingAll": "20px"
@@ -580,6 +720,11 @@ if line_handler:
                     )
                 elif template_config["template"] == "leaderboard_list":
                     flex_message = create_simple_flex_message("leaderboard_list")
+                elif template_config["template"] == "leaderboard_details":
+                    flex_message = create_simple_flex_message(
+                        "leaderboard_details",
+                        rank=template_config["rank"]
+                    )
                 elif template_config["template"] == "location_trips":
                     flex_message = create_simple_flex_message(
                         "location_trips",
