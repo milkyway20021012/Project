@@ -67,7 +67,8 @@ def get_leaderboard_data():
         for i, trip in enumerate(results, 1):
             leaderboard[str(i)] = {
                 "trip_id": trip['trip_id'],
-                "title": rank_titles.get(i, f"🎖️ 排行榜第{i}名"),
+                "title": trip['title'] or f"第{i}名行程",  # 使用實際的行程名稱
+                "rank_title": rank_titles.get(i, f"🎖️ 排行榜第{i}名"),  # 排名標題單獨存儲
                 "color": rank_colors.get(i, "#9B59B6"),
                 "destination": trip['area'] or "未知地區",
                 "duration": f"{trip['duration_days']}天{trip['duration_days']-1}夜" if trip['duration_days'] > 1 else "1天",

@@ -199,7 +199,7 @@ def create_simple_flex_message(template_type, **kwargs):
                     "contents": [
                         {
                             "type": "text",
-                            "text": data["title"],
+                            "text": data.get("rank_title", data["title"]),
                             "weight": "bold",
                             "size": "lg",
                             "color": "#ffffff",
@@ -331,10 +331,11 @@ def create_simple_flex_message(template_type, **kwargs):
                                 },
                                 {
                                     "type": "text",
-                                    "text": data.get('destination', '未知目的地'),
+                                    "text": data.get('title', data.get('destination', '未知行程')),
                                     "size": "xs",
                                     "color": "#666666",
-                                    "marginTop": "xs"
+                                    "marginTop": "xs",
+                                    "wrap": True
                                 },
                                 {
                                     "type": "text",
