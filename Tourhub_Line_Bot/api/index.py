@@ -52,7 +52,8 @@ from linebot.v3.messaging import (
     MessagingApi,
     ReplyMessageRequest,
     FlexMessage,
-    FlexContainer
+    FlexContainer,
+    TextMessage
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, PostbackEvent
 
@@ -75,6 +76,125 @@ def get_message_template(user_message):
         return all_mappings[0][1]
 
     return None
+
+def create_text_itinerary_response(rank):
+    """創建文字格式的詳細行程回應"""
+    try:
+        from api.database import get_database_connection
+        connection = get_database_connection()
+        if not connection:
+            return f"抱歉，第{rank}名的詳細行程暫時無法提供。"
+
+        cursor = connection.cursor(dictionary=True)
+
+        # 查詢排行榜中指定排名的行程
+        leaderboard_query = """
+        SELECT
+            t.trip_id,
+            t.title,
+            t.area
+        FROM line_trips t
+        LEFT JOIN trip_stats ts ON t.trip_id = ts.trip_id
+        WHERE t.trip_id IS NOT NULL
+        ORDER BY ts.popularity_score DESC, ts.favorite_count DESC, ts.share_count DESC
+        LIMIT %s, 1
+        """
+
+        cursor.execute(leaderboard_query, (int(rank) - 1,))
+        trip_data = cursor.fetchone()
+
+        if not trip_data:
+            cursor.close()
+            connection.close()
+            return f"抱歉，第{rank}名的行程資料暫時無法提供。"
+
+        trip_id = trip_data['trip_id']
+
+        # 查詢詳細行程安排
+        details_query = """
+        SELECT
+            location,
+            date,
+            start_time,
+            end_time
+        FROM line_trip_details
+        WHERE trip_id = %s
+        ORDER BY date, start_time
+        """
+
+        cursor.execute(details_query, (trip_id,))
+        details = cursor.fetchall()
+
+        cursor.close()
+        connection.close()
+
+        # 組織文字回應
+        rank_emojis = {1: "🥇", 2: "🥈", 3: "🥉", 4: "🏅", 5: "🎖️"}
+        rank_emoji = rank_emojis.get(int(rank), "🎖️")
+
+        response_lines = [
+            f"{rank_emoji} 第{rank}名詳細行程",
+            f"📍 {trip_data['title']} - {trip_data['area']}",
+            "",
+            "📅 行程安排："
+        ]
+
+        if details:
+            for detail in details:
+                # 處理日期
+                if detail['date']:
+                    date_obj = detail['date']
+                    weekdays = ['一', '二', '三', '四', '五', '六', '日']
+                    weekday = weekdays[date_obj.weekday()]
+                    date_str = f"{date_obj.month}/{date_obj.day} ({weekday})"
+                    response_lines.append(f"📅 {date_str}")
+
+                # 處理時間和地點
+                time_str = ""
+                if detail['start_time'] and detail['end_time']:
+                    start_time = str(detail['start_time'])
+                    end_time = str(detail['end_time'])
+
+                    # 簡化時間格式
+                    if ':' in start_time and len(start_time) > 8:
+                        start_time = start_time[:5]  # 取 HH:MM
+                    if ':' in end_time and len(end_time) > 8:
+                        end_time = end_time[:5]
+
+                    time_str = f"{start_time} - {end_time}"
+                elif detail['start_time']:
+                    start_time = str(detail['start_time'])
+                    if ':' in start_time and len(start_time) > 8:
+                        start_time = start_time[:5]
+                    time_str = start_time
+
+                # 地點
+                location = detail['location'] or "未知地點"
+
+                # 組合時間和地點
+                if time_str:
+                    response_lines.append(f"🕐 {time_str}")
+                    response_lines.append(f"📍 {location}")
+                else:
+                    response_lines.append(f"📍 {location}")
+
+                response_lines.append("")  # 空行分隔
+        else:
+            response_lines.append("暫無詳細行程安排")
+
+        # 移除最後的空行
+        while response_lines and response_lines[-1] == "":
+            response_lines.pop()
+
+        # 添加結尾
+        response_lines.append("")
+        response_lines.append("💡 更多資訊請查看 TourHub 網站")
+
+        return "\n".join(response_lines)
+
+    except Exception as e:
+        logger.error(f"創建文字行程回應失敗: {e}")
+        return f"抱歉，第{rank}名的詳細行程暫時無法提供。"
 
 def create_simple_flex_message(template_type, **kwargs):
     """創建簡單的 Flex Message"""
@@ -774,12 +894,28 @@ if line_handler:
                     flex_message = create_simple_flex_message("leaderboard_list")
                     logger.info(f"🔧 leaderboard_list Flex Message 創建結果: {bool(flex_message)}")
                 elif template_config["template"] == "leaderboard_details":
-                    logger.info(f"🔧 創建 leaderboard_details Flex Message, rank: {template_config['rank']}")
-                    flex_message = create_simple_flex_message(
-                        "leaderboard_details",
-                        rank=template_config["rank"]
-                    )
-                    logger.info(f"🔧 leaderboard_details Flex Message 創建結果: {bool(flex_message)}")
+                    logger.info(f"🔧 創建 leaderboard_details 文字回應, rank: {template_config['rank']}")
+
+                    # 使用文字訊息而不是 Flex Message
+                    text_response = create_text_itinerary_response(template_config["rank"])
+
+                    if text_response:
+                        logger.info(f"📤 準備發送文字訊息")
+                        with ApiClient(configuration) as api_client:
+                            line_bot_api = MessagingApi(api_client)
+                            line_bot_api.reply_message_with_http_info(
+                                ReplyMessageRequest(
+                                    reply_token=event.reply_token,
+                                    messages=[TextMessage(text=text_response)]
+                                )
+                            )
+                            logger.info("✅ 文字訊息發送成功")
+                        return  # 直接返回，不繼續執行 Flex Message 邏輯
+                    else:
+                        logger.error("❌ 無法創建文字回應")
+                        flex_message = create_simple_flex_message("default")
+
+                    logger.info(f"🔧 leaderboard_details 處理完成")
                 elif template_config["template"] == "location_trips":
                     flex_message = create_simple_flex_message(
                         "location_trips",
