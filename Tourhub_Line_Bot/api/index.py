@@ -1122,7 +1122,7 @@ def create_flex_message(template_type, **kwargs):
                         "action": {
                             "type": "uri",
                             "label": "在網頁中編輯",
-                            "uri": f"https://tripfrontend.vercel.app/linetrip?trip_id={trip_data.get('trip_id')}&line_user_id={trip_data.get('line_user_id', '')}"
+                            "uri": "https://tripfrontend.vercel.app/linetrip"
                         },
                         "style": "primary",
                         "color": "#27AE60",
@@ -1897,6 +1897,136 @@ def get_user_trips_api(line_user_id):
 
     except Exception as e:
         logger.error(f"獲取用戶行程 API 失敗: {e}")
+        return {"error": str(e)}, 500
+
+@app.route('/api/liff/user-trips', methods=['POST'])
+def get_liff_user_trips():
+    """LIFF 專用 API：獲取當前登入用戶的行程"""
+    try:
+        # 從 LIFF 前端接收用戶資訊
+        data = request.get_json()
+        if not data or 'userId' not in data:
+            return {"error": "Missing userId in request body"}, 400
+
+        line_user_id = data['userId']
+
+        # 同步用戶資料（如果有提供的話）
+        if 'displayName' in data or 'pictureUrl' in data:
+            from api.database_utils import sync_line_user_profile
+            profile_data = {
+                'displayName': data.get('displayName', ''),
+                'pictureUrl': data.get('pictureUrl', ''),
+                'statusMessage': data.get('statusMessage', '')
+            }
+            sync_line_user_profile(line_user_id, profile_data)
+
+        # 獲取用戶行程
+        from api.database_utils import get_user_created_trips
+        trips = get_user_created_trips(line_user_id, limit=50)
+
+        return {
+            "success": True,
+            "line_user_id": line_user_id,
+            "trips": trips,
+            "count": len(trips),
+            "message": f"找到 {len(trips)} 個行程"
+        }
+
+    except Exception as e:
+        logger.error(f"LIFF 用戶行程 API 失敗: {e}")
+        return {"error": str(e)}, 500
+
+@app.route('/api/liff/trip-details', methods=['POST'])
+def get_liff_trip_details():
+    """LIFF 專用 API：獲取特定行程的詳細資料"""
+    try:
+        data = request.get_json()
+        if not data or 'userId' not in data or 'tripId' not in data:
+            return {"error": "Missing userId or tripId in request body"}, 400
+
+        line_user_id = data['userId']
+        trip_id = data['tripId']
+
+        from api.database_utils import get_database_connection, MYSQL_AVAILABLE
+
+        if not MYSQL_AVAILABLE:
+            return {"error": "Database not available"}, 500
+
+        connection = get_database_connection()
+        if not connection:
+            return {"error": "Database connection failed"}, 500
+
+        cursor = connection.cursor(dictionary=True)
+
+        # 驗證行程所有權並獲取詳細資料
+        query = """
+        SELECT
+            t.trip_id,
+            t.title,
+            t.description,
+            t.area,
+            t.start_date,
+            t.end_date,
+            DATEDIFF(t.end_date, t.start_date) + 1 as duration_days
+        FROM line_trips t
+        WHERE t.trip_id = %s AND (t.line_user_id = %s OR t.created_by_line_user = %s)
+        """
+
+        cursor.execute(query, (trip_id, line_user_id, line_user_id))
+        trip_data = cursor.fetchone()
+
+        if not trip_data:
+            cursor.close()
+            connection.close()
+            return {"error": "Trip not found or access denied"}, 404
+
+        # 獲取行程詳細安排
+        detail_query = """
+        SELECT
+            location,
+            date,
+            start_time,
+            end_time,
+            description
+        FROM line_trip_details
+        WHERE trip_id = %s
+        ORDER BY date, start_time
+        """
+
+        cursor.execute(detail_query, (trip_id,))
+        details = cursor.fetchall()
+
+        cursor.close()
+        connection.close()
+
+        # 格式化詳細資料
+        formatted_details = []
+        for detail in details:
+            formatted_details.append({
+                "location": detail.get('location'),
+                "date": str(detail.get('date')) if detail.get('date') else None,
+                "start_time": str(detail.get('start_time')) if detail.get('start_time') else None,
+                "end_time": str(detail.get('end_time')) if detail.get('end_time') else None,
+                "description": detail.get('description')
+            })
+
+        return {
+            "success": True,
+            "trip": {
+                "trip_id": trip_data.get('trip_id'),
+                "title": trip_data.get('title'),
+                "description": trip_data.get('description'),
+                "area": trip_data.get('area'),
+                "start_date": str(trip_data.get('start_date')),
+                "end_date": str(trip_data.get('end_date')),
+                "duration_days": trip_data.get('duration_days')
+            },
+            "details": formatted_details,
+            "detail_count": len(formatted_details)
+        }
+
+    except Exception as e:
+        logger.error(f"LIFF 行程詳細 API 失敗: {e}")
         return {"error": str(e)}, 500
 
 # 除錯端點
