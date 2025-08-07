@@ -45,46 +45,24 @@ def create_paginated_leaderboard(rank, page=1):
                 "contents": [
                     {
                         "type": "text",
-                        "text": f"📍 {data['title']}",
+                        "text": data['title'],
                         "weight": "bold",
                         "size": "md",
                         "color": "#333333",
                         "marginBottom": "md"
                     },
                     {
-                        "type": "box",
-                        "layout": "horizontal",
-                        "contents": [
-                            {"type": "text", "text": "📍", "size": "md", "flex": 0},
-                            {"type": "text", "text": f"目的地：{data['destination']}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
-                        ],
+                        "type": "text",
+                        "text": f"目的地：{data['destination']}",
+                        "size": "sm",
+                        "color": "#555555",
                         "marginBottom": "sm"
                     },
                     {
-                        "type": "box",
-                        "layout": "horizontal",
-                        "contents": [
-                            {"type": "text", "text": "📅", "size": "md", "flex": 0},
-                            {"type": "text", "text": f"行程天數：{data['duration']}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
-                        ],
-                        "marginBottom": "sm"
-                    },
-                    {
-                        "type": "box",
-                        "layout": "horizontal",
-                        "contents": [
-                            {"type": "text", "text": "❤️", "size": "md", "flex": 0},
-                            {"type": "text", "text": f"收藏數：{data.get('favorite_count', 0)}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
-                        ],
-                        "marginBottom": "sm"
-                    },
-                    {
-                        "type": "box",
-                        "layout": "horizontal",
-                        "contents": [
-                            {"type": "text", "text": "⭐", "size": "md", "flex": 0},
-                            {"type": "text", "text": f"人氣分數：{data.get('popularity_score', 0):.2f}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
-                        ],
+                        "type": "text",
+                        "text": f"行程天數：{data['duration']}",
+                        "size": "sm",
+                        "color": "#555555",
                         "marginBottom": "md"
                     }
                 ],

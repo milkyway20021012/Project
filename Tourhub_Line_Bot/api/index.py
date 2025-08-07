@@ -104,25 +104,26 @@ def create_optimized_flex_itinerary(data):
                 location = detail['location'] or "未知地點"
                 location = location.replace('・', '-')  # 替換特殊字符
 
-                # 創建單個行程項目
+                # 創建單個行程項目（移除所有 icon）
                 if date_text and time_text and location:
                     itinerary_items.extend([
                         {
                             "type": "text",
-                            "text": f"📅 {date_text}",
+                            "text": date_text,
                             "size": "sm",
                             "color": "#666666",
-                            "margin": "md"
+                            "margin": "md",
+                            "weight": "bold"
                         },
                         {
                             "type": "text",
-                            "text": f"🕐 {time_text}",
+                            "text": time_text,
                             "size": "sm",
                             "color": "#333333"
                         },
                         {
                             "type": "text",
-                            "text": f"📍 {location}",
+                            "text": location,
                             "size": "sm",
                             "color": "#333333",
                             "wrap": True
@@ -145,16 +146,27 @@ def create_optimized_flex_itinerary(data):
                 }
             ]
 
-        # 添加查看更多提示
-        if len(data.get("details", [])) > 6:
-            itinerary_items.append({
-                "type": "text",
-                "text": "...",
-                "size": "sm",
-                "color": "#999999",
-                "align": "center",
-                "margin": "md"
-            })
+        # 添加行程長度提示
+        total_days = len(data.get("details", []))
+        if total_days > 6:
+            itinerary_items.extend([
+                {
+                    "type": "text",
+                    "text": "...",
+                    "size": "sm",
+                    "color": "#999999",
+                    "align": "center",
+                    "margin": "md"
+                },
+                {
+                    "type": "text",
+                    "text": f"完整行程共 {total_days} 天，以上僅顯示前 6 天",
+                    "size": "xs",
+                    "color": "#999999",
+                    "align": "center",
+                    "wrap": True
+                }
+            ])
 
         # 清理標題中的特殊字符
         clean_title = data['title'].replace('・', '-') if data['title'] else f"第{data['rank']}名行程"
@@ -193,7 +205,7 @@ def create_optimized_flex_itinerary(data):
                 "contents": [
                     {
                         "type": "text",
-                        "text": "📅 行程安排",
+                        "text": "行程安排",
                         "weight": "bold",
                         "size": "md",
                         "color": "#555555",
@@ -208,7 +220,7 @@ def create_optimized_flex_itinerary(data):
                 "contents": [
                     {
                         "type": "text",
-                        "text": "💡 完整行程請查看 TourHub 網站",
+                        "text": "完整行程請查看 TourHub 網站",
                         "size": "xs",
                         "color": "#666666",
                         "align": "center"
