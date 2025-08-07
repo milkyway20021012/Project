@@ -1,4 +1,4 @@
-from flask import Flask, request, abort
+from flask import Flask, request, abort, jsonify
 import os
 import logging
 import re
@@ -1817,6 +1817,37 @@ def debug():
         "has_secret": bool(CHANNEL_SECRET),
         "token_length": len(CHANNEL_ACCESS_TOKEN) if CHANNEL_ACCESS_TOKEN else 0
     }
+
+@app.route("/api/verify-token", methods=['POST'])
+def verify_unified_token():
+    """驗證統一Token"""
+    try:
+        data = request.get_json()
+        unified_token = data.get('unified_token')
+
+        if not unified_token:
+            return jsonify({'success': False, 'error': 'Token required'}), 400
+
+        # 驗證Token
+        user_data = unified_user_manager.get_user_by_token(unified_token)
+
+        if user_data:
+            return jsonify({
+                'success': True,
+                'user': {
+                    'id': user_data['id'],
+                    'line_user_id': user_data['line_user_id'],
+                    'display_name': user_data['display_name'],
+                    'picture_url': user_data['picture_url'],
+                    'unified_token': user_data['unified_token']
+                }
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Invalid token'}), 401
+
+    except Exception as e:
+        logger.error(f"Token驗證失敗: {e}")
+        return jsonify({'success': False, 'error': 'Server error'}), 500
 
 @app.route("/auth/line/callback")
 def line_login_callback():

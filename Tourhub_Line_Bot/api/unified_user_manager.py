@@ -32,13 +32,17 @@ class UnifiedUserManager:
     
     def __init__(self):
         self.db_config = {
-            'host': os.environ.get('DB_HOST', 'localhost'),
-            'database': os.environ.get('DB_NAME', 'tourhub'),
-            'user': os.environ.get('DB_USER', 'root'),
-            'password': os.environ.get('DB_PASSWORD', ''),
+            'host': os.environ.get('MYSQL_HOST', os.environ.get('DB_HOST', 'trip.mysql.database.azure.com')),
+            'database': os.environ.get('MYSQL_DB', os.environ.get('DB_NAME', 'tourhub')),
+            'user': os.environ.get('MYSQL_USER', os.environ.get('DB_USER', 'b1129005')),
+            'password': os.environ.get('MYSQL_PASSWORD', os.environ.get('DB_PASSWORD', 'Anderson3663')),
+            'port': int(os.environ.get('MYSQL_PORT', '3306')),
+            'ssl_disabled': False,
             'charset': 'utf8mb4',
             'collation': 'utf8mb4_unicode_ci',
-            'autocommit': True
+            'autocommit': True,
+            'connect_timeout': 5,
+            'use_unicode': True
         }
     
     def get_database_connection(self):
@@ -165,7 +169,31 @@ class UnifiedUserManager:
         except Error as e:
             logger.error(f"獲取用戶資料失敗: {e}")
             return None
-    
+
+    def get_user_by_token(self, unified_token: str) -> Optional[Dict[str, Any]]:
+        """根據統一Token獲取用戶資料"""
+        if not MYSQL_AVAILABLE:
+            return None
+
+        try:
+            connection = self.get_database_connection()
+            if not connection:
+                return None
+
+            cursor = connection.cursor(dictionary=True)
+            query = "SELECT * FROM unified_users WHERE unified_token = %s AND status = 'active'"
+            cursor.execute(query, (unified_token,))
+            user = cursor.fetchone()
+
+            cursor.close()
+            connection.close()
+
+            return user
+
+        except Error as e:
+            logger.error(f"根據Token獲取用戶資料失敗: {e}")
+            return None
+
     def get_user_website_bindings(self, line_user_id: str) -> List[Dict[str, Any]]:
         """獲取用戶的網站綁定列表"""
         if not MYSQL_AVAILABLE:
