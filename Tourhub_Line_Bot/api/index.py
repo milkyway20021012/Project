@@ -939,24 +939,6 @@ def create_flex_message(template_type, **kwargs):
                             {"type": "text", "text": "📅", "size": "md", "flex": 0},
                             {"type": "text", "text": f"行程天數：{rank_data.get('duration', '未知')}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
                         ],
-                        "marginBottom": "sm"
-                    },
-                    {
-                        "type": "box",
-                        "layout": "horizontal",
-                        "contents": [
-                            {"type": "text", "text": "⭐", "size": "md", "flex": 0},
-                            {"type": "text", "text": f"人氣分數：{rank_data.get('popularity_score', 0):.1f}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
-                        ],
-                        "marginBottom": "sm"
-                    },
-                    {
-                        "type": "box",
-                        "layout": "horizontal",
-                        "contents": [
-                            {"type": "text", "text": "💡", "size": "md", "flex": 0},
-                            {"type": "text", "text": f"特色：{rank_data.get('description', '精彩行程')}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
-                        ],
                         "marginBottom": "md"
                     },
                     {"type": "separator", "margin": "md"},
