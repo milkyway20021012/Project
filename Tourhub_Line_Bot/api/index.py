@@ -28,6 +28,12 @@ from api.web_scraper import (
     scrape_trip_details
 )
 
+# 導入分頁功能
+from api.pagination import (
+    create_paginated_leaderboard,
+    create_paginated_itinerary
+)
+
 # 導入資料庫功能（作為備用）
 try:
     from api.database import (
@@ -48,7 +54,7 @@ from linebot.v3.messaging import (
     FlexMessage,
     FlexContainer
 )
-from linebot.v3.webhooks import MessageEvent, TextMessageContent
+from linebot.v3.webhooks import MessageEvent, TextMessageContent, PostbackEvent
 
 # 建立 Flask app
 app = Flask(__name__)
@@ -184,120 +190,11 @@ def create_simple_flex_message(template_type, **kwargs):
         }
     
     elif template_type == "leaderboard":
-        # 從網站抓取排行榜詳細資料
+        # 使用分頁系統顯示排行榜詳細資料
         rank = kwargs.get('rank', '1')
-        rank_int = int(rank)
+        page = kwargs.get('page', 1)
 
-        # 從網站抓取排行榜資料
-        leaderboard_data = scrape_leaderboard_data()
-        data = leaderboard_data.get(rank)
-
-        if not data:
-            # 如果網站抓取失敗，使用配置文件的備用資料
-            from api.config import LEADERBOARD_DATA
-            data = LEADERBOARD_DATA.get(rank, LEADERBOARD_DATA["1"])
-
-        return {
-                "type": "bubble",
-                "size": "giga",
-                "header": {
-                    "type": "box",
-                    "layout": "vertical",
-                    "contents": [
-                        {
-                            "type": "text",
-                            "text": data.get("rank_title", data["title"]),
-                            "weight": "bold",
-                            "size": "lg",
-                            "color": "#ffffff",
-                            "align": "center"
-                        }
-                    ],
-                    "backgroundColor": data["color"],
-                    "paddingAll": "20px"
-                },
-                "body": {
-                    "type": "box",
-                    "layout": "vertical",
-                    "contents": [
-                        {
-                            "type": "box",
-                            "layout": "horizontal",
-                            "contents": [
-                                {"type": "text", "text": "📍", "size": "md", "flex": 0},
-                                {"type": "text", "text": f"目的地：{data['destination']}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
-                            ],
-                            "marginBottom": "sm"
-                        },
-                        {
-                            "type": "box",
-                            "layout": "horizontal",
-                            "contents": [
-                                {"type": "text", "text": "📅", "size": "md", "flex": 0},
-                                {"type": "text", "text": f"行程天數：{data['duration']}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
-                            ],
-                            "marginBottom": "sm"
-                        },
-                        {
-                            "type": "box",
-                            "layout": "horizontal",
-                            "contents": [
-                                {"type": "text", "text": "❤️", "size": "md", "flex": 0},
-                                {"type": "text", "text": f"收藏數：{data.get('favorite_count', 0)}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
-                            ],
-                            "marginBottom": "sm"
-                        },
-                        {
-                            "type": "box",
-                            "layout": "horizontal",
-                            "contents": [
-                                {"type": "text", "text": "⭐", "size": "md", "flex": 0},
-                                {"type": "text", "text": f"人氣分數：{data.get('popularity_score', 0):.2f}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
-                            ],
-                            "marginBottom": "md"
-                        },
-                        {"type": "separator", "margin": "md"},
-                        {"type": "text", "text": "📋 詳細行程安排", "weight": "bold", "size": "md", "color": "#555555", "margin": "md"},
-                        {
-                            "type": "box",
-                            "layout": "vertical",
-                            "contents": [
-                                {
-                                    "type": "text",
-                                    "text": data.get("itinerary", "精彩行程安排"),
-                                    "size": "xs",
-                                    "color": "#666666",
-                                    "wrap": True,
-                                    "lineSpacing": "sm"
-                                }
-                            ],
-                            "backgroundColor": "#f8f9fa",
-                            "cornerRadius": "md",
-                            "paddingAll": "md",
-                            "margin": "sm"
-                        }
-                    ],
-                    "paddingAll": "20px"
-                },
-                "footer": {
-                    "type": "box",
-                    "layout": "vertical",
-                    "contents": [
-                        {
-                            "type": "button",
-                            "action": {
-                                "type": "uri",
-                                "label": "查看完整排行榜",
-                                "uri": "https://tourhub-ashy.vercel.app/"
-                            },
-                            "style": "primary",
-                            "color": data["color"],
-                            "height": "sm"
-                        }
-                    ],
-                    "paddingAll": "20px"
-                }
-            }
+        return create_paginated_leaderboard(int(rank), page)
 
     elif template_type == "leaderboard_list":
         # 排行榜列表模板 - 從網站抓取資料
@@ -415,108 +312,11 @@ def create_simple_flex_message(template_type, **kwargs):
         }
 
     elif template_type == "leaderboard_details":
-        # 排行榜詳細行程模板 - 從網站抓取純粹的行程安排
+        # 使用分頁系統顯示詳細行程
         rank = kwargs.get('rank', '1')
-        rank_int = int(rank)
+        page = kwargs.get('page', 1)
 
-        # 從網站抓取詳細行程
-        data = scrape_trip_details(rank_int)
-
-        if not data:
-            # 如果沒有詳細行程，顯示提示訊息
-            return {
-                "type": "bubble",
-                "body": {
-                    "type": "box",
-                    "layout": "vertical",
-                    "contents": [
-                        {
-                            "type": "text",
-                            "text": f"抱歉，第{rank}名的詳細行程安排暫時無法提供。",
-                            "wrap": True,
-                            "color": "#666666",
-                            "align": "center"
-                        }
-                    ],
-                    "paddingAll": "20px"
-                }
-            }
-
-        return {
-            "type": "bubble",
-            "size": "giga",
-            "header": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": f"{data['rank_title']} 詳細行程",
-                        "weight": "bold",
-                        "size": "lg",
-                        "color": "#ffffff",
-                        "align": "center"
-                    },
-                    {
-                        "type": "text",
-                        "text": f"{data['title']} - {data['area']}",
-                        "size": "sm",
-                        "color": "#ffffff",
-                        "align": "center",
-                        "margin": "sm"
-                    }
-                ],
-                "backgroundColor": data["color"],
-                "paddingAll": "20px"
-            },
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": "📅 行程安排",
-                        "weight": "bold",
-                        "size": "md",
-                        "color": "#555555",
-                        "marginBottom": "md"
-                    },
-                    {
-                        "type": "box",
-                        "layout": "vertical",
-                        "contents": [
-                            {
-                                "type": "text",
-                                "text": data["itinerary"],
-                                "size": "sm",
-                                "color": "#333333",
-                                "wrap": True,
-                                "lineSpacing": "md"
-                            }
-                        ],
-                        "backgroundColor": "#f8f9fa",
-                        "cornerRadius": "md",
-                        "paddingAll": "md"
-                    }
-                ],
-                "paddingAll": "20px"
-            },
-            "footer": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": "💡 想了解更多資訊？輸入對應排名查看完整介紹",
-                        "size": "xs",
-                        "color": "#666666",
-                        "align": "center",
-                        "wrap": True
-                    }
-                ],
-                "paddingAll": "20px"
-            }
-        }
+        return create_paginated_itinerary(int(rank), page)
 
     elif template_type == "location_trips":
         # 地區行程查詢模板 - 從資料庫獲取資料
@@ -805,6 +605,54 @@ if line_handler:
                     logger.info("🔧 錯誤回應發送成功")
             except Exception as send_error:
                 logger.error(f"❌ 發送錯誤回應也失敗: {send_error}")
+
+    # Postback 事件處理（分頁按鈕）
+    @line_handler.add(PostbackEvent)
+    def handle_postback(event):
+        try:
+            postback_data = event.postback.data
+            logger.info(f"🔍 收到 postback: {postback_data}")
+
+            # 解析 postback 資料
+            params = {}
+            for param in postback_data.split('&'):
+                if '=' in param:
+                    key, value = param.split('=', 1)
+                    params[key] = value
+
+            action = params.get('action')
+            rank = params.get('rank', '1')
+            page = int(params.get('page', '1'))
+
+            logger.info(f"🔧 Postback 參數: action={action}, rank={rank}, page={page}")
+
+            flex_message = None
+
+            if action == 'leaderboard_page':
+                # 排行榜分頁
+                flex_message = create_paginated_leaderboard(int(rank), page)
+            elif action == 'itinerary_page':
+                # 詳細行程分頁
+                flex_message = create_paginated_itinerary(int(rank), page)
+
+            if flex_message:
+                logger.info(f"📤 準備發送分頁回應")
+                with ApiClient(configuration) as api_client:
+                    line_bot_api = MessagingApi(api_client)
+                    line_bot_api.reply_message_with_http_info(
+                        ReplyMessageRequest(
+                            reply_token=event.reply_token,
+                            messages=[FlexMessage(alt_text="TourHub Bot", contents=FlexContainer.from_dict(flex_message))]
+                        )
+                    )
+                    logger.info("✅ 分頁回應發送成功")
+            else:
+                logger.error("❌ 無法創建分頁回應")
+
+        except Exception as e:
+            logger.error(f"❌ 處理 postback 錯誤: {str(e)}")
+            import traceback
+            logger.error(f"❌ 錯誤詳情: {traceback.format_exc()}")
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
