@@ -1002,6 +1002,354 @@ def create_flex_message(template_type, **kwargs):
             }
         }
 
+    elif template_type == "create_trip_success":
+        trip_data = kwargs.get('trip_data')
+
+        if not trip_data:
+            return {
+                "type": "bubble",
+                "size": "kilo",
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "行程創建失敗，請稍後再試。",
+                            "size": "sm",
+                            "color": "#888888",
+                            "align": "center",
+                            "wrap": True
+                        }
+                    ],
+                    "paddingAll": "20px"
+                }
+            }
+
+        return {
+            "type": "bubble",
+            "size": "giga",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "🎉 行程創建成功！",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#ffffff",
+                        "align": "center"
+                    },
+                    {
+                        "type": "text",
+                        "text": trip_data.get('title', '未知行程'),
+                        "size": "sm",
+                        "color": "#ffffff",
+                        "align": "center",
+                        "margin": "sm"
+                    }
+                ],
+                "backgroundColor": "#27AE60",
+                "paddingAll": "20px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {"type": "text", "text": "🆔", "size": "md", "flex": 0},
+                            {"type": "text", "text": f"行程編號：{trip_data.get('trip_id')}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                        ],
+                        "marginBottom": "sm"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {"type": "text", "text": "📍", "size": "md", "flex": 0},
+                            {"type": "text", "text": f"目的地：{trip_data.get('area', '未指定')}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                        ],
+                        "marginBottom": "sm"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {"type": "text", "text": "📅", "size": "md", "flex": 0},
+                            {"type": "text", "text": f"行程天數：{trip_data.get('duration_days')}天", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                        ],
+                        "marginBottom": "sm"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {"type": "text", "text": "🗓️", "size": "md", "flex": 0},
+                            {"type": "text", "text": f"開始日期：{trip_data.get('start_date')}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                        ],
+                        "marginBottom": "md"
+                    },
+                    {"type": "separator", "margin": "md"},
+                    {
+                        "type": "text",
+                        "text": "💡 接下來您可以：",
+                        "weight": "bold",
+                        "size": "sm",
+                        "color": "#555555",
+                        "margin": "md"
+                    },
+                    {
+                        "type": "text",
+                        "text": f"• 輸入「{trip_data.get('title')}第一天詳細行程為...」來添加第一天的行程安排\n• 輸入「我的行程」查看所有創建的行程",
+                        "size": "xs",
+                        "color": "#666666",
+                        "wrap": True,
+                        "margin": "sm"
+                    }
+                ],
+                "paddingAll": "20px"
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "button",
+                        "action": {
+                            "type": "uri",
+                            "label": "在網頁中編輯",
+                            "uri": f"https://tripfrontend.vercel.app/linetrip?trip_id={trip_data.get('trip_id')}"
+                        },
+                        "style": "primary",
+                        "color": "#27AE60",
+                        "height": "sm"
+                    }
+                ],
+                "paddingAll": "20px"
+            }
+        }
+
+    elif template_type == "my_trips":
+        trips = kwargs.get('trips', [])
+
+        if not trips:
+            return {
+                "type": "bubble",
+                "size": "kilo",
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "您還沒有創建任何行程",
+                            "size": "md",
+                            "color": "#555555",
+                            "align": "center",
+                            "wrap": True
+                        },
+                        {
+                            "type": "text",
+                            "text": "試試輸入「創建日本沖繩三日遊」來創建您的第一個行程！",
+                            "size": "sm",
+                            "color": "#888888",
+                            "align": "center",
+                            "wrap": True,
+                            "margin": "md"
+                        }
+                    ],
+                    "paddingAll": "20px"
+                }
+            }
+
+        # 構建行程列表內容
+        trip_contents = []
+        for i, trip in enumerate(trips[:5]):  # 最多顯示5個行程
+            trip_contents.append({
+                "type": "box",
+                "layout": "horizontal",
+                "contents": [
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": trip["title"],
+                                "weight": "bold",
+                                "size": "sm",
+                                "color": "#555555"
+                            },
+                            {
+                                "type": "text",
+                                "text": f"📍 {trip['area']} • ⏰ {trip['duration']}",
+                                "size": "xs",
+                                "color": "#888888",
+                                "marginTop": "sm"
+                            },
+                            {
+                                "type": "text",
+                                "text": f"📝 已添加 {trip['detail_count']} 個詳細行程",
+                                "size": "xs",
+                                "color": "#888888",
+                                "marginTop": "xs"
+                            }
+                        ],
+                        "flex": 1
+                    },
+                    {
+                        "type": "button",
+                        "action": {
+                            "type": "postback",
+                            "label": "查看",
+                            "data": f"trip_detail:{trip['trip_id']}"
+                        },
+                        "style": "primary",
+                        "color": "#3498DB",
+                        "height": "sm",
+                        "marginStart": "md"
+                    }
+                ],
+                "paddingAll": "md",
+                "backgroundColor": "#F8F9FA" if i % 2 == 0 else "#FFFFFF",
+                "cornerRadius": "md",
+                "marginBottom": "sm"
+            })
+
+        return {
+            "type": "bubble",
+            "size": "giga",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "📋 我的行程",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#ffffff",
+                        "align": "center"
+                    },
+                    {
+                        "type": "text",
+                        "text": f"共 {len(trips)} 個行程",
+                        "size": "sm",
+                        "color": "#ffffff",
+                        "align": "center",
+                        "margin": "sm"
+                    }
+                ],
+                "backgroundColor": "#3498DB",
+                "paddingAll": "20px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": trip_contents,
+                "paddingAll": "20px"
+            }
+        }
+
+    elif template_type == "add_detail_success":
+        detail_data = kwargs.get('detail_data')
+
+        if not detail_data:
+            return {
+                "type": "bubble",
+                "size": "kilo",
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "添加行程詳細失敗，請稍後再試。",
+                            "size": "sm",
+                            "color": "#888888",
+                            "align": "center",
+                            "wrap": True
+                        }
+                    ],
+                    "paddingAll": "20px"
+                }
+            }
+
+        return {
+            "type": "bubble",
+            "size": "giga",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "✅ 行程詳細添加成功！",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#ffffff",
+                        "align": "center"
+                    }
+                ],
+                "backgroundColor": "#27AE60",
+                "paddingAll": "20px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": f"第{detail_data.get('day_number')}天行程",
+                        "weight": "bold",
+                        "size": "md",
+                        "color": "#555555"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {"type": "text", "text": "📅", "size": "md", "flex": 0},
+                            {"type": "text", "text": detail_data.get('date'), "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                        ],
+                        "marginTop": "sm"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {"type": "text", "text": "⏰", "size": "md", "flex": 0},
+                            {"type": "text", "text": f"{detail_data.get('start_time')} - {detail_data.get('end_time')}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                        ],
+                        "marginTop": "sm"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {"type": "text", "text": "📍", "size": "md", "flex": 0},
+                            {"type": "text", "text": detail_data.get('location'), "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md", "wrap": True}
+                        ],
+                        "marginTop": "sm"
+                    },
+                    {"type": "separator", "margin": "md"},
+                    {
+                        "type": "text",
+                        "text": "💡 繼續添加其他天的行程安排，或輸入「我的行程」查看完整行程。",
+                        "size": "xs",
+                        "color": "#666666",
+                        "wrap": True,
+                        "margin": "md"
+                    }
+                ],
+                "paddingAll": "20px"
+            }
+        }
+
 # 預建立關鍵字索引以提高匹配速度
 _keyword_index = None
 
@@ -1203,6 +1551,42 @@ def find_location_trips(user_message):
                 return location, trips
     
     return None, []
+
+def parse_trip_detail_message(user_message):
+    """解析行程詳細添加消息"""
+    import re
+
+    # 匹配模式：行程名稱 + 第X天 + 詳細行程為 + 內容
+    patterns = [
+        r'(.+?)第([一二三四五六七八九十\d]+)天詳細行程為(.+)',
+        r'(.+?)第([一二三四五六七八九十\d]+)天行程為(.+)',
+        r'(.+?)第([一二三四五六七八九十\d]+)天為(.+)',
+        r'(.+?)第([一二三四五六七八九十\d]+)天(.+)',
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, user_message)
+        if match:
+            trip_title = match.group(1).strip()
+            day_str = match.group(2).strip()
+            detail_content = match.group(3).strip()
+
+            # 轉換中文數字為阿拉伯數字
+            day_mapping = {
+                '一': 1, '二': 2, '三': 3, '四': 4, '五': 5,
+                '六': 6, '七': 7, '八': 8, '九': 9, '十': 10
+            }
+
+            if day_str in day_mapping:
+                day_number = day_mapping[day_str]
+            elif day_str.isdigit():
+                day_number = int(day_str)
+            else:
+                continue
+
+            return trip_title, day_number, detail_content
+
+    return None, None, None
 
 def find_trip_by_id(trip_id):
     """根據ID查找行程（使用緩存）"""
@@ -1696,8 +2080,52 @@ if line_handler:
             
             # 如果沒有包含時間地點的集合設定，則檢查其他功能
             else:
-                # 優先檢查是否為地區查詢
-                location, trips = find_location_trips(user_message)
+                # 優先檢查是否為行程詳細添加
+                trip_title, day_number, detail_content = parse_trip_detail_message(user_message)
+                if trip_title and day_number and detail_content:
+                    # 處理行程詳細添加
+                    from api.database_utils import add_trip_detail_from_line
+                    detail_data = add_trip_detail_from_line(
+                        event.source.user_id,
+                        trip_title,
+                        day_number,
+                        detail_content
+                    )
+
+                    if detail_data:
+                        flex_message = create_flex_message("add_detail_success", detail_data=detail_data)
+                    else:
+                        # 添加失敗，可能是找不到行程
+                        flex_message = {
+                            "type": "bubble",
+                            "body": {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "text",
+                                        "text": f"找不到行程「{trip_title}」\n\n請確認：\n1. 行程名稱是否正確\n2. 是否已創建該行程\n\n您可以輸入「我的行程」查看已創建的行程。",
+                                        "wrap": True,
+                                        "color": "#666666"
+                                    }
+                                ],
+                                "paddingAll": "20px"
+                            }
+                        }
+
+                    # 發送消息
+                    with ApiClient(configuration) as api_client:
+                        line_bot_api = MessagingApi(api_client)
+                        line_bot_api.reply_message_with_http_info(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[FlexMessage(alt_text="行程詳細添加", contents=FlexContainer.from_dict(flex_message))]
+                            )
+                        )
+
+                # 檢查是否為地區查詢
+                elif True:
+                    location, trips = find_location_trips(user_message)
                 if location and trips:
                     # 創建行程列表 Flex Message
                     flex_message = create_flex_message(
@@ -1742,6 +2170,36 @@ if line_handler:
                             )
                         elif template_config["template"] == "help":
                             flex_message = create_flex_message("help")
+                        elif template_config["template"] == "my_trips":
+                            # 獲取用戶創建的行程列表
+                            from api.database_utils import get_user_created_trips
+                            user_trips = get_user_created_trips(event.source.user_id)
+                            flex_message = create_flex_message("my_trips", trips=user_trips)
+                        elif template_config["template"] == "create_trip":
+                            # 處理行程創建請求
+                            trip_title = user_message.replace("創建", "").replace("建立", "").replace("新增行程", "").replace("創建行程", "").replace("建立行程", "").strip()
+                            if trip_title:
+                                from api.database_utils import create_trip_from_line
+                                trip_data = create_trip_from_line(event.source.user_id, trip_title)
+                                flex_message = create_flex_message("create_trip_success", trip_data=trip_data)
+                            else:
+                                # 如果沒有提供行程標題，提示用戶
+                                flex_message = {
+                                    "type": "bubble",
+                                    "body": {
+                                        "type": "box",
+                                        "layout": "vertical",
+                                        "contents": [
+                                            {
+                                                "type": "text",
+                                                "text": "請提供行程標題，例如：\n「創建日本沖繩三日遊」",
+                                                "wrap": True,
+                                                "color": "#666666"
+                                            }
+                                        ],
+                                        "paddingAll": "20px"
+                                    }
+                                }
                         
                         # 發送消息
                         with ApiClient(configuration) as api_client:

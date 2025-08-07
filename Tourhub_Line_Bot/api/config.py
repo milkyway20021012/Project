@@ -224,6 +224,18 @@ KEYWORD_MAPPINGS = {
     "help": {
         "keywords": ["功能介紹", "功能", "介紹", "說明", "help", "Help", "功能說明", "使用說明","Tourhub功能介紹","Tourhub功能","Tourhub介紹","Tourhub說明"],
         "template": "help"
+    },
+    "create_trip": {
+        "keywords": ["創建", "建立", "新增行程", "創建行程", "建立行程"],
+        "template": "create_trip"
+    },
+    "my_trips": {
+        "keywords": ["我的行程", "我創建的行程", "我的旅程", "查看我的行程", "行程列表"],
+        "template": "my_trips"
+    },
+    "add_trip_detail": {
+        "keywords": ["第一天", "第二天", "第三天", "第四天", "第五天", "第六天", "第七天", "詳細行程", "行程安排"],
+        "template": "add_trip_detail"
     }
 }
 
