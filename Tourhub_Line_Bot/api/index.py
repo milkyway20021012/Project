@@ -4,6 +4,16 @@ import logging
 import re
 import time
 
+# 加載環境變數
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    logging.info("環境變數文件已加載")
+except ImportError:
+    logging.warning("python-dotenv 未安裝，跳過 .env 文件加載")
+except Exception as e:
+    logging.error(f"加載環境變數失敗: {e}")
+
 # 導入配置文件
 from api.config import (
     MESSAGE_TEMPLATES,
@@ -1796,21 +1806,32 @@ if CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET:
     except Exception as e:
         logger.warning(f"數據庫優化失敗: {e}")
 
-    # 預熱緩存以提高響應速度
+    # 預熱緩存以提高響應速度（使用安全模式）
     try:
-        from api.advanced_cache import warm_up_cache_advanced
-        from api.async_processor import preload_data
+        # 先嘗試基礎緩存預熱
+        warm_up_cache()
+        logger.info("基礎緩存預熱完成")
 
-        # 異步預加載數據
-        preload_data()
+        # 然後嘗試高級功能（如果失敗不影響主要功能）
+        try:
+            from api.advanced_cache import warm_up_cache_advanced
+            warm_up_cache_advanced()
+            logger.info("高級緩存預熱完成")
+        except Exception as e:
+            logger.warning(f"高級緩存預熱失敗（不影響主要功能）: {e}")
 
-        # 同步預熱緩存
-        warm_up_cache_advanced()
+        # 異步預加載（如果失敗不影響主要功能）
+        try:
+            from api.async_processor import preload_data
+            preload_data()
+            logger.info("異步預加載完成")
+        except Exception as e:
+            logger.warning(f"異步預加載失敗（不影響主要功能）: {e}")
 
         logger.info("所有優化系統已啟動")
     except Exception as e:
-        logger.warning(f"高級緩存預熱失敗，使用基礎緩存: {e}")
-        warm_up_cache()
+        logger.error(f"緩存預熱失敗: {e}")
+        logger.info("跳過緩存預熱，使用基本模式")
 
     logger.info("LINE Bot 設定成功")
 else:
