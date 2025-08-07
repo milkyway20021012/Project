@@ -805,6 +805,186 @@ def create_flex_message(template_type, **kwargs):
             }
         }
 
+    elif template_type == "leaderboard_details":
+        rank_data = kwargs.get('rank_data')
+
+        if not rank_data:
+            return {
+                "type": "bubble",
+                "size": "kilo",
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "抱歉，無法獲取詳細行程資料，請稍後再試。",
+                            "size": "sm",
+                            "color": "#888888",
+                            "align": "center",
+                            "wrap": True
+                        }
+                    ],
+                    "paddingAll": "20px"
+                }
+            }
+
+        # 構建行程詳細內容
+        itinerary_contents = []
+        for day_info in rank_data.get('itinerary_list', []):
+            itinerary_contents.append({
+                "type": "text",
+                "text": day_info,
+                "size": "xs",
+                "color": "#666666",
+                "wrap": True,
+                "margin": "sm"
+            })
+
+        # 如果沒有詳細行程，顯示基本行程
+        if not itinerary_contents:
+            itinerary_contents.append({
+                "type": "text",
+                "text": rank_data.get('itinerary', '暫無詳細行程資料'),
+                "size": "xs",
+                "color": "#666666",
+                "wrap": True,
+                "margin": "sm"
+            })
+
+        # 根據排名設定顏色
+        rank_colors = {1: "#FFD700", 2: "#C0C0C0", 3: "#CD7F32", 4: "#4ECDC4", 5: "#FF6B9D"}
+        rank = rank_data.get('rank', 1)
+        color = rank_colors.get(rank, "#9B59B6")
+
+        return {
+            "type": "bubble",
+            "size": "giga",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": f"{rank_data.get('rank_title', '詳細行程')}",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#ffffff",
+                        "align": "center"
+                    },
+                    {
+                        "type": "text",
+                        "text": rank_data.get('title', '未知行程'),
+                        "size": "sm",
+                        "color": "#ffffff",
+                        "align": "center",
+                        "margin": "sm"
+                    }
+                ],
+                "backgroundColor": color,
+                "paddingAll": "20px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {"type": "text", "text": "📍", "size": "md", "flex": 0},
+                            {"type": "text", "text": f"目的地：{rank_data.get('area', '未知地區')}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                        ],
+                        "marginBottom": "sm"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {"type": "text", "text": "📅", "size": "md", "flex": 0},
+                            {"type": "text", "text": f"行程天數：{rank_data.get('duration', '未知')}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                        ],
+                        "marginBottom": "sm"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {"type": "text", "text": "⭐", "size": "md", "flex": 0},
+                            {"type": "text", "text": f"人氣分數：{rank_data.get('popularity_score', 0):.1f}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                        ],
+                        "marginBottom": "sm"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {"type": "text", "text": "💡", "size": "md", "flex": 0},
+                            {"type": "text", "text": f"特色：{rank_data.get('description', '精彩行程')}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
+                        ],
+                        "marginBottom": "md"
+                    },
+                    {"type": "separator", "margin": "md"},
+                    {"type": "text", "text": "📋 詳細行程安排", "weight": "bold", "size": "md", "color": "#555555", "margin": "md"},
+                    *itinerary_contents,
+                    {"type": "separator", "margin": "md"},
+                    {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {"type": "text", "text": "❤️", "size": "sm", "align": "center"},
+                                    {"type": "text", "text": str(rank_data.get('favorite_count', 0)), "size": "xs", "color": "#888888", "align": "center"}
+                                ],
+                                "flex": 1
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {"type": "text", "text": "📤", "size": "sm", "align": "center"},
+                                    {"type": "text", "text": str(rank_data.get('share_count', 0)), "size": "xs", "color": "#888888", "align": "center"}
+                                ],
+                                "flex": 1
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {"type": "text", "text": "👁️", "size": "sm", "align": "center"},
+                                    {"type": "text", "text": str(rank_data.get('view_count', 0)), "size": "xs", "color": "#888888", "align": "center"}
+                                ],
+                                "flex": 1
+                            }
+                        ],
+                        "margin": "md"
+                    }
+                ],
+                "paddingAll": "20px"
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "button",
+                        "action": {
+                            "type": "uri",
+                            "label": "查看完整排行榜",
+                            "uri": "https://tourhub-ashy.vercel.app/?state=n6sFheuU2eAl&liffClientId=2007678368&liffRedirectUri=https%3A%2F%2Ftourhub-ashy.vercel.app%2F&code=DJhtwXyqmCdyhnBlGs3s"
+                        },
+                        "style": "primary",
+                        "color": color,
+                        "height": "sm"
+                    }
+                ],
+                "paddingAll": "20px"
+            }
+        }
+
 def get_message_template(user_message):
     """
     根據用戶消息獲取對應的模板配置
@@ -1425,6 +1605,16 @@ if line_handler:
                             flex_message = create_flex_message(
                                 "leaderboard",
                                 rank=template_config["rank"]
+                            )
+                        elif template_config["template"] == "leaderboard_details":
+                            # 獲取排行榜詳細行程資料
+                            from api.database_utils import get_leaderboard_rank_details
+                            rank = int(template_config["rank"])
+                            rank_data = get_leaderboard_rank_details(rank)
+
+                            flex_message = create_flex_message(
+                                "leaderboard_details",
+                                rank_data=rank_data
                             )
                         elif template_config["template"] == "help":
                             flex_message = create_flex_message("help")

@@ -166,14 +166,29 @@ KEYWORD_MAPPINGS = {
         "template": "leaderboard",
         "rank": "1"
     },
+    "leaderboard_1_details": {
+        "keywords": ["第一名詳細行程", "第一名行程", "第一名詳細", "冠軍詳細行程", "冠軍行程", "排行榜第一名詳細", "排行榜第一詳細行程", "top1詳細", "Top1詳細"],
+        "template": "leaderboard_details",
+        "rank": "1"
+    },
     "leaderboard_2": {
         "keywords": ["第二名", "排行第二", "top2", "Top2", "亞軍", "排行榜亞軍", "排行榜第二名"],
         "template": "leaderboard",
         "rank": "2"
     },
+    "leaderboard_2_details": {
+        "keywords": ["第二名詳細行程", "第二名行程", "第二名詳細", "亞軍詳細行程", "亞軍行程", "排行榜第二名詳細", "top2詳細", "Top2詳細"],
+        "template": "leaderboard_details",
+        "rank": "2"
+    },
     "leaderboard_3": {
         "keywords": ["第三名", "排行第三", "top3", "Top3", "季軍", "排行榜季軍", "排行榜第三名"],
         "template": "leaderboard",
+        "rank": "3"
+    },
+    "leaderboard_3_details": {
+        "keywords": ["第三名詳細行程", "第三名行程", "第三名詳細", "季軍詳細行程", "季軍行程", "排行榜第三名詳細", "top3詳細", "Top3詳細"],
+        "template": "leaderboard_details",
         "rank": "3"
     },
     "leaderboard_4": {
