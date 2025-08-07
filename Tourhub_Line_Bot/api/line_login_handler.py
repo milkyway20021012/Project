@@ -33,7 +33,8 @@ class LineLoginHandler:
         """生成LINE Login授權URL"""
         if not self.channel_id:
             logger.error("LINE Login Channel ID not configured")
-            return None
+            # 臨時返回設定提示URL，而不是None
+            return "https://line-bot-theta-dun.vercel.app/setup-required"
         
         # 生成state參數（包含用戶ID和其他數據）
         state_info = {
