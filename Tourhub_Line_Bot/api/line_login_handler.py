@@ -25,7 +25,7 @@ class LineLoginHandler:
     def __init__(self):
         self.channel_id = os.environ.get('LINE_LOGIN_CHANNEL_ID')
         self.channel_secret = os.environ.get('LINE_LOGIN_CHANNEL_SECRET')
-        self.redirect_uri = os.environ.get('LINE_LOGIN_REDIRECT_URI', 'https://your-domain.vercel.app/auth/line/callback')
+        self.redirect_uri = os.environ.get('LINE_LOGIN_REDIRECT_URI', 'https://line-bot-theta-dun.vercel.app/auth/line/callback')
         self.line_login_api_base = 'https://api.line.me/oauth2/v2.1'
         self.line_api_base = 'https://api.line.me/v2'
     
