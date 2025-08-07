@@ -414,11 +414,10 @@ def get_leaderboard_rank_details(rank: int = 1):
         logger.error(f"獲取排行榜第{rank}名詳細行程失敗: {e}")
         return None
 
-def create_trip_from_line(user_id: str, trip_title: str, area: str = None, duration_days: int = 3):
-    """從 LINE Bot 創建新行程"""
-    if not MYSQL_AVAILABLE:
-        logger.warning("MySQL connector not available, cannot create trip")
-        return None
+# 獨立行程管理函數已移除
+def create_trip_from_line_removed(user_id: str, trip_title: str, area: str = None, duration_days: int = 3):
+    """從 LINE Bot 創建新行程 - 已移除"""
+    return None
 
     try:
         connection = get_database_connection()
@@ -534,8 +533,9 @@ def create_trip_from_line(user_id: str, trip_title: str, area: str = None, durat
         logger.error(f"創建行程失敗: {e}")
         return None
 
-def add_trip_detail_from_line(user_id: str, trip_title: str, day_number: int, detail_content: str):
-    """從 LINE Bot 添加行程詳細內容"""
+def add_trip_detail_from_line_removed(user_id: str, trip_title: str, day_number: int, detail_content: str):
+    """從 LINE Bot 添加行程詳細內容 - 已移除"""
+    return None
     if not MYSQL_AVAILABLE:
         logger.warning("MySQL connector not available, cannot add trip detail")
         return None
@@ -654,8 +654,9 @@ def add_trip_detail_from_line(user_id: str, trip_title: str, day_number: int, de
         logger.error(f"添加行程詳細失敗: {e}")
         return None
 
-def get_user_created_trips(user_id: str, limit: int = 10):
-    """獲取用戶創建的行程列表"""
+def get_user_created_trips_removed(user_id: str, limit: int = 10):
+    """獲取用戶創建的行程列表 - 已移除"""
+    return []
     if not MYSQL_AVAILABLE:
         logger.warning("MySQL connector not available, cannot get user trips")
         return []
@@ -903,8 +904,9 @@ def get_trip_by_title(user_id: str, trip_title: str):
         logger.error(f"獲取行程失敗: {e}")
         return None
 
-def get_trip_details_by_title(user_id: str, trip_title: str):
-    """根據標題獲取行程的詳細安排"""
+def get_trip_details_by_title_removed(user_id: str, trip_title: str):
+    """根據標題獲取行程的詳細安排 - 已移除"""
+    return None
     if not MYSQL_AVAILABLE:
         logger.warning("MySQL connector not available, cannot get trip details")
         return None
@@ -1015,8 +1017,9 @@ def get_trip_details_by_title(user_id: str, trip_title: str):
         logger.error(f"獲取行程詳細失敗: {e}")
         return None
 
-def update_trip_title(user_id: str, old_title: str, new_title: str):
-    """更新行程標題"""
+def update_trip_title_removed(user_id: str, old_title: str, new_title: str):
+    """更新行程標題 - 已移除"""
+    return None
     if not MYSQL_AVAILABLE:
         logger.warning("MySQL connector not available, cannot update trip")
         return None
@@ -1054,8 +1057,9 @@ def update_trip_title(user_id: str, old_title: str, new_title: str):
         logger.error(f"更新行程標題失敗: {e}")
         return None
 
-def delete_trip_by_title(user_id: str, trip_title: str):
-    """刪除行程"""
+def delete_trip_by_title_removed(user_id: str, trip_title: str):
+    """刪除行程 - 已移除"""
+    return None
     if not MYSQL_AVAILABLE:
         logger.warning("MySQL connector not available, cannot delete trip")
         return None

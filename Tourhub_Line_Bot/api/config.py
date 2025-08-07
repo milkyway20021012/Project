@@ -1,25 +1,6 @@
 # 消息模板配置
 MESSAGE_TEMPLATES = {
-    "reminder": {
-        "10_min_before": {
-            "emoji": "⏰",
-            "title": "集合提醒",
-            "message": "還有 10 分鐘就要集合了！",
-            "color": "#F39C12"
-        },
-        "5_min_before": {
-            "emoji": "🚨",
-            "title": "緊急提醒",
-            "message": "還有 5 分鐘就要集合了！",
-            "color": "#E74C3C"
-        },
-        "on_time": {
-            "emoji": "🎯",
-            "title": "集合時間到了！",
-            "message": "集合時間到了！請準時到達！",
-            "color": "#E74C3C"
-        }
-    },
+    # 集合提醒模板已移除
     "features": {
         "leaderboard": {
             "title": "🏆 排行榜",
@@ -62,16 +43,7 @@ MESSAGE_TEMPLATES = {
             "url": "https://tourclock.vercel.app"
         }
     },
-    "meeting_success": {
-        "title": "📍 集合設定成功",
-        "color": "#9B59B6",
-        "status_success": "智能提醒已啟用",
-        "status_success_color": "#27AE60",
-        "status_local": "本地設定",
-        "status_local_color": "#F39C12",
-        "reminder_info": "⏰ 智能提醒設定",
-        "reminder_details": "• 集合前 10 分鐘提醒\n• 集合前 5 分鐘提醒\n• 集合時間到提醒"
-    },
+    # 集合成功模板已移除
     "help": {
         "title": "📱 TourHub 功能介紹",
         "color": "#6C5CE7",
@@ -86,11 +58,7 @@ MESSAGE_TEMPLATES = {
                 "name": "行程管理 (Trip Management)",
                 "description": "建立屬於您的專屬行程內容"
             },
-            {
-                "emoji": "📍",
-                "name": "集合功能 (Meeting Point)",
-                "description": "設定集合地點，方便分散活動後重新集合"
-            },
+            # 集合功能已移除
             {
                 "emoji": "🛅",
                 "name": "置物櫃 (Locker)",
@@ -216,27 +184,20 @@ KEYWORD_MAPPINGS = {
         "template": "feature",
         "feature_name": "split_bill"
     },
-    "tourclock": {
-        "keywords": ["集合", "集合點", "集合地點", "集合時間", "meeting", "Meeting", "meet", "Meet", "gather", "Gather", "集合管理", "時間管理", "提醒", "tourclock", "TourClock", "Tourclock"],
-        "template": "feature",
-        "feature_name": "tourclock"
-    },
+    # TourClock集合功能已移除
     "help": {
         "keywords": ["功能介紹", "功能", "介紹", "說明", "help", "Help", "功能說明", "使用說明","Tourhub功能介紹","Tourhub功能","Tourhub介紹","Tourhub說明"],
         "template": "help"
     },
-    "create_trip": {
-        "keywords": ["創建", "建立", "新增行程", "創建行程", "建立行程"],
-        "template": "create_trip"
+    "account_binding": {
+        "keywords": ["綁定帳號", "帳號綁定", "登入", "login", "Login", "綁定", "帳號", "我的帳號", "個人資料"],
+        "template": "account_binding"
     },
-    "my_trips": {
-        "keywords": ["我的行程", "我創建的行程", "我的旅程", "查看我的行程", "行程列表"],
-        "template": "my_trips"
+    "website_operations": {
+        "keywords": ["網站操作", "操作網站", "使用網站", "網站功能", "我的操作"],
+        "template": "website_operations"
     },
-    "add_trip_detail": {
-        "keywords": ["第一天", "第二天", "第三天", "第四天", "第五天", "第六天", "第七天", "詳細行程", "行程安排"],
-        "template": "add_trip_detail"
-    },
+    # 獨立行程管理關鍵字已移除
     "view_trip": {
         "keywords": ["查看", "顯示行程", "行程內容"],
         "template": "view_trip"
@@ -251,32 +212,6 @@ KEYWORD_MAPPINGS = {
     }
 }
 
-# 集合地點配置
-MEETING_LOCATIONS = [
-    "東京鐵塔", "淺草寺", "新宿車站", "澀谷", "銀座", "秋葉原", "原宿", "池袋", "台場", "築地市場", 
-    "上野公園", "阿美橫町", "大阪城", "道頓堀", "心齋橋", "環球影城", "天保山", "海遊館", "梅田", 
-    "通天閣", "新世界", "金閣寺", "龍安寺", "二条城", "清水寺", "地主神社", "祇園", "伏見稻荷大社", 
-    "東福寺", "三十三間堂", "嵐山", "天龍寺", "渡月橋", "銀閣寺", "哲學之道", "南禪寺", "西陣織會館", 
-    "首里城", "國際通", "牧志公設市場", "美麗海水族館", "古宇利島", "名護鳳梨園", "萬座毛", "真榮田岬", 
-    "殘波岬", "座喜味城跡", "讀谷村", "北谷町美國村", "瀨長島", "札幌", "大通公園", "狸小路商店街", 
-    "小樽運河", "小樽音樂盒堂", "北一硝子", "函館山", "五稜郭公園", "元町異人館", "富良野", "美瑛青池", 
-    "白金溫泉", "洞爺湖", "昭和新山", "登別溫泉", "旭山動物園", "層雲峽", "大雪山"
-]
-
-# 時間解析模式
-TIME_PATTERNS = {
-    "am_pm": r'(上午|下午|晚上|凌晨)\s*(\d{1,2})[點:](\d{1,2})',
-    "am_pm_simple": r'(上午|下午|晚上|凌晨)\s*(\d{1,2})點?',
-    "natural_time": r'(\d{1,2})點半|(\d{1,2})點30分',
-    "chinese": r'(\d{1,2})點(\d{1,2})分',
-    "simple_chinese": r'(\d{1,2})點(?!半)',
-    "standard": r'(\d{1,2}:\d{2})',
-    "time_with_colon": r'(\d{1,2}):(\d{1,2})',
-    "decimal_time": r'(\d{1,2})\.(\d{1,2})',  # 支援 2.35 格式
-    "am_pm_colon": r'(上午|下午|晚上|凌晨)\s*(\d{1,2}):(\d{1,2})'  # 支援 下午2:35 格式
-}
-
-# 集合時間模式 - 更寬鬆的匹配模式
-MEETING_TIME_PATTERN = r'集合|見面|約|約在|在|到|見|碰面|會合|集合點|集合地點|集合時間|時間.*集合|集合.*時間|明天.*集合|今天.*集合|下午.*集合|上午.*集合|晚上.*集合|凌晨.*集合|集合.*下午|集合.*上午|集合.*晚上|集合.*凌晨|\d{1,2}:\d{2}.*集合|\d{1,2}點\d{1,2}分.*集合|\d{1,2}點.*集合|幾點.*集合|幾點.*見|約在.*|.*集合|.*見面'
+# 集合相關配置已移除
 
 # 行程資料庫已移除，改為從資料庫動態獲取 

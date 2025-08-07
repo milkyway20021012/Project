@@ -6,13 +6,15 @@ import time
 
 # 導入配置文件
 from api.config import (
-    MESSAGE_TEMPLATES, 
-    LEADERBOARD_DATA, 
-    KEYWORD_MAPPINGS, 
-    MEETING_LOCATIONS, 
-    TIME_PATTERNS, 
-    MEETING_TIME_PATTERN
+    MESSAGE_TEMPLATES,
+    LEADERBOARD_DATA,
+    KEYWORD_MAPPINGS
 )
+
+# 導入統一用戶管理系統
+from api.unified_user_manager import unified_user_manager
+from api.line_login_handler import line_login_handler
+from api.website_proxy import website_proxy
 
 # LINE Bot imports
 from linebot.v3 import WebhookHandler
@@ -22,8 +24,7 @@ from linebot.v3.messaging import (
     ApiClient,
     MessagingApi,
     ReplyMessageRequest,
-    PushMessageRequest,
-    TextMessage,
+    # PushMessageRequest 和 TextMessage 已移除（集合功能不再需要）
     FlexMessage,
     FlexContainer
 )
@@ -33,96 +34,12 @@ from linebot.v3.webhooks import MessageEvent, TextMessageContent, PostbackEvent
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 導入集合管理器 - 使用 Vercel 兼容版本
-from api.vercel_meeting_manager import meeting_manager
-logger.info("使用 Vercel 兼容的集合管理器")
+# 集合管理功能已移除
 
 # 建立 Flask app
 app = Flask(__name__)
 
-def create_meeting_list_message(meetings):
-    """創建集合列表 Flex Message"""
-    meeting_contents = []
-    
-    for meeting in meetings[:5]:  # 最多顯示5個集合
-        meeting_contents.append({
-            "type": "box",
-            "layout": "horizontal",
-            "contents": [
-                {
-                    "type": "box",
-                    "layout": "vertical",
-                    "contents": [
-                        {
-                            "type": "text",
-                            "text": meeting["meeting_name"],
-                            "weight": "bold",
-                            "size": "sm",
-                            "color": "#555555"
-                        },
-                        {
-                            "type": "text",
-                            "text": f"⏰ {meeting['meeting_time']}",
-                            "size": "xs",
-                            "color": "#888888",
-                            "marginTop": "sm"
-                        },
-                        {
-                            "type": "text",
-                            "text": f"📍 {meeting['meeting_location']}",
-                            "size": "xs",
-                            "color": "#888888",
-                            "wrap": True,
-                            "marginTop": "sm"
-                        }
-                    ],
-                    "flex": 1
-                },
-                {
-                    "type": "button",
-                    "action": {
-                        "type": "postback",
-                        "label": "取消",
-                        "data": f"cancel_meeting:{meeting['id']}"
-                    },
-                    "style": "secondary",
-                    "color": "#E74C3C",
-                    "height": "sm",
-                    "marginStart": "md"
-                }
-            ],
-            "marginBottom": "md",
-            "paddingAll": "sm",
-            "backgroundColor": "#f8f9fa",
-            "cornerRadius": "md"
-        })
-    
-    return {
-        "type": "bubble",
-        "size": "giga",
-        "header": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "📝 我的集合列表",
-                    "weight": "bold",
-                    "size": "lg",
-                    "color": "#ffffff",
-                    "align": "center"
-                }
-            ],
-            "backgroundColor": "#9B59B6",
-            "paddingAll": "20px"
-        },
-        "body": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": meeting_contents,
-            "paddingAll": "20px"
-        }
-    }
+# 集合相關函數已移除
 
 def create_flex_message(template_type, **kwargs):
     """
@@ -413,127 +330,7 @@ def create_flex_message(template_type, **kwargs):
             }
         }
     
-    elif template_type == "meeting_success":
-        meeting_time = kwargs.get('meeting_time')
-        meeting_location = kwargs.get('meeting_location')
-        meeting_id = kwargs.get('meeting_id')  # 保留以備未來使用
-        is_success = kwargs.get('is_success', False)
-        template = MESSAGE_TEMPLATES["meeting_success"]
-
-        status_text = template["status_success"] if is_success else template["status_local"]
-        status_color = template["status_success_color"] if is_success else template["status_local_color"]
-
-        # 計算提醒時間
-        from datetime import datetime, timedelta
-        try:
-            # 假設是今天的時間
-            today = datetime.now().strftime("%Y-%m-%d")
-            meeting_datetime = datetime.strptime(f"{today} {meeting_time}", "%Y-%m-%d %H:%M")
-            reminder_10min = (meeting_datetime - timedelta(minutes=10)).strftime("%H:%M")
-            reminder_5min = (meeting_datetime - timedelta(minutes=5)).strftime("%H:%M")
-        except:
-            reminder_10min = "提醒前10分鐘"
-            reminder_5min = "提醒前5分鐘"
-
-        return {
-            "type": "bubble",
-            "size": "kilo",
-            "header": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": template["title"],
-                        "weight": "bold",
-                        "size": "lg",
-                        "color": "#ffffff",
-                        "align": "center"
-                    }
-                ],
-                "backgroundColor": template["color"],
-                "paddingAll": "20px"
-            },
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "box",
-                        "layout": "horizontal",
-                        "contents": [
-                            {"type": "text", "text": "⏰", "size": "md", "flex": 0},
-                            {"type": "text", "text": f"集合時間：{meeting_time}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
-                        ],
-                        "marginBottom": "sm"
-                    },
-                    {
-                        "type": "box",
-                        "layout": "horizontal",
-                        "contents": [
-                            {"type": "text", "text": "📍", "size": "md", "flex": 0},
-                            {"type": "text", "text": f"集合地點：{meeting_location}", "size": "sm", "color": "#555555", "flex": 1, "marginStart": "md"}
-                        ],
-                        "marginBottom": "sm"
-                    },
-                    {
-                        "type": "box",
-                        "layout": "horizontal",
-                        "contents": [
-                            {"type": "text", "text": "✅", "size": "md", "flex": 0},
-                            {"type": "text", "text": f"狀態：{status_text}", "size": "sm", "color": status_color, "flex": 1, "marginStart": "md"}
-                        ],
-                        "marginBottom": "md"
-                    },
-                    {"type": "separator", "margin": "md"},
-                    {"type": "text", "text": "🎉 集合設定完成！", "weight": "bold", "size": "sm", "color": "#27AE60", "align": "center", "margin": "md"},
-                    {"type": "text", "text": "已成功設定集合時間和地點，智能提醒已啟用", "size": "xs", "color": "#888888", "align": "center", "wrap": True, "margin": "sm"},
-                    {"type": "separator", "margin": "md"},
-                    {"type": "text", "text": "📱 智能提醒時間", "weight": "bold", "size": "sm", "color": template["color"], "align": "center", "margin": "md"},
-                    {
-                        "type": "box",
-                        "layout": "vertical",
-                        "contents": [
-                            {"type": "text", "text": f"🔔 {reminder_10min} (集合前10分鐘)", "size": "xs", "color": "#888888", "align": "center"},
-                            {"type": "text", "text": f"🔔 {reminder_5min} (集合前5分鐘)", "size": "xs", "color": "#888888", "align": "center", "marginTop": "xs"},
-                            {"type": "text", "text": f"🔔 {meeting_time} (集合時間到)", "size": "xs", "color": "#888888", "align": "center", "marginTop": "xs"}
-                        ],
-                        "margin": "sm"
-                    }
-                ],
-                "paddingAll": "20px"
-            },
-            "footer": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "button",
-                        "action": {
-                            "type": "postback",
-                            "label": "查看我的集合",
-                            "data": "view_meetings"
-                        },
-                        "style": "primary",
-                        "color": template["color"],
-                        "height": "sm"
-                    },
-                    {
-                        "type": "button",
-                        "action": {
-                            "type": "uri",
-                            "label": "分享集合資訊",
-                            "uri": f"https://line.me/R/msg/text/?⏰ 集合時間：{meeting_time}%0A📍 集合地點：{meeting_location}%0A%0A🤖 由 TourHub Bot 智能管理"
-                        },
-                        "style": "secondary",
-                        "color": template["color"],
-                        "height": "sm",
-                        "marginTop": "sm"
-                    }
-                ],
-                "paddingAll": "20px"
-            }
-        }
+    # 集合成功模板已移除
     
     elif template_type == "help":
         template = MESSAGE_TEMPLATES["help"]
@@ -587,7 +384,21 @@ def create_flex_message(template_type, **kwargs):
                 "paddingAll": "20px"
             }
         }
-    
+
+    elif template_type == "account_binding":
+        line_user_id = kwargs.get('line_user_id')
+        if line_user_id:
+            return line_login_handler.create_binding_message(line_user_id)
+        else:
+            return create_default_error_message("無法獲取用戶資訊")
+
+    elif template_type == "website_operations":
+        line_user_id = kwargs.get('line_user_id')
+        if line_user_id:
+            return create_website_operations_message(line_user_id)
+        else:
+            return create_default_error_message("無法獲取用戶資訊")
+
     elif template_type == "trip_list":
         location = kwargs.get('location')
         trips = kwargs.get('trips')
@@ -1002,7 +813,8 @@ def create_flex_message(template_type, **kwargs):
             }
         }
 
-    elif template_type == "create_trip_success":
+    # 創建行程成功模板已移除
+    elif False:
         trip_data = kwargs.get('trip_data')
 
         if not trip_data:
@@ -1130,7 +942,8 @@ def create_flex_message(template_type, **kwargs):
             }
         }
 
-    elif template_type == "my_trips":
+    # 我的行程模板已移除
+    elif False and template_type == "my_trips":
         trips = kwargs.get('trips', [])
 
         if not trips:
@@ -1252,7 +1065,8 @@ def create_flex_message(template_type, **kwargs):
             }
         }
 
-    elif template_type == "add_detail_success":
+    # 添加詳細行程成功模板已移除
+    elif False and template_type == "add_detail_success":
         detail_data = kwargs.get('detail_data')
 
         if not detail_data:
@@ -1347,7 +1161,8 @@ def create_flex_message(template_type, **kwargs):
             }
         }
 
-    elif template_type == "view_trip_details":
+    # 查看行程詳細模板已移除
+    elif False and template_type == "view_trip_details":
         trip_data = kwargs.get('trip_data')
 
         if not trip_data:
@@ -1503,7 +1318,8 @@ def create_flex_message(template_type, **kwargs):
             }
         }
 
-    elif template_type == "edit_trip_success":
+    # 編輯行程成功模板已移除
+    elif False and template_type == "edit_trip_success":
         old_title = kwargs.get('old_title')
         new_title = kwargs.get('new_title')
 
@@ -1551,7 +1367,8 @@ def create_flex_message(template_type, **kwargs):
             }
         }
 
-    elif template_type == "delete_trip_success":
+    # 刪除行程成功模板已移除
+    elif False and template_type == "delete_trip_success":
         trip_info = kwargs.get('trip_info')
 
         return {
@@ -1640,140 +1457,9 @@ def get_message_template(user_message):
 
     return best_match
 
-def parse_time(user_message):
-    """解析各種時間格式"""
-    from datetime import datetime
+# 集合時間解析函數已移除
 
-    # 優先處理上午/下午/晚上/凌晨 (冒號格式) - 例如：下午2:35
-    am_pm_colon_match = re.search(TIME_PATTERNS["am_pm_colon"], user_message)
-    if am_pm_colon_match:
-        period = am_pm_colon_match.group(1)
-        hour = int(am_pm_colon_match.group(2))
-        minute = am_pm_colon_match.group(3)
-
-        # 轉換為24小時制
-        if period == "下午" and hour != 12:
-            hour += 12
-        elif period == "晚上" and hour != 12:
-            hour += 12
-        elif period == "凌晨" and hour == 12:
-            hour = 0
-        elif period == "上午" and hour == 12:
-            hour = 0
-
-        return f"{hour:02d}:{minute.zfill(2)}"
-
-    # 處理上午/下午/晚上/凌晨 (點分格式) - 例如：下午2點35分
-    am_pm_match = re.search(TIME_PATTERNS["am_pm"], user_message)
-    if am_pm_match:
-        period = am_pm_match.group(1)
-        hour = int(am_pm_match.group(2))
-        minute = am_pm_match.group(3)
-
-        # 轉換為24小時制
-        if period == "下午" and hour != 12:
-            hour += 12
-        elif period == "晚上" and hour != 12:
-            hour += 12
-        elif period == "凌晨" and hour == 12:
-            hour = 0
-        elif period == "上午" and hour == 12:
-            hour = 0
-
-        return f"{hour:02d}:{minute.zfill(2)}"
-    
-    # 處理上午/下午/晚上/凌晨 (簡化格式) - 例如：下午2點
-    am_pm_simple_match = re.search(TIME_PATTERNS["am_pm_simple"], user_message)
-    if am_pm_simple_match:
-        period = am_pm_simple_match.group(1)
-        hour = int(am_pm_simple_match.group(2))
-        
-        # 轉換為24小時制
-        if period == "下午" and hour != 12:
-            hour += 12
-        elif period == "晚上" and hour != 12:
-            hour += 12
-        elif period == "凌晨" and hour == 12:
-            hour = 0
-        
-        return f"{hour:02d}:00"
-    
-    # 處理 "點半" 或 "點30分"
-    natural_time_match = re.search(TIME_PATTERNS["natural_time"], user_message)
-    if natural_time_match:
-        hour = natural_time_match.group(1) or natural_time_match.group(2)
-        return f"{hour.zfill(2)}:30"
-    
-    # 中文時間格式 2點30分
-    chinese_time = re.search(TIME_PATTERNS["chinese"], user_message)
-    if chinese_time:
-        hour = chinese_time.group(1)
-        minute = chinese_time.group(2)
-        return f"{hour.zfill(2)}:{minute.zfill(2)}"
-    
-    # 簡化中文時間格式 2點
-    simple_chinese_time = re.search(TIME_PATTERNS["simple_chinese"], user_message)
-    if simple_chinese_time:
-        hour = simple_chinese_time.group(1)
-        return f"{hour.zfill(2)}:00"
-    
-    # 標準時間格式 14:30 (最後處理，避免與上午/下午格式衝突)
-    time_match = re.search(TIME_PATTERNS["standard"], user_message)
-    if time_match:
-        return time_match.group(1)
-    
-    # 處理冒號格式但沒有前後文的情況
-    colon_time_match = re.search(TIME_PATTERNS["time_with_colon"], user_message)
-    if colon_time_match:
-        hour = colon_time_match.group(1)
-        minute = colon_time_match.group(2)
-        return f"{hour.zfill(2)}:{minute.zfill(2)}"
-
-    # 處理小數點格式 - 例如：2.35
-    decimal_time_match = re.search(TIME_PATTERNS["decimal_time"], user_message)
-    if decimal_time_match:
-        hour = decimal_time_match.group(1)
-        minute = decimal_time_match.group(2)
-        return f"{hour.zfill(2)}:{minute.zfill(2)}"
-
-    return None
-
-def parse_location(user_message):
-    """解析集合地點"""
-    # 優先檢查預設地點列表
-    for location in MEETING_LOCATIONS:
-        if location in user_message:
-            return location
-    
-    # 模糊比對預設地點
-    for location in MEETING_LOCATIONS:
-        if any(word in user_message for word in location.split()):
-            return location
-    
-    # 使用正則表達式提取地點
-    # 匹配 "在/到/約在/集合於/見面於 + 地點" 的格式
-    location_patterns = [
-        r'(在|到|約在|集合於|見面於|於)([\u4e00-\u9fa5A-Za-z0-9\s]+?)(集合|見面|碰面|會合|$|\s|，|,|。|！|！)',
-        r'([\u4e00-\u9fa5A-Za-z0-9\s]+?)(集合|見面|碰面|會合)',
-        r'集合.*?([\u4e00-\u9fa5A-Za-z0-9\s]+?)(\s|，|,|。|！|！|$)',
-        r'([\u4e00-\u9fa5A-Za-z0-9\s]{2,10})(車站|寺|公園|廣場|商場|大樓|塔|橋|市場|通|町|村|城|館|園|山|湖|溫泉)'
-    ]
-    
-    for pattern in location_patterns:
-        match = re.search(pattern, user_message)
-        if match:
-            location = match.group(1) if '集合' not in match.group(1) else match.group(2)
-            # 清理地點名稱
-            location = location.strip()
-            if len(location) >= 2:  # 至少2個字符
-                return location
-    
-    # 如果還是找不到，嘗試提取中文地名
-    chinese_location_match = re.search(r'([\u4e00-\u9fa5]{2,10})', user_message)
-    if chinese_location_match:
-        return chinese_location_match.group(1)
-    
-    return None
+# 集合地點解析函數已移除
 
 def find_location_trips(user_message):
     """根據用戶訊息查找地區相關行程"""
@@ -1798,100 +1484,159 @@ def find_location_trips(user_message):
     
     return None, []
 
-def parse_trip_detail_message(user_message):
-    """解析行程詳細添加消息"""
-    import re
+# 獨立行程管理解析函數已移除
 
-    # 匹配模式：行程名稱 + 第X天 + 詳細行程為 + 內容
-    patterns = [
-        r'(.+?)第([一二三四五六七八九十\d]+)天詳細行程為(.+)',
-        r'(.+?)第([一二三四五六七八九十\d]+)天行程為(.+)',
-        r'(.+?)第([一二三四五六七八九十\d]+)天為(.+)',
-        r'(.+?)第([一二三四五六七八九十\d]+)天(.+)',
-    ]
+def create_default_error_message(error_text: str) -> dict:
+    """創建預設錯誤訊息"""
+    return {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": f"❌ {error_text}",
+                    "wrap": True,
+                    "color": "#E74C3C",
+                    "size": "sm"
+                }
+            ],
+            "paddingAll": "20px"
+        }
+    }
 
-    for pattern in patterns:
-        match = re.search(pattern, user_message)
-        if match:
-            trip_title = match.group(1).strip()
-            day_str = match.group(2).strip()
-            detail_content = match.group(3).strip()
+def create_website_operations_message(line_user_id: str) -> dict:
+    """創建網站操作訊息"""
+    # 獲取用戶資料和綁定狀態
+    user_data = unified_user_manager.get_user_by_line_id(line_user_id)
+    bindings = unified_user_manager.get_user_website_bindings(line_user_id)
+    available_modules = unified_user_manager.get_available_modules()
 
-            # 轉換中文數字為阿拉伯數字
-            day_mapping = {
-                '一': 1, '二': 2, '三': 3, '四': 4, '五': 5,
-                '六': 6, '七': 7, '八': 8, '九': 9, '十': 10
+    if not user_data or not user_data.get('is_verified'):
+        # 用戶未綁定，提示先綁定
+        return {
+            "type": "bubble",
+            "size": "giga",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "🔐 需要先綁定帳號",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#ffffff",
+                        "align": "center"
+                    }
+                ],
+                "backgroundColor": "#E74C3C",
+                "paddingAll": "20px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "請先完成帳號綁定，才能使用網站操作功能。",
+                        "wrap": True,
+                        "color": "#666666",
+                        "size": "sm",
+                        "margin": "md"
+                    },
+                    {
+                        "type": "text",
+                        "text": "輸入「綁定帳號」開始綁定流程",
+                        "wrap": True,
+                        "color": "#00B900",
+                        "size": "sm",
+                        "weight": "bold",
+                        "margin": "md"
+                    }
+                ],
+                "paddingAll": "20px"
             }
+        }
 
-            if day_str in day_mapping:
-                day_number = day_mapping[day_str]
-            elif day_str.isdigit():
-                day_number = int(day_str)
-            else:
-                continue
+    # 創建操作按鈕
+    operation_contents = []
 
-            return trip_title, day_number, detail_content
+    for module in available_modules:
+        is_bound = any(b['module_id'] == module['id'] for b in bindings)
+        if is_bound:
+            operation_contents.append({
+                "type": "button",
+                "action": {
+                    "type": "postback",
+                    "label": f"🌐 {module['module_display_name']}",
+                    "data": f"website_operation:{module['module_name']}"
+                },
+                "style": "primary",
+                "color": "#00B900",
+                "height": "sm",
+                "margin": "sm"
+            })
 
-    return None, None, None
+    if not operation_contents:
+        operation_contents.append({
+            "type": "text",
+            "text": "目前沒有可用的網站操作",
+            "color": "#888888",
+            "size": "sm",
+            "align": "center"
+        })
 
-def parse_view_trip_message(user_message):
-    """解析查看行程消息"""
-    import re
+    return {
+        "type": "bubble",
+        "size": "giga",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "🌐 網站操作",
+                    "weight": "bold",
+                    "size": "lg",
+                    "color": "#ffffff",
+                    "align": "center"
+                },
+                {
+                    "type": "text",
+                    "text": f"歡迎 {user_data.get('display_name', '用戶')}",
+                    "size": "sm",
+                    "color": "#ffffff",
+                    "align": "center",
+                    "margin": "sm"
+                }
+            ],
+            "backgroundColor": "#00B900",
+            "paddingAll": "20px"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "選擇要操作的網站：",
+                    "weight": "bold",
+                    "size": "md",
+                    "color": "#333333",
+                    "margin": "md"
+                }
+            ] + operation_contents,
+            "paddingAll": "20px"
+        }
+    }
 
-    patterns = [
-        r'查看(.+?)(?:行程|的行程)?$',
-        r'顯示(.+?)(?:行程|的行程)?$',
-        r'(.+?)(?:行程內容|的內容)$'
-    ]
+# 查看行程解析函數已移除
 
-    for pattern in patterns:
-        match = re.search(pattern, user_message)
-        if match:
-            trip_title = match.group(1).strip()
-            if trip_title and len(trip_title) > 1:
-                return trip_title
+# 編輯行程解析函數已移除
 
-    return None
-
-def parse_edit_trip_message(user_message):
-    """解析編輯行程消息"""
-    import re
-
-    patterns = [
-        r'修改(.+?)標題為(.+)$',
-        r'更改(.+?)標題為(.+)$',
-        r'編輯(.+?)標題為(.+)$',
-        r'(.+?)改名為(.+)$'
-    ]
-
-    for pattern in patterns:
-        match = re.search(pattern, user_message)
-        if match:
-            old_title = match.group(1).strip()
-            new_title = match.group(2).strip()
-            if old_title and new_title:
-                return old_title, new_title
-
-    return None, None
-
-def parse_delete_trip_message(user_message):
-    """解析刪除行程消息"""
-    import re
-
-    patterns = [
-        r'刪除(.+?)(?:行程)?$',
-        r'移除(.+?)(?:行程)?$',
-        r'取消(.+?)(?:行程)?$'
-    ]
-
-    for pattern in patterns:
-        match = re.search(pattern, user_message)
-        if match:
-            trip_title = match.group(1).strip()
-            if trip_title and len(trip_title) > 1:
-                return trip_title
-
-    return None
+# 刪除行程解析函數已移除
 
 # 移除用戶資料獲取功能 - LINE Bot 現在專注於行程管理，不需要用戶資料同步
 
@@ -2030,55 +1775,7 @@ def warm_up_cache():
     except Exception as e:
         logger.error(f"緩存預熱失敗: {e}")
 
-# 集合管理函數已整合到 meeting_manager 中
-
-# 提醒處理函數
-def send_reminder_message(user_id, meeting_time, meeting_location, reminder_type):
-    """
-    發送提醒訊息給用戶
-    reminder_type: '10_min_before', '5_min_before', 'on_time'
-    """
-    try:
-        # 使用動態模板創建 Flex Message
-        flex_message = create_flex_message(
-            "reminder",
-            reminder_type=reminder_type,
-            meeting_time=meeting_time,
-            meeting_location=meeting_location
-        )
-
-        with ApiClient(configuration) as api_client:
-            line_bot_api = MessagingApi(api_client)
-            line_bot_api.push_message_with_http_info(
-                PushMessageRequest(
-                    to=user_id,
-                    messages=[FlexMessage(alt_text="集合提醒", contents=FlexContainer.from_dict(flex_message))]
-                )
-            )
-
-        logger.info(f"已發送 {reminder_type} 提醒給用戶 {user_id}")
-
-    except Exception as e:
-        logger.error(f"發送提醒訊息失敗: {str(e)}")
-
-def reminder_callback_handler(reminder_data):
-    """
-    處理集合管理器的提醒回調
-    """
-    try:
-        user_id = reminder_data.get('user_id')
-        meeting_time = reminder_data.get('meeting_time')
-        meeting_location = reminder_data.get('meeting_location')
-        reminder_type = reminder_data.get('reminder_type')
-
-        if all([user_id, meeting_time, meeting_location, reminder_type]):
-            send_reminder_message(user_id, meeting_time, meeting_location, reminder_type)
-            logger.info(f"成功處理提醒回調: {reminder_type} for user {user_id}")
-        else:
-            logger.error(f"提醒回調資料不完整: {reminder_data}")
-
-    except Exception as e:
-        logger.error(f"處理提醒回調失敗: {str(e)}")
+# 集合管理和提醒功能已移除
 
 # 環境變數檢查
 CHANNEL_ACCESS_TOKEN = os.environ.get('CHANNEL_ACCESS_TOKEN')
@@ -2088,8 +1785,7 @@ if CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET:
     configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
     line_handler = WebhookHandler(CHANNEL_SECRET)
 
-    # 設定集合管理器的提醒回調
-    meeting_manager.set_reminder_callback(reminder_callback_handler)
+    # 集合管理器已移除
 
     # 預熱緩存以提高響應速度
     warm_up_cache()
@@ -2122,32 +1818,80 @@ def debug():
         "token_length": len(CHANNEL_ACCESS_TOKEN) if CHANNEL_ACCESS_TOKEN else 0
     }
 
-# TourClock 提醒回調端點
-@app.route('/reminder', methods=['POST'])
-def reminder_callback():
+@app.route("/auth/line/callback")
+def line_login_callback():
+    """處理LINE Login回調"""
     try:
-        data = request.get_json()
-        
-        if not data:
-            return {"error": "No data received"}, 400
-        
-        # 解析提醒資料
-        user_id = data.get('user_id')
-        meeting_time = data.get('meeting_time')
-        meeting_location = data.get('meeting_location')
-        reminder_type = data.get('reminder_type')  # '10_min_before', '5_min_before', 'on_time'
-        
-        if not all([user_id, meeting_time, meeting_location, reminder_type]):
-            return {"error": "Missing required fields"}, 400
-        
-        # 發送提醒訊息
-        send_reminder_message(user_id, meeting_time, meeting_location, reminder_type)
-        
-        return {"status": "success", "message": f"Reminder sent: {reminder_type}"}, 200
-        
+        code = request.args.get('code')
+        state = request.args.get('state')
+
+        if not code or not state:
+            return "Missing required parameters", 400
+
+        # 處理LINE Login回調
+        result = line_login_handler.handle_callback(code, state)
+
+        if result.get('success'):
+            # 綁定成功，返回成功頁面
+            return f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>綁定成功</title>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <style>
+                    body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
+                    .success {{ color: #00B900; }}
+                    .info {{ color: #666; margin-top: 20px; }}
+                </style>
+            </head>
+            <body>
+                <h1 class="success">✅ 帳號綁定成功！</h1>
+                <p>您的LINE帳號已成功綁定到TourHub系統</p>
+                <p class="info">現在您可以回到LINE Bot使用所有功能</p>
+                <script>
+                    setTimeout(function() {{
+                        window.close();
+                    }}, 3000);
+                </script>
+            </body>
+            </html>
+            """
+        else:
+            # 綁定失敗，返回錯誤頁面
+            error_message = result.get('error', '未知錯誤')
+            return f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>綁定失敗</title>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <style>
+                    body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
+                    .error {{ color: #E74C3C; }}
+                    .info {{ color: #666; margin-top: 20px; }}
+                </style>
+            </head>
+            <body>
+                <h1 class="error">❌ 綁定失敗</h1>
+                <p>錯誤：{error_message}</p>
+                <p class="info">請回到LINE Bot重新嘗試綁定</p>
+                <script>
+                    setTimeout(function() {{
+                        window.close();
+                    }}, 5000);
+                </script>
+            </body>
+            </html>
+            """
+
     except Exception as e:
-        logger.error(f"提醒回調處理錯誤: {str(e)}")
-        return {"error": str(e)}, 500
+        logger.error(f"LINE Login callback error: {e}")
+        return "Internal server error", 500
+
+# 提醒回調端點已移除
 
 # LINE Bot callback
 @app.route('/callback', methods=['POST'])
@@ -2177,520 +1921,98 @@ if line_handler:
         try:
             user_message = event.message.text
             
-            # 優先檢查是否包含時間地點的集合設定
-            if re.search(MEETING_TIME_PATTERN, user_message):
-                # 解析集合時間和地點
-                meeting_time = parse_time(user_message)
-                meeting_location = parse_location(user_message)
-                
-                if meeting_time and meeting_location:
-                    # 使用集合管理系統
-                    success, message, meeting_id = meeting_manager.create_meeting(
-                        user_id=event.source.user_id,
-                        meeting_time=meeting_time,
-                        meeting_location=meeting_location
-                    )
+            # 獨立行程管理功能已移除，保留關鍵字跳轉功能
+            # 檢查模板匹配
+            template_config = get_message_template(user_message)
 
-                    # 創建回應訊息
+            if template_config:
+                # 根據模板配置創建 Flex Message
+                if template_config["template"] == "feature":
                     flex_message = create_flex_message(
-                        "meeting_success",
-                        meeting_time=meeting_time,
-                        meeting_location=meeting_location,
-                        meeting_id=meeting_id,
-                        is_success=success
+                        "feature",
+                        feature_name=template_config["feature_name"]
                     )
-                    
-                    with ApiClient(configuration) as api_client:
-                        line_bot_api = MessagingApi(api_client)
-                        line_bot_api.reply_message_with_http_info(
-                            ReplyMessageRequest(
-                                reply_token=event.reply_token,
-                                messages=[FlexMessage(alt_text="集合設定", contents=FlexContainer.from_dict(flex_message))]
-                            )
-                        )
-                    
-                    # 記錄結果
-                    if success:
-                        logger.info(f"成功設定集合: {meeting_time} @ {meeting_location}, TourClock ID: {meeting_id}")
-                    else:
-                        logger.warning(f"集合設定失敗: {message}")
-                        
-                elif meeting_time and not meeting_location:
-                    # 只有時間沒有地點
-                    flex_message = {
-                        "type": "bubble",
-                        "size": "kilo",
-                        "header": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "contents": [
-                                {
-                                    "type": "text",
-                                    "text": "⏰ 集合時間已識別",
-                                    "weight": "bold",
-                                    "size": "lg",
-                                    "color": "#ffffff",
-                                    "align": "center"
-                                }
-                            ],
-                            "backgroundColor": "#9B59B6",
-                            "paddingAll": "20px"
-                        },
-                        "body": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "contents": [
-                                {
-                                    "type": "text",
-                                    "text": f"✅ 時間：{meeting_time}",
-                                    "size": "md",
-                                    "color": "#27AE60",
-                                    "margin": "md"
-                                },
-                                {
-                                    "type": "text",
-                                    "text": "❌ 地點：未識別",
-                                    "size": "md",
-                                    "color": "#E74C3C",
-                                    "margin": "sm"
-                                },
-                                {
-                                    "type": "text",
-                                    "text": "請明確指定集合地點，例如：淺草寺、新宿車站等",
-                                    "size": "sm",
-                                    "color": "#888888",
-                                    "wrap": True,
-                                    "margin": "md"
-                                }
-                            ],
-                            "paddingAll": "20px"
-                        }
-                    }
-                    
-                    with ApiClient(configuration) as api_client:
-                        line_bot_api = MessagingApi(api_client)
-                        line_bot_api.reply_message_with_http_info(
-                            ReplyMessageRequest(
-                                reply_token=event.reply_token,
-                                messages=[FlexMessage(alt_text="集合設定", contents=FlexContainer.from_dict(flex_message))]
-                            )
-                        )
-                        
-                elif meeting_location and not meeting_time:
-                    # 只有地點沒有時間
-                    flex_message = {
-                        "type": "bubble",
-                        "size": "kilo",
-                        "header": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "contents": [
-                                {
-                                    "type": "text",
-                                    "text": "📍 集合地點已識別",
-                                    "weight": "bold",
-                                    "size": "lg",
-                                    "color": "#ffffff",
-                                    "align": "center"
-                                }
-                            ],
-                            "backgroundColor": "#9B59B6",
-                            "paddingAll": "20px"
-                        },
-                        "body": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "contents": [
-                                {
-                                    "type": "text",
-                                    "text": "❌ 時間：未識別",
-                                    "size": "md",
-                                    "color": "#E74C3C",
-                                    "margin": "md"
-                                },
-                                {
-                                    "type": "text",
-                                    "text": f"✅ 地點：{meeting_location}",
-                                    "size": "md",
-                                    "color": "#27AE60",
-                                    "margin": "sm"
-                                },
-                                {
-                                    "type": "text",
-                                    "text": "請明確指定集合時間，例如：下午2:35、14:35、2點35分等",
-                                    "size": "sm",
-                                    "color": "#888888",
-                                    "wrap": True,
-                                    "margin": "md"
-                                }
-                            ],
-                            "paddingAll": "20px"
-                        }
-                    }
-                    
-                    with ApiClient(configuration) as api_client:
-                        line_bot_api = MessagingApi(api_client)
-                        line_bot_api.reply_message_with_http_info(
-                            ReplyMessageRequest(
-                                reply_token=event.reply_token,
-                                messages=[FlexMessage(alt_text="集合設定", contents=FlexContainer.from_dict(flex_message))]
-                            )
-                        )
+                elif template_config["template"] == "leaderboard":
+                    flex_message = create_flex_message(
+                        "leaderboard",
+                        rank=template_config["rank"]
+                    )
+                elif template_config["template"] == "leaderboard_details":
+                    # 獲取排行榜詳細行程資料（使用緩存）
+                    rank = int(template_config["rank"])
+                    rank_data = get_cached_rank_details(rank)
+
+                    flex_message = create_flex_message(
+                        "leaderboard_details",
+                        rank_data=rank_data
+                    )
+                elif template_config["template"] == "help":
+                    flex_message = create_flex_message("help")
+                elif template_config["template"] == "account_binding":
+                    flex_message = create_flex_message(
+                        "account_binding",
+                        line_user_id=event.source.user_id
+                    )
+                elif template_config["template"] == "website_operations":
+                    flex_message = create_flex_message(
+                        "website_operations",
+                        line_user_id=event.source.user_id
+                    )
                 else:
-                    # 時間和地點都沒有識別到
+                    # 預設回應
                     flex_message = {
                         "type": "bubble",
-                        "size": "kilo",
-                        "header": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "contents": [
-                                {
-                                    "type": "text",
-                                    "text": "📝 集合設定說明",
-                                    "weight": "bold",
-                                    "size": "lg",
-                                    "color": "#ffffff",
-                                    "align": "center"
-                                }
-                            ],
-                            "backgroundColor": "#9B59B6",
-                            "paddingAll": "20px"
-                        },
                         "body": {
                             "type": "box",
                             "layout": "vertical",
                             "contents": [
                                 {
                                     "type": "text",
-                                    "text": "請輸入包含時間和地點的集合資訊，例如：",
-                                    "size": "md",
-                                    "color": "#555555",
-                                    "margin": "md"
-                                },
-                                {
-                                    "type": "text",
-                                    "text": "• 下午2:35 淺草寺集合\n• 14:30 新宿車站見面\n• 明天3點 澀谷集合\n• 晚上7點 銀座碰面",
-                                    "size": "sm",
-                                    "color": "#888888",
+                                    "text": "抱歉，我不太理解您的訊息。請嘗試輸入「功能介紹」查看可用功能。",
                                     "wrap": True,
-                                    "margin": "sm"
+                                    "color": "#666666"
                                 }
                             ],
                             "paddingAll": "20px"
                         }
                     }
-                    
-                    with ApiClient(configuration) as api_client:
-                        line_bot_api = MessagingApi(api_client)
-                        line_bot_api.reply_message_with_http_info(
-                            ReplyMessageRequest(
-                                reply_token=event.reply_token,
-                                messages=[FlexMessage(alt_text="集合設定說明", contents=FlexContainer.from_dict(flex_message))]
-                            )
+
+                # 發送消息
+                with ApiClient(configuration) as api_client:
+                    line_bot_api = MessagingApi(api_client)
+                    line_bot_api.reply_message_with_http_info(
+                        ReplyMessageRequest(
+                            reply_token=event.reply_token,
+                            messages=[FlexMessage(alt_text="TourHub Bot", contents=FlexContainer.from_dict(flex_message))]
                         )
-            
-            # 如果沒有包含時間地點的集合設定，則檢查其他功能
+                    )
             else:
-                # 快速檢查：優先處理行程詳細添加（最常用功能）
-                trip_title, day_number, detail_content = parse_trip_detail_message(user_message)
-                if trip_title and day_number and detail_content:
-                    # 處理行程詳細添加
-                    from api.database_utils import add_trip_detail_from_line
-                    detail_data = add_trip_detail_from_line(
-                        event.source.user_id,
-                        trip_title,
-                        day_number,
-                        detail_content
+                # 沒有匹配的模板，發送預設回應
+                flex_message = {
+                    "type": "bubble",
+                    "body": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": "抱歉，我不太理解您的訊息。請嘗試輸入「功能介紹」查看可用功能。",
+                                "wrap": True,
+                                "color": "#666666"
+                            }
+                        ],
+                        "paddingAll": "20px"
+                    }
+                }
+
+                with ApiClient(configuration) as api_client:
+                    line_bot_api = MessagingApi(api_client)
+                    line_bot_api.reply_message_with_http_info(
+                        ReplyMessageRequest(
+                            reply_token=event.reply_token,
+                            messages=[FlexMessage(alt_text="TourHub Bot", contents=FlexContainer.from_dict(flex_message))]
+                        )
                     )
-
-                    if detail_data:
-                        flex_message = create_flex_message("add_detail_success", detail_data=detail_data)
-                    else:
-                        # 添加失敗，可能是找不到行程
-                        flex_message = {
-                            "type": "bubble",
-                            "body": {
-                                "type": "box",
-                                "layout": "vertical",
-                                "contents": [
-                                    {
-                                        "type": "text",
-                                        "text": f"找不到行程「{trip_title}」\n\n請確認：\n1. 行程名稱是否正確\n2. 是否已創建該行程\n\n您可以輸入「我的行程」查看已創建的行程。",
-                                        "wrap": True,
-                                        "color": "#666666"
-                                    }
-                                ],
-                                "paddingAll": "20px"
-                            }
-                        }
-
-                    # 快速發送消息
-                    with ApiClient(configuration) as api_client:
-                        line_bot_api = MessagingApi(api_client)
-                        line_bot_api.reply_message_with_http_info(
-                            ReplyMessageRequest(
-                                reply_token=event.reply_token,
-                                messages=[FlexMessage(alt_text="行程詳細添加", contents=FlexContainer.from_dict(flex_message))]
-                            )
-                        )
-                    return  # 立即返回，提高響應速度
-
-                # 快速檢查：行程創建（第二常用功能）
-                elif any(keyword in user_message for keyword in ["創建", "建立", "新增行程"]):
-                    trip_title = user_message.replace("創建", "").replace("建立", "").replace("新增行程", "").replace("創建行程", "").replace("建立行程", "").strip()
-                    if trip_title and len(trip_title) > 1:
-                        from api.database_utils import create_trip_from_line
-                        trip_data = create_trip_from_line(event.source.user_id, trip_title)
-                        if trip_data:
-                            flex_message = create_flex_message("create_trip_success", trip_data=trip_data)
-                        else:
-                            flex_message = {
-                                "type": "bubble",
-                                "body": {
-                                    "type": "box",
-                                    "layout": "vertical",
-                                    "contents": [
-                                        {
-                                            "type": "text",
-                                            "text": "行程創建失敗，請稍後再試。",
-                                            "wrap": True,
-                                            "color": "#666666"
-                                        }
-                                    ],
-                                    "paddingAll": "20px"
-                                }
-                            }
-
-                        # 快速發送消息
-                        with ApiClient(configuration) as api_client:
-                            line_bot_api = MessagingApi(api_client)
-                            line_bot_api.reply_message_with_http_info(
-                                ReplyMessageRequest(
-                                    reply_token=event.reply_token,
-                                    messages=[FlexMessage(alt_text="創建行程", contents=FlexContainer.from_dict(flex_message))]
-                                )
-                            )
-                        return  # 立即返回，提高響應速度
-
-                # 快速檢查：查看我的行程
-                elif any(keyword in user_message for keyword in ["我的行程", "查看我的行程", "行程列表"]):
-                    from api.database_utils import get_user_created_trips
-                    user_trips = get_user_created_trips(event.source.user_id)
-                    flex_message = create_flex_message("my_trips", trips=user_trips)
-
-                    # 快速發送消息
-                    with ApiClient(configuration) as api_client:
-                        line_bot_api = MessagingApi(api_client)
-                        line_bot_api.reply_message_with_http_info(
-                            ReplyMessageRequest(
-                                reply_token=event.reply_token,
-                                messages=[FlexMessage(alt_text="我的行程", contents=FlexContainer.from_dict(flex_message))]
-                            )
-                        )
-                    return  # 立即返回，提高響應速度
-
-                # 快速檢查：查看行程詳細
-                else:
-                    trip_title = parse_view_trip_message(user_message)
-                    if trip_title:
-                        from api.database_utils import get_trip_details_by_title
-                        trip_data = get_trip_details_by_title(event.source.user_id, trip_title)
-
-                        if trip_data:
-                            flex_message = create_flex_message("view_trip_details", trip_data=trip_data)
-                        else:
-                            flex_message = {
-                                "type": "bubble",
-                                "body": {
-                                    "type": "box",
-                                    "layout": "vertical",
-                                    "contents": [
-                                        {
-                                            "type": "text",
-                                            "text": f"找不到行程「{trip_title}」\n\n請確認：\n1. 行程名稱是否正確\n2. 是否已創建該行程\n\n您可以輸入「我的行程」查看已創建的行程。",
-                                            "wrap": True,
-                                            "color": "#666666"
-                                        }
-                                    ],
-                                    "paddingAll": "20px"
-                                }
-                            }
-
-                        # 快速發送消息
-                        with ApiClient(configuration) as api_client:
-                            line_bot_api = MessagingApi(api_client)
-                            line_bot_api.reply_message_with_http_info(
-                                ReplyMessageRequest(
-                                    reply_token=event.reply_token,
-                                    messages=[FlexMessage(alt_text="行程詳細", contents=FlexContainer.from_dict(flex_message))]
-                                )
-                            )
-                        return  # 立即返回，提高響應速度
-
-                    # 快速檢查：編輯行程
-                    old_title, new_title = parse_edit_trip_message(user_message)
-                    if old_title and new_title:
-                        from api.database_utils import update_trip_title
-                        result = update_trip_title(event.source.user_id, old_title, new_title)
-
-                        if result:
-                            flex_message = create_flex_message("edit_trip_success", old_title=old_title, new_title=new_title)
-                        else:
-                            flex_message = {
-                                "type": "bubble",
-                                "body": {
-                                    "type": "box",
-                                    "layout": "vertical",
-                                    "contents": [
-                                        {
-                                            "type": "text",
-                                            "text": f"找不到行程「{old_title}」或更新失敗\n\n請確認行程名稱是否正確。",
-                                            "wrap": True,
-                                            "color": "#666666"
-                                        }
-                                    ],
-                                    "paddingAll": "20px"
-                                }
-                            }
-
-                        # 快速發送消息
-                        with ApiClient(configuration) as api_client:
-                            line_bot_api = MessagingApi(api_client)
-                            line_bot_api.reply_message_with_http_info(
-                                ReplyMessageRequest(
-                                    reply_token=event.reply_token,
-                                    messages=[FlexMessage(alt_text="編輯行程", contents=FlexContainer.from_dict(flex_message))]
-                                )
-                            )
-                        return  # 立即返回，提高響應速度
-
-                    # 快速檢查：刪除行程
-                    trip_title = parse_delete_trip_message(user_message)
-                    if trip_title:
-                        from api.database_utils import delete_trip_by_title
-                        result = delete_trip_by_title(event.source.user_id, trip_title)
-
-                        if result:
-                            flex_message = create_flex_message("delete_trip_success", trip_info=result)
-                        else:
-                            flex_message = {
-                                "type": "bubble",
-                                "body": {
-                                    "type": "box",
-                                    "layout": "vertical",
-                                    "contents": [
-                                        {
-                                            "type": "text",
-                                            "text": f"找不到行程「{trip_title}」\n\n請確認行程名稱是否正確。",
-                                            "wrap": True,
-                                            "color": "#666666"
-                                        }
-                                    ],
-                                    "paddingAll": "20px"
-                                }
-                            }
-
-                        # 快速發送消息
-                        with ApiClient(configuration) as api_client:
-                            line_bot_api = MessagingApi(api_client)
-                            line_bot_api.reply_message_with_http_info(
-                                ReplyMessageRequest(
-                                    reply_token=event.reply_token,
-                                    messages=[FlexMessage(alt_text="刪除行程", contents=FlexContainer.from_dict(flex_message))]
-                                )
-                            )
-                        return  # 立即返回，提高響應速度
-
-                    # 最後檢查：地區查詢（較少使用的功能）
-                    location, trips = find_location_trips(user_message)
-                if location and trips:
-                    # 創建行程列表 Flex Message
-                    flex_message = create_flex_message(
-                        "trip_list",
-                        location=location,
-                        trips=trips
-                    )
-                    
-                    # 發送消息
-                    with ApiClient(configuration) as api_client:
-                        line_bot_api = MessagingApi(api_client)
-                        line_bot_api.reply_message_with_http_info(
-                            ReplyMessageRequest(
-                                reply_token=event.reply_token,
-                                messages=[FlexMessage(alt_text=f"{location} 行程推薦", contents=FlexContainer.from_dict(flex_message))]
-                            )
-                        )
-                else:
-                    # 檢查其他模板匹配
-                    template_config = get_message_template(user_message)
-                    
-                    if template_config:
-                        # 根據模板配置創建 Flex Message
-                        if template_config["template"] == "feature":
-                            flex_message = create_flex_message(
-                                "feature",
-                                feature_name=template_config["feature_name"]
-                            )
-                        elif template_config["template"] == "leaderboard":
-                            flex_message = create_flex_message(
-                                "leaderboard",
-                                rank=template_config["rank"]
-                            )
-                        elif template_config["template"] == "leaderboard_details":
-                            # 獲取排行榜詳細行程資料（使用緩存）
-                            rank = int(template_config["rank"])
-                            rank_data = get_cached_rank_details(rank)
-
-                            flex_message = create_flex_message(
-                                "leaderboard_details",
-                                rank_data=rank_data
-                            )
-                        elif template_config["template"] == "help":
-                            flex_message = create_flex_message("help")
-                        elif template_config["template"] == "my_trips":
-                            # 獲取用戶創建的行程列表
-                            from api.database_utils import get_user_created_trips
-                            user_trips = get_user_created_trips(event.source.user_id)
-                            flex_message = create_flex_message("my_trips", trips=user_trips)
-                        elif template_config["template"] == "create_trip":
-                            # 處理行程創建請求
-                            trip_title = user_message.replace("創建", "").replace("建立", "").replace("新增行程", "").replace("創建行程", "").replace("建立行程", "").strip()
-                            if trip_title:
-                                from api.database_utils import create_trip_from_line
-                                trip_data = create_trip_from_line(event.source.user_id, trip_title)
-                                flex_message = create_flex_message("create_trip_success", trip_data=trip_data)
-                            else:
-                                # 如果沒有提供行程標題，提示用戶
-                                flex_message = {
-                                    "type": "bubble",
-                                    "body": {
-                                        "type": "box",
-                                        "layout": "vertical",
-                                        "contents": [
-                                            {
-                                                "type": "text",
-                                                "text": "請提供行程標題，例如：\n「創建日本沖繩三日遊」",
-                                                "wrap": True,
-                                                "color": "#666666"
-                                            }
-                                        ],
-                                        "paddingAll": "20px"
-                                    }
-                                }
-                        
-                        # 發送消息
-                        with ApiClient(configuration) as api_client:
-                            line_bot_api = MessagingApi(api_client)
-                            line_bot_api.reply_message_with_http_info(
-                                ReplyMessageRequest(
-                                    reply_token=event.reply_token,
-                                    messages=[FlexMessage(alt_text="功能回應", contents=FlexContainer.from_dict(flex_message))]
-                                )
-                            )
-                    else:
-                        # 遇到不認識的指令時不回應
-                        pass
         except Exception as e:
             logger.error(f"Reply error: {str(e)}")
 
@@ -2703,14 +2025,14 @@ if line_handler:
             if postback_data.startswith("trip_detail:"):
                 trip_id = postback_data.split(":")[1]
                 trip = find_trip_by_id(trip_id)
-                
+
                 if trip:
                     # 創建行程詳情 Flex Message
                     flex_message = create_flex_message(
                         "trip_detail",
                         trip=trip
                     )
-                    
+
                     # 發送消息
                     with ApiClient(configuration) as api_client:
                         line_bot_api = MessagingApi(api_client)
@@ -2722,174 +2044,305 @@ if line_handler:
                         )
                 else:
                     logger.error(f"找不到行程 ID: {trip_id}")
-            
-            # 處理查看集合列表
-            elif postback_data == "view_meetings":
-                user_id = event.source.user_id
-                meetings = meeting_manager.get_user_meetings(user_id)
-                
-                if meetings:
-                    # 創建集合列表 Flex Message
-                    flex_message = create_meeting_list_message(meetings)
-                    
-                    with ApiClient(configuration) as api_client:
-                        line_bot_api = MessagingApi(api_client)
-                        line_bot_api.reply_message_with_http_info(
-                            ReplyMessageRequest(
-                                reply_token=event.reply_token,
-                                messages=[FlexMessage(alt_text="我的集合列表", contents=FlexContainer.from_dict(flex_message))]
-                            )
-                        )
-                else:
-                    # 沒有集合時的回應
-                    flex_message = {
-                        "type": "bubble",
-                        "size": "kilo",
-                        "header": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "contents": [
-                                {
-                                    "type": "text",
-                                    "text": "📝 我的集合",
-                                    "weight": "bold",
-                                    "size": "lg",
-                                    "color": "#ffffff",
-                                    "align": "center"
-                                }
-                            ],
-                            "backgroundColor": "#9B59B6",
-                            "paddingAll": "20px"
-                        },
-                        "body": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "contents": [
-                                {
-                                    "type": "text",
-                                    "text": "目前沒有設定任何集合",
-                                    "size": "md",
-                                    "color": "#555555",
-                                    "align": "center",
-                                    "margin": "md"
-                                },
-                                {
-                                    "type": "text",
-                                    "text": "試試輸入「下午2:35 淺草寺集合」來設定您的第一個集合！",
-                                    "size": "sm",
-                                    "color": "#888888",
-                                    "align": "center",
-                                    "wrap": True,
-                                    "margin": "sm"
-                                }
-                            ],
-                            "paddingAll": "20px"
-                        }
-                    }
-                    
-                    with ApiClient(configuration) as api_client:
-                        line_bot_api = MessagingApi(api_client)
-                        line_bot_api.reply_message_with_http_info(
-                            ReplyMessageRequest(
-                                reply_token=event.reply_token,
-                                messages=[FlexMessage(alt_text="我的集合", contents=FlexContainer.from_dict(flex_message))]
-                            )
-                        )
-            
-            # 處理取消集合
-            elif postback_data.startswith("cancel_meeting:"):
-                meeting_id = int(postback_data.split(":")[1])
-                user_id = event.source.user_id
-                
-                success, message = meeting_manager.cancel_meeting(meeting_id, user_id)
-                
-                if success:
-                    flex_message = {
-                        "type": "bubble",
-                        "size": "kilo",
-                        "header": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "contents": [
-                                {
-                                    "type": "text",
-                                    "text": "✅ 集合已取消",
-                                    "weight": "bold",
-                                    "size": "lg",
-                                    "color": "#ffffff",
-                                    "align": "center"
-                                }
-                            ],
-                            "backgroundColor": "#27AE60",
-                            "paddingAll": "20px"
-                        },
-                        "body": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "contents": [
-                                {
-                                    "type": "text",
-                                    "text": message,
-                                    "size": "md",
-                                    "color": "#555555",
-                                    "align": "center",
-                                    "margin": "md"
-                                }
-                            ],
-                            "paddingAll": "20px"
-                        }
-                    }
-                else:
-                    flex_message = {
-                        "type": "bubble",
-                        "size": "kilo",
-                        "header": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "contents": [
-                                {
-                                    "type": "text",
-                                    "text": "❌ 取消失敗",
-                                    "weight": "bold",
-                                    "size": "lg",
-                                    "color": "#ffffff",
-                                    "align": "center"
-                                }
-                            ],
-                            "backgroundColor": "#E74C3C",
-                            "paddingAll": "20px"
-                        },
-                        "body": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "contents": [
-                                {
-                                    "type": "text",
-                                    "text": message,
-                                    "size": "md",
-                                    "color": "#555555",
-                                    "align": "center",
-                                    "margin": "md"
-                                }
-                            ],
-                            "paddingAll": "20px"
-                        }
-                    }
-                
+
+            # 處理網站操作
+            elif postback_data.startswith("website_operation:"):
+                module_name = postback_data.split(":")[1]
+                line_user_id = event.source.user_id
+
+                # 創建網站操作選單
+                flex_message = create_website_operation_menu(line_user_id, module_name)
+
                 with ApiClient(configuration) as api_client:
                     line_bot_api = MessagingApi(api_client)
                     line_bot_api.reply_message_with_http_info(
                         ReplyMessageRequest(
                             reply_token=event.reply_token,
-                            messages=[FlexMessage(alt_text="取消集合", contents=FlexContainer.from_dict(flex_message))]
+                            messages=[FlexMessage(alt_text=f"{module_name} 操作選單", contents=FlexContainer.from_dict(flex_message))]
                         )
                     )
+
+            # 處理具體的網站操作
+            elif postback_data.startswith("execute_operation:"):
+                parts = postback_data.split(":")
+                if len(parts) >= 3:
+                    module_name = parts[1]
+                    operation = parts[2]
+                    line_user_id = event.source.user_id
+
+                    # 執行操作
+                    result = website_proxy.execute_operation(line_user_id, module_name, operation)
+
+                    # 創建結果訊息
+                    if result.get('success'):
+                        flex_message = create_operation_success_message(module_name, operation, result.get('data'))
+                    else:
+                        flex_message = create_operation_error_message(module_name, operation, result.get('error'))
+
+                    with ApiClient(configuration) as api_client:
+                        line_bot_api = MessagingApi(api_client)
+                        line_bot_api.reply_message_with_http_info(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[FlexMessage(alt_text="操作結果", contents=FlexContainer.from_dict(flex_message))]
+                            )
+                        )
+
+            # 集合相關的postback處理已移除
             
         except Exception as e:
             logger.error(f"Postback error: {str(e)}")
 
 # Vercel 會自動檢測名為 'app' 的 Flask 實例
 # 確保 app 在模組級別可用
+
+def create_website_operation_menu(line_user_id: str, module_name: str) -> dict:
+    """創建網站操作選單"""
+    # 根據不同模組創建不同的操作選單
+    module_operations = {
+        'tourhub_leaderboard': [
+            {'name': '🏆 查看排行榜', 'operation': 'view_leaderboard'},
+            {'name': '🔥 熱門行程', 'operation': 'get_top_trips'}
+        ],
+        'trip_management': [
+            {'name': '📋 管理我的行程', 'operation': 'manage_trips'},
+            {'name': '➕ 創建新行程', 'operation': 'create_new_trip'}
+        ],
+        'tour_clock': [
+            {'name': '⏰ 管理集合時間', 'operation': 'manage_meetings'},
+            {'name': '📅 創建新集合', 'operation': 'create_meeting'}
+        ],
+        'locker_finder': [
+            {'name': '🔍 查找置物櫃', 'operation': 'find_lockers'},
+            {'name': '📍 按地點搜尋', 'operation': 'search_by_location'}
+        ],
+        'bill_split': [
+            {'name': '💰 管理分帳', 'operation': 'manage_bills'},
+            {'name': '➕ 新建分帳', 'operation': 'create_bill'}
+        ]
+    }
+
+    operations = module_operations.get(module_name, [])
+
+    # 創建操作按鈕
+    operation_buttons = []
+    for op in operations:
+        operation_buttons.append({
+            "type": "button",
+            "action": {
+                "type": "postback",
+                "label": op['name'],
+                "data": f"execute_operation:{module_name}:{op['operation']}"
+            },
+            "style": "secondary",
+            "height": "sm",
+            "margin": "sm"
+        })
+
+    return {
+        "type": "bubble",
+        "size": "giga",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": f"🌐 {module_name.replace('_', ' ').title()}",
+                    "weight": "bold",
+                    "size": "lg",
+                    "color": "#ffffff",
+                    "align": "center"
+                },
+                {
+                    "type": "text",
+                    "text": "選擇要執行的操作",
+                    "size": "sm",
+                    "color": "#ffffff",
+                    "align": "center",
+                    "margin": "sm"
+                }
+            ],
+            "backgroundColor": "#00B900",
+            "paddingAll": "20px"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": operation_buttons,
+            "paddingAll": "20px"
+        }
+    }
+
+def create_operation_success_message(module_name: str, operation: str, data: dict = None) -> dict:
+    """創建操作成功訊息"""
+    # 檢查是否需要跳轉到網站
+    if data and data.get('action') == 'redirect':
+        url = data.get('url')
+        message = data.get('message', '正在為您開啟頁面...')
+
+        return {
+            "type": "bubble",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "🌐 跳轉到網站",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#ffffff",
+                        "align": "center"
+                    }
+                ],
+                "backgroundColor": "#00B900",
+                "paddingAll": "20px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": message,
+                        "size": "md",
+                        "color": "#333333",
+                        "align": "center",
+                        "wrap": True,
+                        "margin": "md"
+                    },
+                    {
+                        "type": "text",
+                        "text": "點擊下方按鈕開啟網站",
+                        "size": "sm",
+                        "color": "#666666",
+                        "align": "center",
+                        "margin": "md"
+                    }
+                ],
+                "paddingAll": "20px"
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "button",
+                        "action": {
+                            "type": "uri",
+                            "label": "🚀 開啟網站",
+                            "uri": url
+                        },
+                        "style": "primary",
+                        "color": "#00B900",
+                        "height": "sm"
+                    }
+                ],
+                "paddingAll": "20px"
+            }
+        }
+
+    # 一般操作成功訊息
+    return {
+        "type": "bubble",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "✅ 操作成功",
+                    "weight": "bold",
+                    "size": "lg",
+                    "color": "#ffffff",
+                    "align": "center"
+                }
+            ],
+            "backgroundColor": "#00B900",
+            "paddingAll": "20px"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": f"模組：{module_name}",
+                    "size": "sm",
+                    "color": "#666666",
+                    "margin": "md"
+                },
+                {
+                    "type": "text",
+                    "text": f"操作：{operation}",
+                    "size": "sm",
+                    "color": "#666666",
+                    "margin": "sm"
+                },
+                {
+                    "type": "text",
+                    "text": "操作已成功執行",
+                    "size": "md",
+                    "color": "#333333",
+                    "weight": "bold",
+                    "margin": "md"
+                }
+            ],
+            "paddingAll": "20px"
+        }
+    }
+
+def create_operation_error_message(module_name: str, operation: str, error: str) -> dict:
+    """創建操作錯誤訊息"""
+    return {
+        "type": "bubble",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "❌ 操作失敗",
+                    "weight": "bold",
+                    "size": "lg",
+                    "color": "#ffffff",
+                    "align": "center"
+                }
+            ],
+            "backgroundColor": "#E74C3C",
+            "paddingAll": "20px"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": f"模組：{module_name}",
+                    "size": "sm",
+                    "color": "#666666",
+                    "margin": "md"
+                },
+                {
+                    "type": "text",
+                    "text": f"操作：{operation}",
+                    "size": "sm",
+                    "color": "#666666",
+                    "margin": "sm"
+                },
+                {
+                    "type": "text",
+                    "text": f"錯誤：{error}",
+                    "size": "sm",
+                    "color": "#E74C3C",
+                    "wrap": True,
+                    "margin": "md"
+                }
+            ],
+            "paddingAll": "20px"
+        }
+    }
 
 # 為了兼容性，保留原有的條件
 if __name__ == "__main__":
