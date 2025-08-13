@@ -99,6 +99,25 @@ def add_favorite(line_user_id, rank_int):
     except Exception:
         return False
 
+def remove_favorite(line_user_id, rank_int):
+    try:
+        # 先嘗試 DB
+        try:
+            from api.database import remove_user_favorite_db
+            removed = remove_user_favorite_db(line_user_id, int(rank_int))
+            if removed:
+                return True
+        except Exception:
+            pass
+        # 回退記憶體
+        favorites = _get_user_favorites_memory(line_user_id)
+        if int(rank_int) in favorites:
+            favorites.remove(int(rank_int))
+            return True
+        return False
+    except Exception:
+        return False
+
 def get_message_template(user_message):
     """根據用戶消息獲取對應的模板配置"""
     # 按關鍵字長度排序，優先匹配更具體的關鍵字
@@ -1647,11 +1666,24 @@ def create_simple_flex_message(template_type, **kwargs):
                 }
             }
 
-        # 將收藏的名次轉成 carousel 卡片
+        # 將收藏的名次轉成 carousel 卡片（每張附移除收藏）
         bubbles = []
         for rank in favorites[:10]:
             sub = create_simple_flex_message("leaderboard", rank=str(rank))
             if sub and sub.get('type') == 'bubble':
+                # 附加一個移除收藏按鈕
+                sub = dict(sub)  # 淺拷貝
+                footer = sub.get('footer') or {"type": "box", "layout": "vertical", "contents": [], "paddingAll": "20px"}
+                contents = footer.get('contents', [])
+                contents.append({
+                    "type": "button",
+                    "action": {"type": "postback", "label": "移除收藏 🗑️", "data": f"action=favorite_remove&rank={rank}"},
+                    "style": "secondary",
+                    "height": "sm",
+                    "margin": "sm"
+                })
+                footer['contents'] = contents
+                sub['footer'] = footer
                 bubbles.append(sub)
         if not bubbles:
             return {
@@ -2282,6 +2314,30 @@ if line_handler:
                     notice = "加入收藏失敗"
 
                 # 回傳簡短通知卡
+                flex_message = {
+                    "type": "bubble",
+                    "body": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {"type": "text", "text": notice, "wrap": True, "align": "center", "color": "#555555"},
+                            {"type": "separator", "margin": "lg"},
+                            {"type": "text", "text": "輸入『我的收藏』查看清單", "size": "xs", "align": "center", "color": "#888888", "margin": "md"}
+                        ],
+                        "paddingAll": "20px"
+                    }
+                }
+            elif action == 'favorite_remove':
+                # 取消收藏
+                try:
+                    removed = remove_favorite(line_user_id, int(rank))
+                    if removed:
+                        notice = f"已移除收藏：第{rank}名"
+                    else:
+                        notice = f"收藏內沒有：第{rank}名"
+                except Exception:
+                    notice = "移除收藏失敗"
+
                 flex_message = {
                     "type": "bubble",
                     "body": {

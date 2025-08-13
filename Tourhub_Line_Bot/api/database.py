@@ -158,3 +158,28 @@ def get_user_favorites_db(line_user_id: str):
     except Exception as e:
         logger.error(f"取得收藏清單失敗: {e}")
         return []
+
+def remove_user_favorite_db(line_user_id: str, rank: int) -> bool:
+    """移除使用者的單一收藏名次。"""
+    try:
+        connection = get_database_connection()
+        if not connection:
+            return False
+        if not ensure_user_favorites_table_exists(connection):
+            return False
+
+        cursor = connection.cursor()
+        try:
+            cursor.execute(
+                "DELETE FROM user_favorites WHERE line_user_id = %s AND rank = %s",
+                (line_user_id, int(rank))
+            )
+            affected = cursor.rowcount
+        finally:
+            cursor.close()
+            connection.close()
+
+        return affected > 0
+    except Exception as e:
+        logger.error(f"移除收藏失敗: {e}")
+        return False
