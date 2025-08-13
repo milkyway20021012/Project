@@ -1629,6 +1629,8 @@ def create_simple_flex_message(template_type, **kwargs):
             try:
                 from api.database import get_user_favorites_db
                 favorites = get_user_favorites_db(line_user_id)
+                if not favorites:
+                    favorites = sorted(list(_get_user_favorites_memory(line_user_id)))
             except Exception:
                 favorites = sorted(list(_get_user_favorites_memory(line_user_id)))
         if not favorites:

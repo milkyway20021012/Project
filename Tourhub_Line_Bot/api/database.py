@@ -119,7 +119,8 @@ def add_user_favorite_db(line_user_id: str, rank: int) -> bool:
                 """,
                 (line_user_id, int(rank))
             )
-            inserted = cursor.rowcount == 1  # 1 表示新插入；2 可能是更新，但我們視為已存在
+            # 插入或更新都視為成功
+            inserted = True
         finally:
             cursor.close()
             connection.close()
