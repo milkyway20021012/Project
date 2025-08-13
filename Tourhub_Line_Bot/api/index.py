@@ -1627,28 +1627,25 @@ def create_simple_flex_message(template_type, **kwargs):
         # 從資料庫獲取地區行程資料
         trips = get_trips_by_location(location)
 
-        # 如果沒有找到資料，使用模擬資料
+        # 若無資料，回傳提示訊息
         if not trips:
-            trips = [
-                {
-                    "title": f"{location}經典三日遊",
-                    "duration": "3天2夜",
-                    "highlights": "經典景點深度遊覽",
-                    "id": "sample_1"
-                },
-                {
-                    "title": f"{location}美食文化之旅",
-                    "duration": "4天3夜",
-                    "highlights": "品嚐當地特色美食",
-                    "id": "sample_2"
-                },
-                {
-                    "title": f"{location}自然風光探索",
-                    "duration": "5天4夜",
-                    "highlights": "欣賞自然美景",
-                    "id": "sample_3"
+            return {
+                "type": "bubble",
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": f"抱歉，暫無 {location} 的行程資料",
+                            "wrap": True,
+                            "color": "#666666",
+                            "align": "center"
+                        }
+                    ],
+                    "paddingAll": "20px"
                 }
-            ]
+            }
 
         # 創建行程內容
         trip_contents = []
