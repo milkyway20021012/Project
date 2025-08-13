@@ -340,5 +340,23 @@ KEYWORD_MAPPINGS = {
         "template": "rebind_confirm"
     },
 
+    # 我的收藏
+    "my_favorites": {
+        "keywords": ["我的收藏", "收藏清單", "收藏列表", "最愛"],
+        "template": "my_favorites"
+    },
+
+    # 排行榜 Top10
+    "leaderboard_top10": {
+        "keywords": ["top10", "Top10", "top 10", "Top 10", "前十", "排行榜前十", "前10"],
+        "template": "leaderboard_top10"
+    },
+
+    # 附近置物櫃（提示用戶上傳位置）
+    "locker_nearby_prompt": {
+        "keywords": ["附近置物櫃", "附近寄物", "附近寄物點"],
+        "template": "locker_nearby_prompt"
+    },
+
     
 }

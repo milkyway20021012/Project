@@ -65,10 +65,39 @@ from linebot.v3.messaging import (
     FlexMessage,
     FlexContainer
 )
-from linebot.v3.webhooks import MessageEvent, TextMessageContent, PostbackEvent
+from linebot.v3.webhooks import MessageEvent, TextMessageContent, PostbackEvent, LocationMessageContent
 
 # 建立 Flask app
 app = Flask(__name__)
+
+# 收藏功能：優先寫入資料庫，失敗則回退記憶體
+USER_FAVORITES = {}
+
+def _get_user_favorites_memory(line_user_id):
+    favorites = USER_FAVORITES.get(line_user_id)
+    if favorites is None:
+        favorites = set()
+        USER_FAVORITES[line_user_id] = favorites
+    return favorites
+
+def add_favorite(line_user_id, rank_int):
+    try:
+        # 先嘗試存 DB
+        try:
+            from api.database import add_user_favorite_db
+            inserted = add_user_favorite_db(line_user_id, int(rank_int))
+            if inserted:
+                return True
+        except Exception:
+            pass
+
+        # 回退記憶體
+        favorites = _get_user_favorites_memory(line_user_id)
+        before_size = len(favorites)
+        favorites.add(int(rank_int))
+        return len(favorites) > before_size
+    except Exception:
+        return False
 
 def get_message_template(user_message):
     """根據用戶消息獲取對應的模板配置"""
@@ -1488,6 +1517,114 @@ def create_simple_flex_message(template_type, **kwargs):
             }
         }
 
+    elif template_type == "leaderboard_top10":
+        # 以 carousel 顯示前10名（來源優先：網站，其次 DB）
+        from api.web_scraper import scrape_leaderboard_data
+        leaderboard_data = scrape_leaderboard_data()
+
+        bubbles = []
+        for rank in range(1, 11):
+            rank_str = str(rank)
+            if rank_str not in leaderboard_data:
+                # 後援：用簡化樣板占位
+                rank_colors = {1: "#FFD700", 2: "#C0C0C0", 3: "#CD7F32", 4: "#4ECDC4", 5: "#FF6B9D"}
+                color = rank_colors.get(rank, "#6C5CE7")
+                title = f"第{rank}名"
+                destination = "熱門目的地"
+                duration = ""
+            else:
+                data = leaderboard_data[rank_str]
+                color = data.get("color", "#6C5CE7")
+                title = data.get("title") or data.get("destination", f"第{rank}名")
+                destination = data.get("destination", "")
+                duration = data.get("duration", "")
+
+            bubbles.append({
+                "type": "bubble",
+                "size": "kilo",
+                "header": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {"type": "text", "text": f"🏆 第{rank}名", "weight": "bold", "size": "lg", "color": "#ffffff", "align": "center"}
+                    ],
+                    "backgroundColor": color,
+                    "paddingAll": "20px"
+                },
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {"type": "text", "text": title, "weight": "bold", "size": "md", "color": "#333333", "wrap": True},
+                        {"type": "text", "text": f"目的地：{destination}", "size": "sm", "color": "#555555", "margin": "md"},
+                        {"type": "text", "text": f"行程天數：{duration}", "size": "sm", "color": "#555555"}
+                    ],
+                    "paddingAll": "20px"
+                },
+                "footer": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {"type": "button", "action": {"type": "postback", "label": "查看詳細行程 📋", "data": f"action=leaderboard_page&rank={rank}&page=2"}, "style": "primary", "color": color, "height": "sm"},
+                        {"type": "button", "action": {"type": "postback", "label": "加入收藏 ❤️", "data": f"action=favorite_add&rank={rank}"}, "style": "secondary", "height": "sm", "margin": "sm"}
+                    ],
+                    "paddingAll": "20px"
+                }
+            })
+
+        return {"type": "carousel", "contents": bubbles}
+
+    elif template_type == "my_favorites":
+        # 顯示使用者收藏的排行榜名次
+        line_user_id = kwargs.get('line_user_id')
+        favorites = []
+        if line_user_id:
+            # 先試 DB，再回退記憶體
+            try:
+                from api.database import get_user_favorites_db
+                favorites = get_user_favorites_db(line_user_id)
+            except Exception:
+                favorites = sorted(list(_get_user_favorites_memory(line_user_id)))
+        if not favorites:
+            return {
+                "type": "bubble",
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {"type": "text", "text": "您尚未收藏任何行程名次", "align": "center", "color": "#666666", "wrap": True},
+                        {"type": "text", "text": "在排行榜卡片點『加入收藏』即可新增", "size": "xs", "align": "center", "color": "#888888", "margin": "md"}
+                    ],
+                    "paddingAll": "20px"
+                }
+            }
+
+        # 將收藏的名次轉成 carousel 卡片
+        bubbles = []
+        for rank in favorites[:10]:
+            sub = create_simple_flex_message("leaderboard", rank=str(rank))
+            if sub and sub.get('type') == 'bubble':
+                bubbles.append(sub)
+        if not bubbles:
+            return {
+                "type": "bubble",
+                "body": {"type": "box", "layout": "vertical", "contents": [{"type": "text", "text": "暫無有效收藏可顯示", "align": "center", "color": "#666666"}]}
+            }
+        return {"type": "carousel", "contents": bubbles}
+
+    elif template_type == "locker_nearby_prompt":
+        return {
+            "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {"type": "text", "text": "請分享您目前位置，以尋找附近的置物櫃", "wrap": True, "align": "center", "color": "#555555"}
+                ],
+                "paddingAll": "20px"
+            }
+        }
+
     elif template_type == "leaderboard_details":
         # 直接從資料庫獲取詳細行程
         rank = kwargs.get('rank', '1')
@@ -1948,6 +2085,12 @@ if line_handler:
                     flex_message = create_simple_flex_message("binding_status", line_user_id=line_user_id)
                 elif template_config["template"] == "rebind_confirm":
                     flex_message = create_simple_flex_message("rebind_confirm")
+                elif template_config["template"] == "my_favorites":
+                    flex_message = create_simple_flex_message("my_favorites", line_user_id=line_user_id)
+                elif template_config["template"] == "leaderboard_top10":
+                    flex_message = create_simple_flex_message("leaderboard_top10")
+                elif template_config["template"] == "locker_nearby_prompt":
+                    flex_message = create_simple_flex_message("locker_nearby_prompt")
                 else:
                     # 預設回應
                     flex_message = create_simple_flex_message("default")
@@ -1990,7 +2133,40 @@ if line_handler:
             except Exception as send_error:
                 logger.error(f"❌ 發送錯誤回應也失敗: {send_error}")
 
-    # Postback 事件處理（分頁按鈕）
+    # 位置訊息處理（附近置物櫃）
+    @line_handler.add(MessageEvent, message=LocationMessageContent)
+    def handle_location(event):
+        try:
+            latitude = getattr(event.message, 'latitude', None)
+            longitude = getattr(event.message, 'longitude', None)
+            logger.info(f"📍 收到位置: lat={latitude}, lng={longitude}")
+
+            # 使用 locker_service 查詢真實資料
+            try:
+                from api.locker_service import fetch_nearby_lockers, build_lockers_carousel
+                lockers = fetch_nearby_lockers(latitude, longitude)
+                flex_message = build_lockers_carousel(lockers)
+            except Exception as e:
+                logger.error(f"locker_service 失敗，改回 mock: {e}")
+                # 最後回退：一張提示卡
+                flex_message = {
+                    "type": "bubble",
+                    "body": {"type": "box", "layout": "vertical", "contents": [{"type": "text", "text": "暫時無法取得附近置物櫃，稍後再試", "align": "center", "color": "#666666"}], "paddingAll": "20px"}
+                }
+
+            with ApiClient(configuration) as api_client:
+                line_bot_api = MessagingApi(api_client)
+                line_bot_api.reply_message_with_http_info(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[FlexMessage(alt_text="附近置物櫃", contents=FlexContainer.from_dict(flex_message))]
+                    )
+                )
+                logger.info("✅ 附近置物櫃回覆成功")
+        except Exception as e:
+            logger.error(f"❌ 處理位置訊息錯誤: {str(e)}")
+
+    # Postback 事件處理（分頁按鈕／收藏）
     @line_handler.add(PostbackEvent)
     def handle_postback(event):
         try:
@@ -2046,6 +2222,31 @@ if line_handler:
                 # 執行重新綁定
                 logger.info(f"🔧 執行重新綁定")
                 flex_message = execute_rebind(line_user_id)
+            elif action == 'favorite_add':
+                # 加入收藏（排行榜名次）
+                try:
+                    added = add_favorite(line_user_id, int(rank))
+                    if added:
+                        notice = f"已加入收藏：第{rank}名"
+                    else:
+                        notice = f"已在收藏：第{rank}名"
+                except Exception:
+                    notice = "加入收藏失敗"
+
+                # 回傳簡短通知卡
+                flex_message = {
+                    "type": "bubble",
+                    "body": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {"type": "text", "text": notice, "wrap": True, "align": "center", "color": "#555555"},
+                            {"type": "separator", "margin": "lg"},
+                            {"type": "text", "text": "輸入『我的收藏』查看清單", "size": "xs", "align": "center", "color": "#888888", "margin": "md"}
+                        ],
+                        "paddingAll": "20px"
+                    }
+                }
 
 
             if flex_message:

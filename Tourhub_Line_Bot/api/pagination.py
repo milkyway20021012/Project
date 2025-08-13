@@ -133,6 +133,17 @@ def create_paginated_leaderboard(rank, page=1):
                         "style": "primary",
                         "color": data["color"],
                         "height": "sm"
+                    },
+                    {
+                        "type": "button",
+                        "action": {
+                            "type": "postback",
+                            "label": "加入收藏 ❤️",
+                            "data": f"action=favorite_add&rank={rank}"
+                        },
+                        "style": "secondary",
+                        "height": "sm",
+                        "margin": "sm"
                     }
                 ],
                 "paddingAll": "20px"

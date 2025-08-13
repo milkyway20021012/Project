@@ -78,3 +78,82 @@ def get_trips_by_location(location):
 ## 已移除未使用的 get_leaderboard_rank_details 函式
 
 ## 已移除未使用的 get_simple_itinerary_by_rank 函式
+
+# 收藏功能：資料庫持久化
+def ensure_user_favorites_table_exists(connection):
+    try:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS user_favorites (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                line_user_id VARCHAR(128) NOT NULL,
+                rank INT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY uniq_user_rank (line_user_id, rank)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """
+        )
+        cursor.close()
+        return True
+    except Exception as e:
+        logger.error(f"建立 user_favorites 表失敗: {e}")
+        return False
+
+def add_user_favorite_db(line_user_id: str, rank: int) -> bool:
+    """新增收藏，若已存在則回傳 False"""
+    try:
+        connection = get_database_connection()
+        if not connection:
+            return False
+        if not ensure_user_favorites_table_exists(connection):
+            return False
+
+        cursor = connection.cursor()
+        try:
+            cursor.execute(
+                """
+                INSERT INTO user_favorites (line_user_id, rank)
+                VALUES (%s, %s)
+                ON DUPLICATE KEY UPDATE rank = VALUES(rank)
+                """,
+                (line_user_id, int(rank))
+            )
+            inserted = cursor.rowcount == 1  # 1 表示新插入；2 可能是更新，但我們視為已存在
+        finally:
+            cursor.close()
+            connection.close()
+
+        return inserted
+    except Exception as e:
+        logger.error(f"新增收藏失敗: {e}")
+        return False
+
+def get_user_favorites_db(line_user_id: str):
+    """取得使用者收藏的名次列表（升冪排序）"""
+    try:
+        connection = get_database_connection()
+        if not connection:
+            return []
+        if not ensure_user_favorites_table_exists(connection):
+            return []
+
+        cursor = connection.cursor()
+        try:
+            cursor.execute(
+                """
+                SELECT rank FROM user_favorites
+                WHERE line_user_id = %s
+                ORDER BY rank ASC
+                """,
+                (line_user_id,)
+            )
+            rows = cursor.fetchall()
+        finally:
+            cursor.close()
+            connection.close()
+
+        return [int(r[0]) for r in rows]
+    except Exception as e:
+        logger.error(f"取得收藏清單失敗: {e}")
+        return []
