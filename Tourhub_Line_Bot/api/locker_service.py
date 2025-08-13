@@ -1,78 +1,116 @@
 import os
 import logging
 import requests
+import re
+import math
 from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
 LOCKER_SITE_URL = os.environ.get('LOCKER_SITE_URL', 'https://tripfrontend.vercel.app/linelocker')
 
+def _extract_lat_lng_from_text(text: str):
+    if not text:
+        return None
+    # 常見格式：...q=lat,lng 或 ...query=lat,lng 或文字中直接出現 lat,lng
+    m = re.search(r'(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)', text)
+    if not m:
+        return None
+    try:
+        return float(m.group(1)), float(m.group(2))
+    except Exception:
+        return None
+
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    R = 6371.0
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = math.sin(dphi/2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
 def fetch_nearby_lockers(lat: float, lng: float, max_items: int = 3):
-    """從自家置物櫃網站頁面爬取附近置物資訊（不依賴 Google API）。"""
+    """從自家置物櫃網站爬取清單，解析每項座標，按距離排序回傳最近 max_items 筆。"""
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36'
         }
-        # 嘗試以查詢參數帶入座標，若站點支援則可回傳附近結果
-        url = f"{LOCKER_SITE_URL}?lat={lat}&lng={lng}"
-        resp = requests.get(url, headers=headers, timeout=10)
+        # 先抓清單頁（即使站點不支援 lat/lng 過濾，也能解析清單後本地計算距離）
+        resp = requests.get(LOCKER_SITE_URL, headers=headers, timeout=12)
         resp.raise_for_status()
 
         soup = BeautifulSoup(resp.content, 'html.parser')
 
-        # 寬鬆選擇器，盡可能找出清單項目
         selectors = [
-            '.locker-item',
-            '.item',
-            '[class*="locker"]',
-            '[data-type*="locker"]',
-            'li',
-            '.card'
+            '.locker-item', '.item', '.card', '[class*="locker"]', '[data-type*="locker"]', 'li'
         ]
-
         elements = []
         for sel in selectors:
             elements = soup.select(sel)
             if elements:
                 break
 
-        lockers = []
+        candidates = []
         for el in elements:
             try:
-                # 名稱：優先使用標題標籤或含 name/title 的 class
                 title_el = (
                     el.find(['h1', 'h2', 'h3', 'h4', 'h5']) or
                     el.find(class_=lambda c: c and ('title' in c or 'name' in c))
                 )
                 name = title_el.get_text(strip=True) if title_el else None
 
-                # 地址：找含 address/location 的 class 或文字
                 address_el = el.find(class_=lambda c: c and ('address' in c or 'location' in c))
                 address = address_el.get_text(strip=True) if address_el else None
 
-                # 導航連結：找包含 map 的連結
-                link_el = el.find('a', href=True)
+                # 嘗試從任何連結或元素文字中解析座標
+                latlng = None
                 map_uri = None
-                if link_el and ('map' in link_el['href'] or 'maps' in link_el['href']):
-                    map_uri = link_el['href']
-                if not map_uri:
-                    # 回退到站內頁面
-                    map_uri = LOCKER_SITE_URL
+                for a in el.find_all('a', href=True):
+                    latlng = _extract_lat_lng_from_text(a['href']) or _extract_lat_lng_from_text(a.get_text(" ", strip=True))
+                    if latlng:
+                        map_uri = a['href']
+                        break
 
-                if name or address:
-                    lockers.append({
+                # 若無連結座標，試從整個元素文字嘗試解析
+                if not latlng:
+                    latlng = _extract_lat_lng_from_text(el.get_text(" ", strip=True))
+
+                if name or address or latlng:
+                    item = {
                         'name': name or '附近置物點',
                         'address': address or '—',
-                        'rating': None,
-                        'map_uri': map_uri
-                    })
+                        'map_uri': map_uri or LOCKER_SITE_URL,
+                        'latlng': latlng
+                    }
+                    # 計算距離
+                    if item['latlng']:
+                        lat2, lng2 = item['latlng']
+                        item['distance_km'] = _haversine_km(lat, lng, lat2, lng2)
+                    else:
+                        item['distance_km'] = None
 
-                if len(lockers) >= max_items:
-                    break
+                    candidates.append(item)
             except Exception:
                 continue
 
-        return lockers
+        # 先過濾出有距離的，按距離排序；若不足，再補無距離者
+        with_distance = [c for c in candidates if c['distance_km'] is not None]
+        without_distance = [c for c in candidates if c['distance_km'] is None]
+        with_distance.sort(key=lambda x: x['distance_km'])
+        lockers_sorted = with_distance + without_distance
+
+        final = []
+        for c in lockers_sorted[:max_items]:
+            final.append({
+                'name': c['name'],
+                'address': c['address'],
+                'rating': None,
+                'map_uri': c['map_uri'],
+                'distance_km': c['distance_km']
+            })
+        return final
     except Exception as e:
         logger.error(f"爬取置物櫃網站失敗: {e}")
         return []
@@ -94,9 +132,9 @@ def build_lockers_carousel(lockers):
     for idx, item in enumerate(lockers, 1):
         name = item.get('name')
         addr = item.get('address')
-        rating = item.get('rating')
         uri = item.get('map_uri')
-        rating_text = f"評分：{rating}" if rating else "—"
+        distance_km = item.get('distance_km')
+        distance_text = f"距離：約 {distance_km:.1f} 公里" if isinstance(distance_km, (int, float)) else None
         bubbles.append({
             "type": "bubble",
             "size": "kilo",
@@ -113,7 +151,7 @@ def build_lockers_carousel(lockers):
                 "contents": [
                     {"type": "text", "text": name, "weight": "bold", "size": "md", "color": "#333333", "wrap": True},
                     {"type": "text", "text": addr, "size": "sm", "color": "#555555", "wrap": True, "margin": "sm"},
-                    {"type": "text", "text": rating_text, "size": "sm", "color": "#555555", "margin": "sm"}
+                    *(([{"type": "text", "text": distance_text, "size": "sm", "color": "#555555", "margin": "sm"}] if distance_text else []))
                 ],
                 "paddingAll": "20px"
             },
