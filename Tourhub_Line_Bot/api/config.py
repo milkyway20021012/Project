@@ -373,6 +373,20 @@ KEYWORD_MAPPINGS = {
         "template": "creation_help"
     },
 
+    # 用戶綁定管理
+    "user_account_info": {
+        "keywords": ["我的帳號", "帳號資訊", "用戶資訊", "個人資料", "my account", "account info"],
+        "template": "user_account"
+    },
+    "binding_management": {
+        "keywords": ["綁定管理", "綁定狀態", "服務綁定", "binding status", "綁定查詢"],
+        "template": "binding_status"
+    },
+    "rebind_services": {
+        "keywords": ["重新綁定", "重新連接", "rebind", "重新登入", "重新綁定服務"],
+        "template": "rebind_confirm"
+    },
+
     "website_operations": {
         "keywords": ["網站操作", "操作網站", "使用網站", "網站功能", "我的操作"],
         "template": "website_operations"

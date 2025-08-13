@@ -673,6 +673,448 @@ def create_creation_help():
         }
     }
 
+def create_user_account_info(line_user_id):
+    """創建用戶帳號資訊"""
+    from api.unified_user_manager import user_manager
+
+    # 獲取用戶資訊
+    user = user_manager.get_or_create_user(line_user_id)
+    if not user:
+        return create_error_message("無法獲取用戶資訊")
+
+    # 獲取綁定資訊
+    bindings = user_manager.get_user_bindings(user['id'])
+
+    # 格式化時間
+    last_login = user.get('last_login_at')
+    if last_login:
+        last_login_str = last_login.strftime('%Y-%m-%d %H:%M')
+    else:
+        last_login_str = "首次使用"
+
+    return {
+        "type": "bubble",
+        "size": "kilo",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "👤 我的帳號資訊",
+                    "weight": "bold",
+                    "size": "lg",
+                    "color": "#ffffff",
+                    "align": "center"
+                }
+            ],
+            "backgroundColor": "#6C5CE7",
+            "paddingAll": "20px"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": f"🆔 用戶 ID: {user['id']}",
+                    "size": "sm",
+                    "color": "#666666",
+                    "margin": "md"
+                },
+                {
+                    "type": "text",
+                    "text": f"📱 Line ID: {line_user_id[:10]}...",
+                    "size": "sm",
+                    "color": "#666666",
+                    "margin": "sm"
+                },
+                {
+                    "type": "text",
+                    "text": f"⏰ 最後登入: {last_login_str}",
+                    "size": "sm",
+                    "color": "#666666",
+                    "margin": "sm"
+                },
+                {
+                    "type": "text",
+                    "text": f"🔗 已綁定服務: {len(bindings)}/5",
+                    "size": "sm",
+                    "color": "#666666",
+                    "margin": "sm"
+                },
+                {
+                    "type": "text",
+                    "text": f"✅ 帳號狀態: {user.get('status', 'active').upper()}",
+                    "size": "sm",
+                    "color": "#2ECC71",
+                    "margin": "sm"
+                }
+            ],
+            "paddingAll": "20px"
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "button",
+                    "action": {
+                        "type": "postback",
+                        "label": "🔗 查看綁定狀態",
+                        "data": "action=binding_status"
+                    },
+                    "style": "primary",
+                    "color": "#6C5CE7",
+                    "height": "sm"
+                },
+                {
+                    "type": "button",
+                    "action": {
+                        "type": "postback",
+                        "label": "🔄 重新綁定服務",
+                        "data": "action=rebind_confirm"
+                    },
+                    "style": "secondary",
+                    "height": "sm",
+                    "margin": "sm"
+                }
+            ],
+            "paddingAll": "20px"
+        }
+    }
+
+def create_binding_status(line_user_id):
+    """創建綁定狀態資訊"""
+    from api.unified_user_manager import user_manager
+
+    # 獲取用戶資訊
+    user = user_manager.get_or_create_user(line_user_id)
+    if not user:
+        return create_error_message("無法獲取用戶資訊")
+
+    # 獲取綁定資訊
+    bindings = user_manager.get_user_bindings(user['id'])
+
+    # 預定義的服務列表
+    services = [
+        {"name": "tourhub_leaderboard", "display": "🏆 排行榜"},
+        {"name": "trip_management", "display": "🗓️ 行程管理"},
+        {"name": "tour_clock", "display": "⏰ 集合管理"},
+        {"name": "locker_finder", "display": "🛅 置物櫃"},
+        {"name": "bill_split", "display": "💰 分帳系統"}
+    ]
+
+    # 創建服務狀態列表
+    service_contents = []
+    for service in services:
+        is_bound = service["name"] in bindings
+        status_icon = "✅" if is_bound else "❌"
+        status_text = "已綁定" if is_bound else "未綁定"
+
+        service_contents.append({
+            "type": "box",
+            "layout": "horizontal",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": service["display"],
+                    "size": "sm",
+                    "color": "#333333",
+                    "flex": 3
+                },
+                {
+                    "type": "text",
+                    "text": f"{status_icon} {status_text}",
+                    "size": "sm",
+                    "color": "#2ECC71" if is_bound else "#E74C3C",
+                    "align": "end",
+                    "flex": 2
+                }
+            ],
+            "margin": "sm"
+        })
+
+    return {
+        "type": "bubble",
+        "size": "kilo",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "🔗 服務綁定狀態",
+                    "weight": "bold",
+                    "size": "lg",
+                    "color": "#ffffff",
+                    "align": "center"
+                }
+            ],
+            "backgroundColor": "#2ECC71",
+            "paddingAll": "20px"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": f"綁定狀態總覽 ({len(bindings)}/5)",
+                    "size": "md",
+                    "color": "#555555",
+                    "margin": "md",
+                    "weight": "bold"
+                },
+                {
+                    "type": "separator",
+                    "margin": "lg"
+                }
+            ] + service_contents,
+            "paddingAll": "20px"
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "button",
+                    "action": {
+                        "type": "postback",
+                        "label": "🔄 重新綁定所有服務",
+                        "data": "action=rebind_all"
+                    },
+                    "style": "primary",
+                    "color": "#2ECC71",
+                    "height": "sm"
+                }
+            ],
+            "paddingAll": "20px"
+        }
+    }
+
+def create_rebind_confirm():
+    """創建重新綁定確認"""
+    return {
+        "type": "bubble",
+        "size": "kilo",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "🔄 重新綁定確認",
+                    "weight": "bold",
+                    "size": "lg",
+                    "color": "#ffffff",
+                    "align": "center"
+                }
+            ],
+            "backgroundColor": "#F39C12",
+            "paddingAll": "20px"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "⚠️ 重新綁定將會：",
+                    "size": "md",
+                    "color": "#555555",
+                    "margin": "md",
+                    "weight": "bold"
+                },
+                {
+                    "type": "text",
+                    "text": "• 重新建立與所有服務的連接\n• 刷新您的認證 Token\n• 確保所有功能正常運作",
+                    "size": "sm",
+                    "color": "#666666",
+                    "wrap": True,
+                    "margin": "md"
+                },
+                {
+                    "type": "separator",
+                    "margin": "lg"
+                },
+                {
+                    "type": "text",
+                    "text": "💡 通常在以下情況需要重新綁定：",
+                    "size": "sm",
+                    "color": "#333333",
+                    "weight": "bold",
+                    "margin": "lg"
+                },
+                {
+                    "type": "text",
+                    "text": "• 功能使用異常\n• 無法創建內容\n• 跳轉網站失敗",
+                    "size": "sm",
+                    "color": "#666666",
+                    "wrap": True,
+                    "margin": "sm"
+                }
+            ],
+            "paddingAll": "20px"
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "button",
+                    "action": {
+                        "type": "postback",
+                        "label": "✅ 確認重新綁定",
+                        "data": "action=rebind_execute"
+                    },
+                    "style": "primary",
+                    "color": "#F39C12",
+                    "height": "sm"
+                },
+                {
+                    "type": "button",
+                    "action": {
+                        "type": "postback",
+                        "label": "❌ 取消",
+                        "data": "action=back_to_menu"
+                    },
+                    "style": "secondary",
+                    "height": "sm",
+                    "margin": "sm"
+                }
+            ],
+            "paddingAll": "20px"
+        }
+    }
+
+def execute_rebind(line_user_id):
+    """執行重新綁定"""
+    from api.unified_user_manager import user_manager
+
+    try:
+        # 獲取用戶
+        user = user_manager.get_or_create_user(line_user_id)
+        if not user:
+            return create_error_message("無法獲取用戶資訊")
+
+        # 重新綁定所有服務
+        services = ['trip_management', 'tour_clock', 'locker_finder', 'bill_split', 'tourhub_leaderboard']
+        success_count = 0
+
+        for service in services:
+            if user_manager.bind_website(user['id'], service):
+                success_count += 1
+
+        # 記錄重新綁定操作
+        user_manager.log_operation(
+            user['id'],
+            'rebind_services',
+            {'services': services, 'success_count': success_count},
+            result_status='success' if success_count == len(services) else 'partial'
+        )
+
+        if success_count == len(services):
+            return {
+                "type": "bubble",
+                "size": "kilo",
+                "header": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "✅ 重新綁定成功",
+                            "weight": "bold",
+                            "size": "lg",
+                            "color": "#ffffff",
+                            "align": "center"
+                        }
+                    ],
+                    "backgroundColor": "#2ECC71",
+                    "paddingAll": "20px"
+                },
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": f"🎉 已成功重新綁定 {success_count} 個服務！",
+                            "size": "md",
+                            "color": "#555555",
+                            "margin": "md",
+                            "weight": "bold"
+                        },
+                        {
+                            "type": "text",
+                            "text": "• 🏆 排行榜\n• 🗓️ 行程管理\n• ⏰ 集合管理\n• 🛅 置物櫃\n• 💰 分帳系統",
+                            "size": "sm",
+                            "color": "#666666",
+                            "wrap": True,
+                            "margin": "md"
+                        },
+                        {
+                            "type": "separator",
+                            "margin": "lg"
+                        },
+                        {
+                            "type": "text",
+                            "text": "💡 現在您可以正常使用所有功能了！",
+                            "size": "sm",
+                            "color": "#2ECC71",
+                            "wrap": True,
+                            "margin": "lg"
+                        }
+                    ],
+                    "paddingAll": "20px"
+                },
+                "footer": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "postback",
+                                "label": "🎯 返回功能選單",
+                                "data": "action=back_to_menu"
+                            },
+                            "style": "primary",
+                            "color": "#2ECC71",
+                            "height": "sm"
+                        }
+                    ],
+                    "paddingAll": "20px"
+                }
+            }
+        else:
+            return create_error_message(f"重新綁定部分成功 ({success_count}/{len(services)})")
+
+    except Exception as e:
+        logger.error(f"重新綁定失敗: {e}")
+        return create_error_message("重新綁定失敗，請稍後再試")
+
+def create_error_message(error_text):
+    """創建錯誤訊息"""
+    return {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": f"❌ {error_text}",
+                    "wrap": True,
+                    "color": "#E74C3C",
+                    "align": "center"
+                }
+            ],
+            "paddingAll": "20px"
+        }
+    }
+
 def create_simple_flex_message(template_type, **kwargs):
     """創建簡單的 Flex Message"""
     
@@ -983,6 +1425,23 @@ def create_simple_flex_message(template_type, **kwargs):
 
     elif template_type == "creation_help":
         return create_creation_help()
+
+    elif template_type == "user_account":
+        line_user_id = kwargs.get('line_user_id')
+        if line_user_id:
+            return create_user_account_info(line_user_id)
+        else:
+            return create_error_message("無法獲取用戶資訊")
+
+    elif template_type == "binding_status":
+        line_user_id = kwargs.get('line_user_id')
+        if line_user_id:
+            return create_binding_status(line_user_id)
+        else:
+            return create_error_message("無法獲取用戶資訊")
+
+    elif template_type == "rebind_confirm":
+        return create_rebind_confirm()
 
     elif template_type == "leaderboard":
         # 使用分頁系統顯示排行榜詳細資料
@@ -1545,6 +2004,12 @@ if line_handler:
 
                 elif template_config["template"] == "creation_help":
                     flex_message = create_simple_flex_message("creation_help")
+                elif template_config["template"] == "user_account":
+                    flex_message = create_simple_flex_message("user_account", line_user_id=line_user_id)
+                elif template_config["template"] == "binding_status":
+                    flex_message = create_simple_flex_message("binding_status", line_user_id=line_user_id)
+                elif template_config["template"] == "rebind_confirm":
+                    flex_message = create_simple_flex_message("rebind_confirm")
                 else:
                     # 預設回應
                     flex_message = create_simple_flex_message("default")
@@ -1594,6 +2059,9 @@ if line_handler:
             postback_data = event.postback.data
             logger.info(f"🔍 收到 postback: {postback_data}")
 
+            # 獲取用戶 ID
+            line_user_id = event.source.user_id if hasattr(event.source, 'user_id') else 'unknown'
+
             # 解析 postback 資料
             params = {}
             for param in postback_data.split('&'):
@@ -1605,7 +2073,7 @@ if line_handler:
             rank = params.get('rank', '1')
             page = int(params.get('page', '1'))
 
-            logger.info(f"🔧 Postback 參數: action={action}, rank={rank}, page={page}")
+            logger.info(f"🔧 Postback 參數: action={action}, rank={rank}, page={page}, user={line_user_id}")
 
             flex_message = None
 
@@ -1628,6 +2096,18 @@ if line_handler:
                 # 返回功能選單
                 logger.info(f"🔧 返回功能選單")
                 flex_message = create_simple_flex_message("feature_menu")
+            elif action == 'binding_status':
+                # 查看綁定狀態
+                logger.info(f"🔧 查看綁定狀態")
+                flex_message = create_simple_flex_message("binding_status", line_user_id=line_user_id)
+            elif action == 'rebind_confirm':
+                # 重新綁定確認
+                logger.info(f"🔧 重新綁定確認")
+                flex_message = create_simple_flex_message("rebind_confirm")
+            elif action == 'rebind_execute' or action == 'rebind_all':
+                # 執行重新綁定
+                logger.info(f"🔧 執行重新綁定")
+                flex_message = execute_rebind(line_user_id)
 
 
             if flex_message:
