@@ -15,7 +15,58 @@ def create_paginated_leaderboard(rank, page=1):
     data = leaderboard_data.get(str(rank))
     
     if not data:
-        return None
+        # 後援：從資料庫查詢第 rank 名基本資訊，避免回傳 None
+        try:
+            from api.database import get_database_connection
+            connection = get_database_connection()
+            if not connection:
+                return create_no_content_page(rank, "基本資訊")
+
+            cursor = connection.cursor(dictionary=True)
+            leaderboard_query = """
+            SELECT
+                t.trip_id,
+                t.title,
+                t.area,
+                t.start_date,
+                t.end_date
+            FROM line_trips t
+            LEFT JOIN trip_stats ts ON t.trip_id = ts.trip_id
+            WHERE t.trip_id IS NOT NULL
+            ORDER BY ts.popularity_score DESC, ts.favorite_count DESC, ts.share_count DESC
+            LIMIT %s, 1
+            """
+
+            cursor.execute(leaderboard_query, (int(rank) - 1,))
+            trip_row = cursor.fetchone()
+            cursor.close()
+            connection.close()
+
+            if not trip_row:
+                return create_no_content_page(rank, "基本資訊")
+
+            # 構造與爬蟲一致的基本顯示資料
+            days = None
+            if trip_row.get('start_date') and trip_row.get('end_date'):
+                try:
+                    days = (trip_row['end_date'] - trip_row['start_date']).days + 1
+                except Exception:
+                    days = None
+
+            rank_colors = {1: "#FFD700", 2: "#C0C0C0", 3: "#CD7F32", 4: "#4ECDC4", 5: "#FF6B9D"}
+            rank_titles = {1: "🥇 第一名", 2: "🥈 第二名", 3: "🥉 第三名", 4: "🏅 第四名", 5: "🎖️ 第五名"}
+
+            data = {
+                "rank": int(rank),
+                "title": trip_row.get('title') or f"第{rank}名行程",
+                "rank_title": rank_titles.get(int(rank), f"第{rank}名"),
+                "color": rank_colors.get(int(rank), "#9B59B6"),
+                "destination": trip_row.get('area') or "",
+                "duration": (f"{days}天{days-1}夜" if days and days > 1 else ("1天" if days == 1 else ""))
+            }
+
+        except Exception:
+            return create_no_content_page(rank, "基本資訊")
     
     # 分頁邏輯
     if page == 1:
