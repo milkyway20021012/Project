@@ -1,6 +1,7 @@
 from flask import Flask, request, abort
 import os
 import logging
+import re
 
 # 設定日誌
 logging.basicConfig(level=logging.INFO)
@@ -85,6 +86,34 @@ def get_message_template(user_message):
         return all_mappings[0][1]
 
     return None
+
+def parse_rank_request(user_message):
+    """解析用戶輸入是否為要求排行榜第 n 名或其詳細行程
+    支援：
+    - 排行榜第5名 / 第5名
+    - 第5名詳細行程 / 排行榜第5名詳細行程
+    - top 3 / Top3 / TOP 3 詳細行程
+    返回: (template_type, rank_int) 或 None
+    """
+    try:
+        text = (user_message or '').strip()
+        is_detail = '詳細' in text
+
+        # 1) 中文「第n名」樣式（可帶「排行榜」前綴，可帶「詳細行程」後綴）
+        m = re.search(r'(?:排行榜)?第\s*(\d+)\s*名', text)
+        if m:
+            rank = int(m.group(1))
+            return ("leaderboard_details" if is_detail else "leaderboard", rank)
+
+        # 2) 英文 Top n 樣式（top3, top 3, TOP 3...）
+        m = re.search(r'(?i)\btop\s*(\d+)\b', text)
+        if m:
+            rank = int(m.group(1))
+            return ("leaderboard_details" if is_detail else "leaderboard", rank)
+
+        return None
+    except Exception:
+        return None
 
 def create_optimized_flex_itinerary(data):
     """創建優化的 Flex Message 詳細行程"""
@@ -1823,10 +1852,28 @@ if line_handler:
             # 獲取用戶 ID
             line_user_id = event.source.user_id if hasattr(event.source, 'user_id') else 'unknown'
 
-            # 先檢查是否為內容創建指令
+            # 先檢查是否為第 n 名的快速查詢
+            parsed = parse_rank_request(user_message)
+            if parsed:
+                template_key, rank = parsed
+                if template_key == "leaderboard":
+                    flex_message = create_simple_flex_message("leaderboard", rank=str(rank))
+                else:
+                    flex_message = create_simple_flex_message("leaderboard_details", rank=str(rank))
+
+                with ApiClient(configuration) as api_client:
+                    line_bot_api = MessagingApi(api_client)
+                    line_bot_api.reply_message_with_http_info(
+                        ReplyMessageRequest(
+                            reply_token=event.reply_token,
+                            messages=[FlexMessage(alt_text="TourHub 排行榜", contents=FlexContainer.from_dict(flex_message))]
+                        )
+                    )
+                return
+
+            # 再檢查是否為內容創建指令
             creation_result = content_creator.parse_and_create(user_message, line_user_id)
             if creation_result:
-                # 創建回應訊息
                 response_message = create_creation_response(creation_result)
 
                 with ApiClient(configuration) as api_client:
