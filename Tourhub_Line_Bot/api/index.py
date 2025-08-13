@@ -24,8 +24,7 @@ from api.config import (
 
 # 導入網頁爬蟲功能
 from api.web_scraper import (
-    scrape_leaderboard_data,
-    scrape_trip_details
+    scrape_leaderboard_data
 )
 
 # 導入分頁功能
@@ -34,13 +33,21 @@ from api.pagination import (
     create_paginated_itinerary
 )
 
-# 導入內容創建功能
-from api.content_creator import content_creator
+import importlib
+
+# 導入內容創建功能（若不存在則降級為無操作）
+class _NoopContentCreator:
+    def parse_and_create(self, user_message, line_user_id):
+        return None
+
+try:
+    content_creator = importlib.import_module('api.content_creator').content_creator
+except Exception:
+    content_creator = _NoopContentCreator()
 
 # 導入資料庫功能（作為備用）
 try:
     from api.database import (
-        get_leaderboard_data,
         get_trips_by_location
     )
 except ImportError:
@@ -253,124 +260,7 @@ def create_optimized_flex_itinerary(data):
             }
         }
 
-def create_text_itinerary_response(rank):
-    """創建文字格式的詳細行程回應"""
-    try:
-        from api.database import get_database_connection
-        connection = get_database_connection()
-        if not connection:
-            return f"抱歉，第{rank}名的詳細行程暫時無法提供。"
-
-        cursor = connection.cursor(dictionary=True)
-
-        # 查詢排行榜中指定排名的行程
-        leaderboard_query = """
-        SELECT
-            t.trip_id,
-            t.title,
-            t.area
-        FROM line_trips t
-        LEFT JOIN trip_stats ts ON t.trip_id = ts.trip_id
-        WHERE t.trip_id IS NOT NULL
-        ORDER BY ts.popularity_score DESC, ts.favorite_count DESC, ts.share_count DESC
-        LIMIT %s, 1
-        """
-
-        cursor.execute(leaderboard_query, (int(rank) - 1,))
-        trip_data = cursor.fetchone()
-
-        if not trip_data:
-            cursor.close()
-            connection.close()
-            return f"抱歉，第{rank}名的行程資料暫時無法提供。"
-
-        trip_id = trip_data['trip_id']
-
-        # 查詢詳細行程安排
-        details_query = """
-        SELECT
-            location,
-            date,
-            start_time,
-            end_time
-        FROM line_trip_details
-        WHERE trip_id = %s
-        ORDER BY date, start_time
-        """
-
-        cursor.execute(details_query, (trip_id,))
-        details = cursor.fetchall()
-
-        cursor.close()
-        connection.close()
-
-        # 組織文字回應
-        rank_emojis = {1: "🥇", 2: "🥈", 3: "🥉", 4: "🏅", 5: "🎖️"}
-        rank_emoji = rank_emojis.get(int(rank), "🎖️")
-
-        response_lines = [
-            f"{rank_emoji} 第{rank}名詳細行程",
-            f"📍 {trip_data['title']} - {trip_data['area']}",
-            "",
-            "📅 行程安排："
-        ]
-
-        if details:
-            for detail in details:
-                # 處理日期
-                if detail['date']:
-                    date_obj = detail['date']
-                    weekdays = ['一', '二', '三', '四', '五', '六', '日']
-                    weekday = weekdays[date_obj.weekday()]
-                    date_str = f"{date_obj.month}/{date_obj.day} ({weekday})"
-                    response_lines.append(f"📅 {date_str}")
-
-                # 處理時間和地點
-                time_str = ""
-                if detail['start_time'] and detail['end_time']:
-                    start_time = str(detail['start_time'])
-                    end_time = str(detail['end_time'])
-
-                    # 簡化時間格式
-                    if ':' in start_time and len(start_time) > 8:
-                        start_time = start_time[:5]  # 取 HH:MM
-                    if ':' in end_time and len(end_time) > 8:
-                        end_time = end_time[:5]
-
-                    time_str = f"{start_time} - {end_time}"
-                elif detail['start_time']:
-                    start_time = str(detail['start_time'])
-                    if ':' in start_time and len(start_time) > 8:
-                        start_time = start_time[:5]
-                    time_str = start_time
-
-                # 地點
-                location = detail['location'] or "未知地點"
-
-                # 組合時間和地點
-                if time_str:
-                    response_lines.append(f"🕐 {time_str}")
-                    response_lines.append(f"📍 {location}")
-                else:
-                    response_lines.append(f"📍 {location}")
-
-                response_lines.append("")  # 空行分隔
-        else:
-            response_lines.append("暫無詳細行程安排")
-
-        # 移除最後的空行
-        while response_lines and response_lines[-1] == "":
-            response_lines.pop()
-
-        # 添加結尾
-        response_lines.append("")
-        response_lines.append("💡 更多資訊請查看 TourHub 網站")
-
-        return "\n".join(response_lines)
-
-    except Exception as e:
-        logger.error(f"創建文字行程回應失敗: {e}")
-        return f"抱歉，第{rank}名的詳細行程暫時無法提供。"
+## 已移除未使用的 create_text_itinerary_response 函式
 
 
 
@@ -675,7 +565,10 @@ def create_creation_help():
 
 def create_user_account_info(line_user_id):
     """創建用戶帳號資訊"""
-    from api.unified_user_manager import user_manager
+    try:
+        user_manager = importlib.import_module('api.unified_user_manager').user_manager
+    except Exception:
+        return create_error_message("用戶管理功能暫不可用")
 
     # 獲取用戶資訊
     user = user_manager.get_or_create_user(line_user_id)
@@ -786,7 +679,10 @@ def create_user_account_info(line_user_id):
 
 def create_binding_status(line_user_id):
     """創建綁定狀態資訊"""
-    from api.unified_user_manager import user_manager
+    try:
+        user_manager = importlib.import_module('api.unified_user_manager').user_manager
+    except Exception:
+        return create_error_message("綁定管理功能暫不可用")
 
     # 獲取用戶資訊
     user = user_manager.get_or_create_user(line_user_id)
@@ -990,7 +886,10 @@ def create_rebind_confirm():
 
 def execute_rebind(line_user_id):
     """執行重新綁定"""
-    from api.unified_user_manager import user_manager
+    try:
+        user_manager = importlib.import_module('api.unified_user_manager').user_manager
+    except Exception:
+        return create_error_message("重新綁定功能暫不可用")
 
     try:
         # 獲取用戶
@@ -1451,13 +1350,8 @@ def create_simple_flex_message(template_type, **kwargs):
         return create_paginated_leaderboard(int(rank), page)
 
     elif template_type == "leaderboard_list":
-        # 排行榜列表模板 - 從網站抓取資料
+        # 排行榜列表模板 - 僅從網站抓取資料（無模擬回退）
         leaderboard_data = scrape_leaderboard_data()
-
-        # 如果網站抓取失敗，使用配置文件的備用資料
-        if not leaderboard_data:
-            from api.config import LEADERBOARD_DATA
-            leaderboard_data = LEADERBOARD_DATA
 
         # 創建排行榜項目
         leaderboard_contents = []
