@@ -175,6 +175,35 @@ MESSAGE_TEMPLATES = {
             "button_text": "開始分帳",
             "url": "https://tripfrontend.vercel.app/linesplitbill"
         }
+    },
+
+    # 內建功能模板
+    "inline_features": {
+        "quick_split": {
+            "title": "💰 快速分帳計算器",
+            "color": "#E74C3C",
+            "description": "直接在 Line 中計算分帳金額"
+        },
+        "weather_check": {
+            "title": "🌤️ 天氣查詢",
+            "color": "#3498DB",
+            "description": "查詢旅遊地點的天氣資訊"
+        },
+        "currency_convert": {
+            "title": "💱 匯率換算",
+            "color": "#F39C12",
+            "description": "即時匯率換算工具"
+        },
+        "travel_tips": {
+            "title": "💡 旅遊小貼士",
+            "color": "#2ECC71",
+            "description": "實用的旅遊建議和小技巧"
+        },
+        "nearby_search": {
+            "title": "📍 附近景點",
+            "color": "#9B59B6",
+            "description": "根據位置推薦附近景點"
+        }
     }
 }
 
@@ -361,6 +390,28 @@ KEYWORD_MAPPINGS = {
         "keywords": ["分帳功能介紹", "分帳說明", "分帳怎麼用", "AA功能介紹", "split bill help"],
         "template": "feature_detail",
         "feature_name": "split_bill"
+    },
+
+    # 內建功能關鍵字映射
+    "quick_split_calc": {
+        "keywords": ["快速分帳", "分帳計算", "計算分帳", "分錢計算", "AA計算", "split calc"],
+        "template": "quick_split_calculator"
+    },
+    "weather_query": {
+        "keywords": ["天氣", "天氣查詢", "weather", "Weather", "氣象", "今天天氣", "明天天氣"],
+        "template": "weather_inquiry"
+    },
+    "currency_exchange": {
+        "keywords": ["匯率", "換算", "匯率換算", "currency", "Currency", "日幣", "台幣", "美金"],
+        "template": "currency_converter"
+    },
+    "travel_tips_query": {
+        "keywords": ["旅遊小貼士", "旅遊建議", "旅遊技巧", "travel tips", "Travel Tips", "旅行建議"],
+        "template": "travel_tips"
+    },
+    "nearby_attractions": {
+        "keywords": ["附近景點", "附近推薦", "nearby", "Nearby", "周邊景點", "附近有什麼"],
+        "template": "nearby_search"
     },
 
     "website_operations": {
