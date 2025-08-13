@@ -1518,59 +1518,105 @@ def create_simple_flex_message(template_type, **kwargs):
         }
 
     elif template_type == "leaderboard_top10":
-        # 以 carousel 顯示前10名（來源優先：網站，其次 DB）
-        from api.web_scraper import scrape_leaderboard_data
-        leaderboard_data = scrape_leaderboard_data()
+        # 以 carousel 顯示前10名（來源：資料庫）
+        rank_colors = {1: "#FFD700", 2: "#C0C0C0", 3: "#CD7F32", 4: "#4ECDC4", 5: "#FF6B9D"}
+        try:
+            from api.database import get_database_connection
+            connection = get_database_connection()
+            results = []
+            if connection:
+                cursor = connection.cursor(dictionary=True)
+                leaderboard_query = """
+                SELECT
+                    t.trip_id,
+                    t.title,
+                    t.area,
+                    t.start_date,
+                    t.end_date
+                FROM line_trips t
+                LEFT JOIN trip_stats ts ON t.trip_id = ts.trip_id
+                WHERE t.trip_id IS NOT NULL
+                ORDER BY ts.popularity_score DESC, ts.favorite_count DESC, ts.share_count DESC
+                LIMIT 10
+                """
+                cursor.execute(leaderboard_query)
+                results = cursor.fetchall() or []
+                cursor.close()
+                connection.close()
+        except Exception as e:
+            logger.error(f"查詢 Top10 失敗: {e}")
+            results = []
+
+        def build_duration_days(row):
+            try:
+                if row.get('start_date') and row.get('end_date'):
+                    days = (row['end_date'] - row['start_date']).days + 1
+                    return f"{days}天{days-1}夜" if days and days > 1 else "1天"
+            except Exception:
+                return ""
+            return ""
 
         bubbles = []
         for rank in range(1, 11):
-            rank_str = str(rank)
-            if rank_str not in leaderboard_data:
-                # 後援：用簡化樣板占位
-                rank_colors = {1: "#FFD700", 2: "#C0C0C0", 3: "#CD7F32", 4: "#4ECDC4", 5: "#FF6B9D"}
+            idx = rank - 1
+            if idx < len(results):
+                row = results[idx]
                 color = rank_colors.get(rank, "#6C5CE7")
-                title = f"第{rank}名"
-                destination = "熱門目的地"
-                duration = ""
-            else:
-                data = leaderboard_data[rank_str]
-                color = data.get("color", "#6C5CE7")
-                title = data.get("title") or data.get("destination", f"第{rank}名")
-                destination = data.get("destination", "")
-                duration = data.get("duration", "")
+                title = row.get('title') or f"第{rank}名行程"
+                destination = row.get('area') or ""
+                duration = build_duration_days(row)
 
-            bubbles.append({
-                "type": "bubble",
-                "size": "kilo",
-                "header": {
-                    "type": "box",
-                    "layout": "vertical",
-                    "contents": [
-                        {"type": "text", "text": f"🏆 第{rank}名", "weight": "bold", "size": "lg", "color": "#ffffff", "align": "center"}
-                    ],
-                    "backgroundColor": color,
-                    "paddingAll": "20px"
-                },
-                "body": {
-                    "type": "box",
-                    "layout": "vertical",
-                    "contents": [
-                        {"type": "text", "text": title, "weight": "bold", "size": "md", "color": "#333333", "wrap": True},
-                        {"type": "text", "text": f"目的地：{destination}", "size": "sm", "color": "#555555", "margin": "md"},
-                        {"type": "text", "text": f"行程天數：{duration}", "size": "sm", "color": "#555555"}
-                    ],
-                    "paddingAll": "20px"
-                },
-                "footer": {
-                    "type": "box",
-                    "layout": "vertical",
-                    "contents": [
-                        {"type": "button", "action": {"type": "postback", "label": "查看詳細行程 📋", "data": f"action=leaderboard_page&rank={rank}&page=2"}, "style": "primary", "color": color, "height": "sm"},
-                        {"type": "button", "action": {"type": "postback", "label": "加入收藏 ❤️", "data": f"action=favorite_add&rank={rank}"}, "style": "secondary", "height": "sm", "margin": "sm"}
-                    ],
-                    "paddingAll": "20px"
-                }
-            })
+                body_contents = [
+                    {"type": "text", "text": title, "weight": "bold", "size": "md", "color": "#333333", "wrap": True}
+                ]
+                if destination:
+                    body_contents.append({"type": "text", "text": f"目的地：{destination}", "size": "sm", "color": "#555555", "margin": "md"})
+                if duration:
+                    body_contents.append({"type": "text", "text": f"行程天數：{duration}", "size": "sm", "color": "#555555"})
+
+                footer_buttons = [
+                    {"type": "button", "action": {"type": "postback", "label": "查看詳細行程 📋", "data": f"action=leaderboard_page&rank={rank}&page=2"}, "style": "primary", "color": color, "height": "sm"},
+                    {"type": "button", "action": {"type": "postback", "label": "加入收藏 ❤️", "data": f"action=favorite_add&rank={rank}"}, "style": "secondary", "height": "sm", "margin": "sm"}
+                ]
+
+                bubbles.append({
+                    "type": "bubble",
+                    "size": "kilo",
+                    "header": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {"type": "text", "text": f"🏆 第{rank}名", "weight": "bold", "size": "lg", "color": "#ffffff", "align": "center"}
+                        ],
+                        "backgroundColor": color,
+                        "paddingAll": "20px"
+                    },
+                    "body": {"type": "box", "layout": "vertical", "contents": body_contents, "paddingAll": "20px"},
+                    "footer": {"type": "box", "layout": "vertical", "contents": footer_buttons, "paddingAll": "20px"}
+                })
+            else:
+                color = rank_colors.get(rank, "#6C5CE7")
+                bubbles.append({
+                    "type": "bubble",
+                    "size": "kilo",
+                    "header": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {"type": "text", "text": f"🏆 第{rank}名", "weight": "bold", "size": "lg", "color": "#ffffff", "align": "center"}
+                        ],
+                        "backgroundColor": color,
+                        "paddingAll": "20px"
+                    },
+                    "body": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {"type": "text", "text": "無行程內容", "align": "center", "color": "#666666"}
+                        ],
+                        "paddingAll": "20px"
+                    }
+                })
 
         return {"type": "carousel", "contents": bubbles}
 
