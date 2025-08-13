@@ -414,6 +414,12 @@ KEYWORD_MAPPINGS = {
         "template": "nearby_search"
     },
 
+    # 內容創建說明
+    "content_creation_help": {
+        "keywords": ["如何創建", "創建說明", "創建幫助", "怎麼創建", "創建指令"],
+        "template": "creation_help"
+    },
+
     "website_operations": {
         "keywords": ["網站操作", "操作網站", "使用網站", "網站功能", "我的操作"],
         "template": "website_operations"

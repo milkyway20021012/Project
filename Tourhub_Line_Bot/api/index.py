@@ -34,6 +34,9 @@ from api.pagination import (
     create_paginated_itinerary
 )
 
+# 導入內容創建功能
+from api.content_creator import content_creator
+
 # 導入資料庫功能（作為備用）
 try:
     from api.database import (
@@ -777,6 +780,297 @@ def create_nearby_search():
         }
     }
 
+def create_creation_response(creation_result):
+    """創建內容創建結果的回應訊息"""
+    if creation_result['type'] == 'success':
+        # 成功創建的回應
+        content_type_names = {
+            'trip': '行程',
+            'meeting': '集合',
+            'bill': '分帳'
+        }
+
+        content_name = content_type_names.get(creation_result['content_type'], '內容')
+
+        return {
+            "type": "bubble",
+            "size": "kilo",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": f"✅ {content_name}創建成功",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#ffffff",
+                        "align": "center"
+                    }
+                ],
+                "backgroundColor": "#2ECC71",
+                "paddingAll": "20px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": creation_result['message'],
+                        "size": "md",
+                        "color": "#555555",
+                        "wrap": True,
+                        "margin": "md"
+                    },
+                    {
+                        "type": "separator",
+                        "margin": "lg"
+                    },
+                    {
+                        "type": "text",
+                        "text": "📋 詳細資訊：",
+                        "weight": "bold",
+                        "size": "sm",
+                        "color": "#333333",
+                        "margin": "lg"
+                    }
+                ] + _create_detail_contents(creation_result.get('details', {})),
+                "paddingAll": "20px"
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "button",
+                        "action": {
+                            "type": "uri",
+                            "label": f"查看{content_name}",
+                            "uri": creation_result.get('url', 'https://tripfrontend.vercel.app')
+                        },
+                        "style": "primary",
+                        "color": "#2ECC71",
+                        "height": "sm"
+                    }
+                ] if creation_result.get('url') else [],
+                "paddingAll": "20px"
+            }
+        }
+    else:
+        # 創建失敗的回應
+        return {
+            "type": "bubble",
+            "size": "kilo",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "❌ 創建失敗",
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#ffffff",
+                        "align": "center"
+                    }
+                ],
+                "backgroundColor": "#E74C3C",
+                "paddingAll": "20px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": creation_result['message'],
+                        "size": "md",
+                        "color": "#555555",
+                        "wrap": True,
+                        "margin": "md"
+                    },
+                    {
+                        "type": "separator",
+                        "margin": "lg"
+                    },
+                    {
+                        "type": "text",
+                        "text": "💡 請檢查輸入格式或稍後再試",
+                        "size": "sm",
+                        "color": "#666666",
+                        "wrap": True,
+                        "margin": "lg"
+                    }
+                ],
+                "paddingAll": "20px"
+            }
+        }
+
+def _create_detail_contents(details):
+    """創建詳細資訊內容"""
+    contents = []
+
+    if 'title' in details:
+        contents.append({
+            "type": "text",
+            "text": f"📝 標題：{details['title']}",
+            "size": "sm",
+            "color": "#666666",
+            "wrap": True,
+            "margin": "sm"
+        })
+
+    if 'location' in details:
+        contents.append({
+            "type": "text",
+            "text": f"📍 地點：{details['location']}",
+            "size": "sm",
+            "color": "#666666",
+            "wrap": True,
+            "margin": "sm"
+        })
+
+    if 'days' in details:
+        contents.append({
+            "type": "text",
+            "text": f"📅 天數：{details['days']}天",
+            "size": "sm",
+            "color": "#666666",
+            "wrap": True,
+            "margin": "sm"
+        })
+
+    if 'time_info' in details and details['time_info']:
+        time_info = details['time_info']
+        time_text = "⏰ 時間：" + time_info.get('description', '請稍後設定')
+        if time_info.get('date'):
+            time_text += f" ({time_info['date']}"
+            if time_info.get('time'):
+                time_text += f" {time_info['time']}"
+            time_text += ")"
+
+        contents.append({
+            "type": "text",
+            "text": time_text,
+            "size": "sm",
+            "color": "#666666",
+            "wrap": True,
+            "margin": "sm"
+        })
+
+    return contents
+
+def create_creation_help():
+    """創建內容創建說明"""
+    return {
+        "type": "bubble",
+        "size": "giga",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "🚀 直接創建內容",
+                    "weight": "bold",
+                    "size": "lg",
+                    "color": "#ffffff",
+                    "align": "center"
+                }
+            ],
+            "backgroundColor": "#6C5CE7",
+            "paddingAll": "20px"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "現在您可以直接在 Line 中創建內容到各個網站！",
+                    "size": "md",
+                    "color": "#555555",
+                    "wrap": True,
+                    "margin": "md"
+                },
+                {
+                    "type": "separator",
+                    "margin": "lg"
+                },
+                {
+                    "type": "text",
+                    "text": "🗓️ 創建行程",
+                    "weight": "bold",
+                    "size": "sm",
+                    "color": "#333333",
+                    "margin": "lg"
+                },
+                {
+                    "type": "text",
+                    "text": "• 創建東京三日遊行程\n• 建立北海道五日遊行程\n• 規劃大阪美食行程",
+                    "size": "sm",
+                    "color": "#666666",
+                    "wrap": True,
+                    "margin": "sm"
+                },
+                {
+                    "type": "separator",
+                    "margin": "lg"
+                },
+                {
+                    "type": "text",
+                    "text": "⏰ 創建集合",
+                    "weight": "bold",
+                    "size": "sm",
+                    "color": "#333333",
+                    "margin": "lg"
+                },
+                {
+                    "type": "text",
+                    "text": "• 創建明天9點東京車站集合\n• 設定後天下午2點集合\n• 約今天晚上7點集合",
+                    "size": "sm",
+                    "color": "#666666",
+                    "wrap": True,
+                    "margin": "sm"
+                },
+                {
+                    "type": "separator",
+                    "margin": "lg"
+                },
+                {
+                    "type": "text",
+                    "text": "💰 創建分帳",
+                    "weight": "bold",
+                    "size": "sm",
+                    "color": "#333333",
+                    "margin": "lg"
+                },
+                {
+                    "type": "text",
+                    "text": "• 創建東京旅遊分帳\n• 建立聚餐分帳\n• 新增購物分帳",
+                    "size": "sm",
+                    "color": "#666666",
+                    "wrap": True,
+                    "margin": "sm"
+                },
+                {
+                    "type": "separator",
+                    "margin": "lg"
+                },
+                {
+                    "type": "text",
+                    "text": "💡 創建後會自動同步到對應網站，您可以點擊連結查看和編輯詳細內容！",
+                    "size": "sm",
+                    "color": "#2ECC71",
+                    "wrap": True,
+                    "margin": "lg"
+                }
+            ],
+            "paddingAll": "20px"
+        }
+    }
+
 def create_simple_flex_message(template_type, **kwargs):
     """創建簡單的 Flex Message"""
     
@@ -1102,6 +1396,9 @@ def create_simple_flex_message(template_type, **kwargs):
 
     elif template_type == "nearby_search":
         return create_nearby_search()
+
+    elif template_type == "creation_help":
+        return create_creation_help()
 
     elif template_type == "leaderboard":
         # 使用分頁系統顯示排行榜詳細資料
@@ -1589,7 +1886,27 @@ if line_handler:
             logger.info(f"🔍 訊息長度: {len(user_message)}")
             logger.info(f"🔍 訊息類型: {type(user_message)}")
 
-            # 先檢查是否為分帳計算
+            # 獲取用戶 ID
+            line_user_id = event.source.user_id if hasattr(event.source, 'user_id') else 'unknown'
+
+            # 先檢查是否為內容創建指令
+            creation_result = content_creator.parse_and_create(user_message, line_user_id)
+            if creation_result:
+                # 創建回應訊息
+                response_message = create_creation_response(creation_result)
+
+                with ApiClient(configuration) as api_client:
+                    line_bot_api = MessagingApi(api_client)
+                    line_bot_api.reply_message_with_http_info(
+                        ReplyMessageRequest(
+                            reply_token=event.reply_token,
+                            messages=[FlexMessage(alt_text="內容創建結果", contents=FlexContainer.from_dict(response_message))]
+                        )
+                    )
+                    logger.info("✅ 內容創建結果發送成功")
+                return
+
+            # 檢查是否為分帳計算
             split_result = calculate_split_bill(user_message)
             if split_result:
                 # 直接發送文字回應
@@ -1664,6 +1981,8 @@ if line_handler:
                     flex_message = create_simple_flex_message("travel_tips")
                 elif template_config["template"] == "nearby_search":
                     flex_message = create_simple_flex_message("nearby_search")
+                elif template_config["template"] == "creation_help":
+                    flex_message = create_simple_flex_message("creation_help")
                 else:
                     # 預設回應
                     flex_message = create_simple_flex_message("default")
