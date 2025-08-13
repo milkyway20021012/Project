@@ -434,7 +434,7 @@ def create_simple_flex_message(template_type, **kwargs):
     
     elif template_type == "help":
         template = MESSAGE_TEMPLATES["help"]
-        
+
         feature_contents = []
         for feature in template["features"]:
             feature_contents.append({
@@ -455,7 +455,7 @@ def create_simple_flex_message(template_type, **kwargs):
                 ],
                 "marginBottom": "md"
             })
-        
+
         return {
             "type": "bubble",
             "size": "giga",
@@ -482,6 +482,199 @@ def create_simple_flex_message(template_type, **kwargs):
                 "paddingAll": "20px"
             }
         }
+
+    elif template_type == "feature_menu":
+        template = MESSAGE_TEMPLATES["feature_menu"]
+
+        # 創建功能按鈕
+        feature_buttons = []
+        features = [
+            {"name": "🏆 排行榜", "data": "action=feature_detail&feature=leaderboard"},
+            {"name": "🗓️ 行程管理", "data": "action=feature_detail&feature=trip_management"},
+            {"name": "⏰ 集合管理", "data": "action=feature_detail&feature=tour_clock"},
+            {"name": "🛅 置物櫃", "data": "action=feature_detail&feature=locker"},
+            {"name": "💰 分帳工具", "data": "action=feature_detail&feature=split_bill"}
+        ]
+
+        for feature in features:
+            feature_buttons.append({
+                "type": "button",
+                "action": {
+                    "type": "postback",
+                    "label": feature["name"],
+                    "data": feature["data"]
+                },
+                "style": "secondary",
+                "height": "sm",
+                "margin": "sm"
+            })
+
+        return {
+            "type": "bubble",
+            "size": "kilo",
+            "header": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": template["title"],
+                        "weight": "bold",
+                        "size": "lg",
+                        "color": "#ffffff",
+                        "align": "center"
+                    }
+                ],
+                "backgroundColor": template["color"],
+                "paddingAll": "20px"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": template["description"],
+                        "size": "md",
+                        "color": "#555555",
+                        "align": "center",
+                        "wrap": True
+                    }
+                ],
+                "paddingAll": "20px"
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": feature_buttons,
+                "paddingAll": "20px"
+            }
+        }
+
+    elif template_type == "feature_detail":
+        feature_name = kwargs.get('feature_name')
+        if feature_name in MESSAGE_TEMPLATES["feature_details"]:
+            template = MESSAGE_TEMPLATES["feature_details"][feature_name]
+
+            # 創建功能詳情內容
+            detail_contents = []
+
+            # 添加描述
+            detail_contents.append({
+                "type": "text",
+                "text": template["description"],
+                "size": "md",
+                "color": "#555555",
+                "wrap": True,
+                "margin": "md"
+            })
+
+            # 添加功能特點
+            detail_contents.append({
+                "type": "separator",
+                "margin": "lg"
+            })
+            detail_contents.append({
+                "type": "text",
+                "text": "✨ 功能特點",
+                "weight": "bold",
+                "size": "sm",
+                "color": "#333333",
+                "margin": "lg"
+            })
+
+            for detail in template["details"]:
+                detail_contents.append({
+                    "type": "text",
+                    "text": detail,
+                    "size": "sm",
+                    "color": "#666666",
+                    "wrap": True,
+                    "margin": "sm"
+                })
+
+            # 添加使用步驟
+            detail_contents.append({
+                "type": "separator",
+                "margin": "lg"
+            })
+            detail_contents.append({
+                "type": "text",
+                "text": "📋 使用方法",
+                "weight": "bold",
+                "size": "sm",
+                "color": "#333333",
+                "margin": "lg"
+            })
+
+            for step in template["usage_steps"]:
+                detail_contents.append({
+                    "type": "text",
+                    "text": step,
+                    "size": "sm",
+                    "color": "#666666",
+                    "wrap": True,
+                    "margin": "sm"
+                })
+
+            # 創建按鈕
+            footer_buttons = [
+                {
+                    "type": "button",
+                    "action": {
+                        "type": "uri",
+                        "label": template["button_text"],
+                        "uri": template["url"]
+                    },
+                    "style": "primary",
+                    "color": template["color"],
+                    "height": "sm"
+                },
+                {
+                    "type": "button",
+                    "action": {
+                        "type": "postback",
+                        "label": "🔙 返回功能選單",
+                        "data": "action=back_to_menu"
+                    },
+                    "style": "secondary",
+                    "height": "sm",
+                    "margin": "sm"
+                }
+            ]
+
+            return {
+                "type": "bubble",
+                "size": "giga",
+                "header": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": template["title"],
+                            "weight": "bold",
+                            "size": "lg",
+                            "color": "#ffffff",
+                            "align": "center"
+                        }
+                    ],
+                    "backgroundColor": template["color"],
+                    "paddingAll": "20px"
+                },
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": detail_contents,
+                    "paddingAll": "20px"
+                },
+                "footer": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": footer_buttons,
+                    "paddingAll": "20px"
+                }
+            }
     
     elif template_type == "leaderboard":
         # 使用分頁系統顯示排行榜詳細資料
@@ -1006,6 +1199,13 @@ if line_handler:
                     )
                 elif template_config["template"] == "help":
                     flex_message = create_simple_flex_message("help")
+                elif template_config["template"] == "feature_menu":
+                    flex_message = create_simple_flex_message("feature_menu")
+                elif template_config["template"] == "feature_detail":
+                    flex_message = create_simple_flex_message(
+                        "feature_detail",
+                        feature_name=template_config["feature_name"]
+                    )
                 elif template_config["template"] == "tour_clock":
                     # TourClock 使用 feature 模板
                     flex_message = create_simple_flex_message(
@@ -1082,6 +1282,19 @@ if line_handler:
             elif action == 'itinerary_page':
                 # 詳細行程分頁
                 flex_message = create_paginated_itinerary(int(rank), page)
+            elif action == 'feature_detail':
+                # 功能詳細介紹
+                feature = params.get('feature')
+                if feature:
+                    logger.info(f"🔧 創建功能詳細介紹: {feature}")
+                    flex_message = create_simple_flex_message(
+                        "feature_detail",
+                        feature_name=feature
+                    )
+            elif action == 'back_to_menu':
+                # 返回功能選單
+                logger.info(f"🔧 返回功能選單")
+                flex_message = create_simple_flex_message("feature_menu")
 
             if flex_message:
                 logger.info(f"📤 準備發送分頁回應")
