@@ -1,0 +1,79 @@
+{
+  "type": "bubble",
+  "size": "giga",
+  "header": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "text",
+        "text": "🥇 第一名 詳細行程",
+        "weight": "bold",
+        "size": "lg",
+        "color": "#ffffff",
+        "align": "center"
+      },
+      {
+        "type": "text",
+        "text": "第 1 頁 / 共 3 頁",
+        "size": "sm",
+        "color": "#ffffff",
+        "align": "center",
+        "margin": "sm"
+      }
+    ],
+    "backgroundColor": "#FFD700",
+    "paddingAll": "20px"
+  },
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "text",
+        "text": "📅 行程安排",
+        "weight": "bold",
+        "size": "md",
+        "color": "#555555",
+        "marginBottom": "md"
+      },
+      {
+        "type": "box",
+        "layout": "vertical",
+        "contents": [
+          {
+            "type": "text",
+            "text": "2025年08月15日 (星期五)\n10:00 - 18:00 札幌市區・大通公園\n\n2025年08月16日 (星期六)\n09:00 - 17:00 小樽運河・音樂盒堂\n\n2025年08月17日 (星期日)\n09:00 - 16:00 富良野薰衣草田",
+            "size": "sm",
+            "color": "#333333",
+            "wrap": true,
+            "lineSpacing": "md"
+          }
+        ],
+        "backgroundColor": "#f8f9fa",
+        "cornerRadius": "md",
+        "paddingAll": "md"
+      }
+    ],
+    "paddingAll": "20px"
+  },
+  "footer": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "button",
+        "action": {
+          "type": "postback",
+          "label": "下一頁 ➡️",
+          "data": "action=itinerary_page&rank=1&page=2"
+        },
+        "style": "primary",
+        "color": "#FFD700",
+        "height": "sm"
+      }
+    ],
+    "paddingAll": "20px",
+    "spacing": "sm"
+  }
+}

@@ -1,208 +1,90 @@
-# 🚀 TourHub Line Bot - 跨平台旅遊服務整合
+# TourHub LINE Bot 統一綁定系統
 
-一個完整的 LINE Bot 系統，實現從聊天機器人直接創建內容到各個旅遊網站的跨平台整合。
+## 🎯 系統概述
 
-## ✨ 核心特色
+TourHub LINE Bot 提供便捷的旅遊資訊查詢和功能導航，讓用戶輕鬆使用所有 TourHub 相關網站。
 
-### 🔗 跨平台內容創建
-用戶在 Line Bot 中輸入指令，直接在對應網站創建內容：
-```
-用戶：創建東京三日遊行程
-Bot：✅ 行程「東京三日遊行程」創建成功！
-     [查看行程] ← 點擊直接跳轉到網站並自動登入
-```
+## 🌐 整合的網站
 
-### 🔐 統一用戶管理
-- 一個 Line 帳號自動綁定所有服務
-- 跨平台統一身份認證
-- 無縫的用戶體驗
+1. **🏆 TourHub排行榜** - https://tourhub-ashy.vercel.app/
+2. **📋 行程管理** - https://tripfrontend.vercel.app/linetrip
+3. **⏰ 集合管理** - https://tourclock-dvf2.vercel.app/
+4. **🔍 置物櫃查找** - https://tripfrontend.vercel.app/linelocker
+5. **💰 分帳系統** - https://split-front-pearl.vercel.app
 
-## 🌟 主要功能
+## 🚀 功能特色
 
-### 1. 🗓️ 行程管理整合
-- **創建指令**：`創建東京三日遊行程`
-- **目標網站**：https://tripfrontend.vercel.app
-- **功能**：直接在網站創建行程，自動登入查看
+### 關鍵字功能
+- `網站操作` - 查看可用網站並進行操作
+- `功能介紹` - 查看 Bot 功能說明
+- `第一名`、`第二名`、`第三名` - 查看排行榜
+- `東京`、`大阪`、`京都`、`北海道` - 地區行程查詢
 
-### 2. ⏰ 集合管理整合
-- **創建指令**：`設定明天9點東京車站集合`
-- **目標網站**：https://tourclock-dvf2.vercel.app
-- **功能**：創建集合時間，智能時間管理
-
-### 3. 💰 分帳系統整合
-- **創建指令**：`建立東京旅遊分帳`
-- **目標網站**：https://split-front-pearl.vercel.app
-- **功能**：創建分帳項目，多人費用管理
-
-### 4. 🏆 排行榜查詢
-- **查詢指令**：`排行榜`、`第一名`
-- **目標網站**：https://tourhub-ashy.vercel.app
-- **功能**：熱門行程排行，詳細資訊展示
-
-### 5. 🛅 置物櫃查找
-- **查詢指令**：`查找置物櫃`
-- **目標網站**：https://tripfrontend.vercel.app/linelocker
-- **功能**：附近置物櫃位置查詢
-
-### 6. 👤 用戶管理
-- **帳號查詢**：`我的帳號`
-- **綁定管理**：`綁定狀態`
-- **問題修復**：`重新綁定`
-
-## 🛠️ 技術架構
+## 🔧 技術架構
 
 ### 核心組件
-```
-Line Bot ←→ 統一用戶管理 ←→ API 代理 ←→ 各個網站
-    ↓           ↓              ↓         ↓
- 訊息處理    身份認證        API調用    內容創建
-```
+- **統一用戶管理** (`unified_user_manager.py`)
+- **網站API代理** (`website_proxy.py`)
+- **資料庫系統** (`database/unified_user_system.sql`)
 
-### 關鍵技術
-- **統一認證系統**：SHA256 加密的跨平台 Token
-- **API 代理服務**：統一的網站 API 調用接口
-- **智能內容解析**：自動提取創建參數
-- **錯誤處理機制**：完善的異常處理和重試
-
-### 資料庫設計
-- `unified_users` - 統一用戶資料
-- `user_website_bindings` - 跨平台綁定關係
-- `user_operation_logs` - 完整操作記錄
+### 資料庫表格
+- `unified_users` - 統一用戶管理
 - `website_modules` - 網站模組配置
+- `user_website_bindings` - 用戶網站綁定關係
+- `user_operation_logs` - 用戶操作日誌
+- `system_configs` - 系統配置
 
-## 🚀 部署指南
+## ⚙️ 環境變數
 
-### 環境需求
-- Python 3.8+
-- MySQL 資料庫
-- LINE Bot Channel
-
-### 核心環境變數
 ```bash
-# LINE Bot 配置
-LINE_CHANNEL_ACCESS_TOKEN=your_line_channel_access_token
-LINE_CHANNEL_SECRET=your_line_channel_secret
+# LINE Bot
+CHANNEL_ACCESS_TOKEN=你的LINE_Bot_Token
+CHANNEL_SECRET=你的LINE_Bot_Secret
 
-# 資料庫配置
+# 資料庫
 MYSQL_HOST=trip.mysql.database.azure.com
 MYSQL_USER=b1129005
 MYSQL_PASSWORD=Anderson3663
 MYSQL_DB=tourhub
-
-# API 模式配置
-USE_REAL_API=false  # true=實際API, false=模擬模式
-AUTH_SERVICE_URL=https://your-auth-service.vercel.app
+MYSQL_PORT=3306
 ```
 
-### 快速部署
-```bash
-# 1. 克隆專案
-git clone <repository_url>
-cd Tourhub_Line_Bot
+## 🔄 用戶使用流程
 
-# 2. 安裝依賴
-pip install -r requirements.txt
+1. **使用網站功能**
+   ```
+   用戶輸入「網站操作」→ 選擇網站 → 點擊按鈕 → 跳轉到對應網站
+   ```
 
-# 3. 初始化資料庫
-mysql -u your_user -p your_database < database/unified_user_system.sql
+2. **查詢排行榜**
+   ```
+   用戶輸入「第一名」→ 查看排行榜第一名詳細資訊
+   ```
 
-# 4. 部署到 Vercel
-vercel --prod
-```
+## 📋 API 端點
 
-## 📁 專案結構
+- `POST /callback` - LINE Bot Webhook
+- `GET /debug` - 系統狀態檢查
 
-### 核心檔案
-```
-api/
-├── index.py                 # 主程式 - Line Bot 訊息處理
-├── unified_user_manager.py  # 統一用戶管理系統
-├── website_proxy.py         # 跨平台 API 代理
-├── content_creator.py       # 內容創建處理器
-├── auth_service.py          # 統一認證服務
-└── config.py               # 關鍵字配置
+## 🔐 安全特性
 
-database/
-└── unified_user_system.sql  # 資料庫結構
+- 使用 LINE 官方 Webhook 驗證
+- 完整的操作日誌記錄
+- 安全的資料庫連接
 
-website_api_examples/        # 各網站 API 實現範例
-├── trip_management_api.js   # 行程管理 API
-├── tour_clock_api.js        # 集合管理 API
-└── bill_split_api.js        # 分帳系統 API
-```
+## 📊 部署資訊
 
-### 文件檔案
-- `USER_BINDING_GUIDE.md` - 用戶綁定使用指南
-- `CROSS_PLATFORM_INTEGRATION_GUIDE.md` - 技術整合指南
-- `CROSS_PLATFORM_DEPLOYMENT.md` - 詳細部署指南
-- `CROSS_PLATFORM_SUMMARY.md` - 實現總結報告
+- **平台**: Vercel
+- **域名**: https://line-bot-theta-dun.vercel.app/
+- **資料庫**: Azure MySQL
+- **狀態**: ✅ 已部署並運行
 
-## 🎯 使用方式
+## 📚 相關文檔
 
-### 內容創建指令
-```
-創建東京三日遊行程          → 在行程管理網站創建行程
-設定明天9點東京車站集合      → 在集合管理網站創建集合
-建立東京旅遊分帳           → 在分帳系統創建分帳項目
-```
+本專案為 TourHub LINE Bot 主要功能實現。
 
-### 查詢指令
-```
-排行榜                    → 查看熱門行程排行
-第一名                    → 查看排行榜第一名
-第一名詳細行程             → 查看詳細行程安排
-功能介紹                  → 查看所有可用功能
-```
+---
 
-### 用戶管理指令
-```
-我的帳號                  → 查看帳號資訊和綁定狀態
-綁定狀態                  → 查看各服務綁定詳情
-重新綁定                  → 修復連接問題
-```
-
-## 🔄 運作模式
-
-### 模擬模式 (預設)
-- 完整功能體驗
-- 無需外部 API 依賴
-- 適合開發和測試
-
-### 實際 API 模式
-- 真實跨平台整合
-- 需要各網站配合部署 API 端點
-- 設定 `USE_REAL_API=true` 啟用
-
-## 📊 測試結果
-
-最新測試顯示系統運作正常：
-```
-✅ 行程創建成功 - trip_20250813_111353
-✅ 集合創建成功 - meeting_20250813_111405
-✅ 分帳創建成功 - bill_20250813_111417
-📊 成功率: 100%
-```
-
-## 🤝 各網站整合
-
-要啟用實際 API 模式，各網站需要：
-
-1. **添加 API 端點**：根據 `website_api_examples/` 中的範例
-2. **實現統一認證**：驗證 Line Bot 用戶的 Token
-3. **支援跨域請求**：允許 Line Bot 的 API 調用
-
-詳細實現方式請參考 `CROSS_PLATFORM_DEPLOYMENT.md`
-
-## 🎉 專案成果
-
-- ✅ **完整的跨平台整合架構**
-- ✅ **統一用戶管理系統**
-- ✅ **智能內容創建處理**
-- ✅ **完善的錯誤處理機制**
-- ✅ **詳細的實現文件和範例**
-
-現在只需要各網站配合添加 API 端點，就能實現真正的跨平台內容創建！🚀
-
-## 📄 授權
-
-此專案採用 MIT 授權條款。
+**版本**: 1.0.0  
+**最後更新**: 2025-08-07  
+**狀態**: 生產環境就緒
