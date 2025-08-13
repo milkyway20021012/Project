@@ -55,8 +55,7 @@ from linebot.v3.messaging import (
     MessagingApi,
     ReplyMessageRequest,
     FlexMessage,
-    FlexContainer,
-    TextMessage
+    FlexContainer
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, PostbackEvent
 
@@ -373,412 +372,15 @@ def create_text_itinerary_response(rank):
         logger.error(f"創建文字行程回應失敗: {e}")
         return f"抱歉，第{rank}名的詳細行程暫時無法提供。"
 
-def create_quick_split_calculator():
-    """創建快速分帳計算器"""
-    return {
-        "type": "bubble",
-        "size": "kilo",
-        "header": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "💰 快速分帳計算器",
-                    "weight": "bold",
-                    "size": "lg",
-                    "color": "#ffffff",
-                    "align": "center"
-                }
-            ],
-            "backgroundColor": "#E74C3C",
-            "paddingAll": "20px"
-        },
-        "body": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "請輸入以下格式來計算分帳：",
-                    "size": "md",
-                    "color": "#555555",
-                    "wrap": True,
-                    "margin": "md"
-                },
-                {
-                    "type": "separator",
-                    "margin": "lg"
-                },
-                {
-                    "type": "text",
-                    "text": "📝 格式範例：",
-                    "weight": "bold",
-                    "size": "sm",
-                    "color": "#333333",
-                    "margin": "lg"
-                },
-                {
-                    "type": "text",
-                    "text": "• 分帳 1000 3人\n• 分帳 2500 5人\n• AA 800 4人",
-                    "size": "sm",
-                    "color": "#666666",
-                    "wrap": True,
-                    "margin": "sm"
-                },
-                {
-                    "type": "separator",
-                    "margin": "lg"
-                },
-                {
-                    "type": "text",
-                    "text": "💡 小提示：",
-                    "weight": "bold",
-                    "size": "sm",
-                    "color": "#333333",
-                    "margin": "lg"
-                },
-                {
-                    "type": "text",
-                    "text": "輸入總金額和人數，我會自動幫您計算每人應付的金額！",
-                    "size": "sm",
-                    "color": "#666666",
-                    "wrap": True,
-                    "margin": "sm"
-                }
-            ],
-            "paddingAll": "20px"
-        },
-        "footer": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "button",
-                    "action": {
-                        "type": "uri",
-                        "label": "使用完整分帳工具",
-                        "uri": "https://tripfrontend.vercel.app/linesplitbill"
-                    },
-                    "style": "primary",
-                    "color": "#E74C3C",
-                    "height": "sm"
-                }
-            ],
-            "paddingAll": "20px"
-        }
-    }
 
-def calculate_split_bill(message):
-    """計算分帳金額"""
-    import re
 
-    # 匹配格式：分帳/AA + 金額 + 人數
-    pattern = r'(?:分帳|AA|aa)\s*(\d+(?:\.\d+)?)\s*(\d+)(?:人)?'
-    match = re.search(pattern, message)
 
-    if match:
-        amount = float(match.group(1))
-        people = int(match.group(2))
 
-        if people <= 0:
-            return "❌ 人數必須大於 0"
 
-        per_person = amount / people
 
-        response = f"💰 分帳計算結果\n\n"
-        response += f"💳 總金額：${amount:,.0f}\n"
-        response += f"👥 分攤人數：{people}人\n"
-        response += f"💵 每人應付：${per_person:,.0f}\n\n"
 
-        if per_person != int(per_person):
-            response += f"💡 精確金額：${per_person:.2f}\n\n"
 
-        response += "📝 想要記錄更多費用？\n"
-        response += "輸入「分帳工具」使用完整功能！"
 
-        return response
-
-    return None
-
-def get_weather_info(location=None):
-    """獲取天氣資訊（模擬）"""
-    if not location:
-        return {
-            "type": "bubble",
-            "size": "kilo",
-            "header": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": "🌤️ 天氣查詢",
-                        "weight": "bold",
-                        "size": "lg",
-                        "color": "#ffffff",
-                        "align": "center"
-                    }
-                ],
-                "backgroundColor": "#3498DB",
-                "paddingAll": "20px"
-            },
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": "請輸入以下格式查詢天氣：",
-                        "size": "md",
-                        "color": "#555555",
-                        "wrap": True,
-                        "margin": "md"
-                    },
-                    {
-                        "type": "separator",
-                        "margin": "lg"
-                    },
-                    {
-                        "type": "text",
-                        "text": "📝 格式範例：",
-                        "weight": "bold",
-                        "size": "sm",
-                        "color": "#333333",
-                        "margin": "lg"
-                    },
-                    {
-                        "type": "text",
-                        "text": "• 東京天氣\n• 大阪天氣\n• 京都天氣\n• 北海道天氣",
-                        "size": "sm",
-                        "color": "#666666",
-                        "wrap": True,
-                        "margin": "sm"
-                    }
-                ],
-                "paddingAll": "20px"
-            }
-        }
-
-def get_currency_converter():
-    """獲取匯率換算工具"""
-    return {
-        "type": "bubble",
-        "size": "kilo",
-        "header": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "💱 匯率換算",
-                    "weight": "bold",
-                    "size": "lg",
-                    "color": "#ffffff",
-                    "align": "center"
-                }
-            ],
-            "backgroundColor": "#F39C12",
-            "paddingAll": "20px"
-        },
-        "body": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "請輸入以下格式進行換算：",
-                    "size": "md",
-                    "color": "#555555",
-                    "wrap": True,
-                    "margin": "md"
-                },
-                {
-                    "type": "separator",
-                    "margin": "lg"
-                },
-                {
-                    "type": "text",
-                    "text": "📝 格式範例：",
-                    "weight": "bold",
-                    "size": "sm",
-                    "color": "#333333",
-                    "margin": "lg"
-                },
-                {
-                    "type": "text",
-                    "text": "• 1000台幣換日幣\n• 100美金換台幣\n• 5000日幣換台幣",
-                    "size": "sm",
-                    "color": "#666666",
-                    "wrap": True,
-                    "margin": "sm"
-                },
-                {
-                    "type": "separator",
-                    "margin": "lg"
-                },
-                {
-                    "type": "text",
-                    "text": "💡 支援幣別：",
-                    "weight": "bold",
-                    "size": "sm",
-                    "color": "#333333",
-                    "margin": "lg"
-                },
-                {
-                    "type": "text",
-                    "text": "台幣 (TWD)、日幣 (JPY)、美金 (USD)、港幣 (HKD)",
-                    "size": "sm",
-                    "color": "#666666",
-                    "wrap": True,
-                    "margin": "sm"
-                }
-            ],
-            "paddingAll": "20px"
-        }
-    }
-
-def create_travel_tips():
-    """創建旅遊小貼士"""
-    tips = [
-        "🎒 輕裝出行，只帶必需品",
-        "📱 下載離線地圖和翻譯 App",
-        "💳 準備多種付款方式",
-        "🏥 購買旅遊保險",
-        "📋 備份重要文件",
-        "🌐 了解當地文化和禮儀",
-        "💰 預留緊急備用金",
-        "📞 記住緊急聯絡電話"
-    ]
-
-    tip_contents = []
-    for tip in tips:
-        tip_contents.append({
-            "type": "text",
-            "text": tip,
-            "size": "sm",
-            "color": "#666666",
-            "wrap": True,
-            "margin": "sm"
-        })
-
-    return {
-        "type": "bubble",
-        "size": "kilo",
-        "header": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "💡 旅遊小貼士",
-                    "weight": "bold",
-                    "size": "lg",
-                    "color": "#ffffff",
-                    "align": "center"
-                }
-            ],
-            "backgroundColor": "#2ECC71",
-            "paddingAll": "20px"
-        },
-        "body": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "實用的旅遊建議：",
-                    "size": "md",
-                    "color": "#555555",
-                    "wrap": True,
-                    "margin": "md"
-                },
-                {
-                    "type": "separator",
-                    "margin": "lg"
-                }
-            ] + tip_contents,
-            "paddingAll": "20px"
-        }
-    }
-
-def create_nearby_search():
-    """創建附近景點搜尋"""
-    return {
-        "type": "bubble",
-        "size": "kilo",
-        "header": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "📍 附近景點搜尋",
-                    "weight": "bold",
-                    "size": "lg",
-                    "color": "#ffffff",
-                    "align": "center"
-                }
-            ],
-            "backgroundColor": "#9B59B6",
-            "paddingAll": "20px"
-        },
-        "body": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "請輸入地點來搜尋附近景點：",
-                    "size": "md",
-                    "color": "#555555",
-                    "wrap": True,
-                    "margin": "md"
-                },
-                {
-                    "type": "separator",
-                    "margin": "lg"
-                },
-                {
-                    "type": "text",
-                    "text": "📝 格式範例：",
-                    "weight": "bold",
-                    "size": "sm",
-                    "color": "#333333",
-                    "margin": "lg"
-                },
-                {
-                    "type": "text",
-                    "text": "• 東京附近景點\n• 大阪附近推薦\n• 京都周邊景點",
-                    "size": "sm",
-                    "color": "#666666",
-                    "wrap": True,
-                    "margin": "sm"
-                },
-                {
-                    "type": "separator",
-                    "margin": "lg"
-                },
-                {
-                    "type": "text",
-                    "text": "💡 或者直接輸入地區名稱：",
-                    "weight": "bold",
-                    "size": "sm",
-                    "color": "#333333",
-                    "margin": "lg"
-                },
-                {
-                    "type": "text",
-                    "text": "東京、大阪、京都、北海道、沖繩",
-                    "size": "sm",
-                    "color": "#666666",
-                    "wrap": True,
-                    "margin": "sm"
-                }
-            ],
-            "paddingAll": "20px"
-        }
-    }
 
 def create_creation_response(creation_result):
     """創建內容創建結果的回應訊息"""
@@ -1194,12 +796,7 @@ def create_simple_flex_message(template_type, **kwargs):
             {"name": "🗓️ 行程管理", "data": "action=feature_detail&feature=trip_management"},
             {"name": "⏰ 集合", "data": "action=feature_detail&feature=tour_clock"},
             {"name": "🛅 置物櫃查找", "data": "action=feature_detail&feature=locker"},
-            {"name": "💰 分帳工具", "data": "action=feature_detail&feature=split_bill"},
-            {"name": "💰 快速分帳", "data": "action=inline_feature&feature=quick_split"},
-            {"name": "🌤️ 天氣查詢", "data": "action=inline_feature&feature=weather"},
-            {"name": "💱 匯率換算", "data": "action=inline_feature&feature=currency"},
-            {"name": "💡 旅遊小貼士", "data": "action=inline_feature&feature=tips"},
-            {"name": "📍 附近景點", "data": "action=inline_feature&feature=nearby"}
+            {"name": "💰 分帳工具", "data": "action=feature_detail&feature=split_bill"}
         ]
 
         for feature in features:
@@ -1382,20 +979,7 @@ def create_simple_flex_message(template_type, **kwargs):
                 }
             }
 
-    elif template_type == "quick_split_calculator":
-        return create_quick_split_calculator()
 
-    elif template_type == "weather_inquiry":
-        return get_weather_info()
-
-    elif template_type == "currency_converter":
-        return get_currency_converter()
-
-    elif template_type == "travel_tips":
-        return create_travel_tips()
-
-    elif template_type == "nearby_search":
-        return create_nearby_search()
 
     elif template_type == "creation_help":
         return create_creation_help()
@@ -1906,20 +1490,7 @@ if line_handler:
                     logger.info("✅ 內容創建結果發送成功")
                 return
 
-            # 檢查是否為分帳計算
-            split_result = calculate_split_bill(user_message)
-            if split_result:
-                # 直接發送文字回應
-                with ApiClient(configuration) as api_client:
-                    line_bot_api = MessagingApi(api_client)
-                    line_bot_api.reply_message_with_http_info(
-                        ReplyMessageRequest(
-                            reply_token=event.reply_token,
-                            messages=[TextMessage(text=split_result)]
-                        )
-                    )
-                    logger.info("✅ 分帳計算結果發送成功")
-                return
+
 
             # 檢查模板匹配
             template_config = get_message_template(user_message)
@@ -1971,16 +1542,7 @@ if line_handler:
                         "feature",
                         feature_name="tour_clock"
                     )
-                elif template_config["template"] == "quick_split_calculator":
-                    flex_message = create_simple_flex_message("quick_split_calculator")
-                elif template_config["template"] == "weather_inquiry":
-                    flex_message = create_simple_flex_message("weather_inquiry")
-                elif template_config["template"] == "currency_converter":
-                    flex_message = create_simple_flex_message("currency_converter")
-                elif template_config["template"] == "travel_tips":
-                    flex_message = create_simple_flex_message("travel_tips")
-                elif template_config["template"] == "nearby_search":
-                    flex_message = create_simple_flex_message("nearby_search")
+
                 elif template_config["template"] == "creation_help":
                     flex_message = create_simple_flex_message("creation_help")
                 else:
@@ -2066,21 +1628,7 @@ if line_handler:
                 # 返回功能選單
                 logger.info(f"🔧 返回功能選單")
                 flex_message = create_simple_flex_message("feature_menu")
-            elif action == 'inline_feature':
-                # 內建功能
-                feature = params.get('feature')
-                logger.info(f"🔧 使用內建功能: {feature}")
 
-                if feature == 'quick_split':
-                    flex_message = create_simple_flex_message("quick_split_calculator")
-                elif feature == 'weather':
-                    flex_message = create_simple_flex_message("weather_inquiry")
-                elif feature == 'currency':
-                    flex_message = create_simple_flex_message("currency_converter")
-                elif feature == 'tips':
-                    flex_message = create_simple_flex_message("travel_tips")
-                elif feature == 'nearby':
-                    flex_message = create_simple_flex_message("nearby_search")
 
             if flex_message:
                 logger.info(f"📤 準備發送分頁回應")
