@@ -1675,6 +1675,19 @@ def create_simple_flex_message(template_type, **kwargs):
                 sub = dict(sub)  # 淺拷貝
                 footer = sub.get('footer') or {"type": "box", "layout": "vertical", "contents": [], "paddingAll": "20px"}
                 contents = footer.get('contents', [])
+                # 在「我的收藏」清單中，不顯示「加入收藏」按鈕
+                filtered_contents = []
+                for c in contents:
+                    try:
+                        action = c.get('action', {})
+                        data = action.get('data', '') if isinstance(action, dict) else ''
+                        if isinstance(c, dict) and isinstance(action, dict) and isinstance(data, str):
+                            if 'action=favorite_add' in data:
+                                continue
+                    except Exception:
+                        pass
+                    filtered_contents.append(c)
+                contents = filtered_contents
                 contents.append({
                     "type": "button",
                     "action": {"type": "postback", "label": "移除收藏 🗑️", "data": f"action=favorite_remove&rank={rank}"},
