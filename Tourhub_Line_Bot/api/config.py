@@ -348,7 +348,13 @@ KEYWORD_MAPPINGS = {
 
     # 排行榜 Top10
     "leaderboard_top10": {
-        "keywords": ["top10", "Top10", "top 10", "Top 10", "前十", "排行榜前十", "前10"],
+        "keywords": [
+            "top10", "Top10", "TOP10",
+            "top 10", "Top 10", "TOP 10",
+            "前十", "前10", "前十名", "前10名",
+            "排行榜前十", "排行榜前10", "排行前十", "排行前10",
+            "十大"
+        ],
         "template": "leaderboard_top10"
     },
 
