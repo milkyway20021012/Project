@@ -10,6 +10,13 @@ logger = logging.getLogger(__name__)
 LOCKER_SITE_URL = os.environ.get('LOCKER_SITE_URL', 'https://metro.akilocker.biz/index.html?lgId=tokyometro')
 LOCKER_EXTRA_SOURCES = os.environ.get('LOCKER_EXTRA_SOURCES', '')  # 逗號分隔 URL 清單
 
+# 預設整合來源（若未提供環境變數，或作為補充）
+DEFAULT_LOCKER_SOURCES = [
+    'https://metro.akilocker.biz/index.html?lgId=tokyometro',  # Tokyo Metro Locker Concierge
+    'https://www.metocan.co.jp/locker/',                      # Metro Commerce 站點清單（含各站空位頁連結）
+    'https://qrtranslator.com/0000001730/000048/'             # Shinjuku 站 QR Translator 範例頁
+]
+
 def _parse_vacancy_info(text: str):
     """從文字中嘗試解析空位狀態與可用數量。
     返回 (has_vacancy: Optional[bool], available_slots: Optional[int])。
@@ -84,6 +91,100 @@ def _scrape_site_for_lockers(url: str, headers: dict):
     resp = requests.get(url, headers=headers, timeout=12)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.content, 'html.parser')
+
+    # Tokyo Metro Locker Concierge（入口頁，多語，動態內容為主：保底抽鏈結與區塊文字）
+    if 'akilocker.biz' in url:
+        items = []
+        # 嘗試蒐集頁內與 Locker/Station 相關的連結做為候選點
+        for a in soup.find_all('a', href=True):
+            href = a['href']
+            text = a.get_text(' ', strip=True)
+            if not text and not href:
+                continue
+            # 只保留與 locker/metro/station 相關的連結
+            if any(key in href for key in ['locker', 'lgId', 'station', 'metro']) or any(key in text for key in ['ロッカー', 'Locker', '駅']):
+                name = text or 'Tokyo Metro ロッカー'
+                # 盡量取一個較有意義的名稱
+                if len(name) < 4:
+                    name = 'Tokyo Metro ロッカー'
+                items.append({
+                    'name': name,
+                    'address': '東京メトロ駅構内',
+                    'map_uri': href if href.startswith('http') else url,
+                    'latlng': None,
+                })
+        # 若頁面未提供可用連結，至少返回入口作為一筆候選
+        if not items:
+            items.append({
+                'name': 'Tokyo Metro ロッカー',
+                'address': '東京メトロ',
+                'map_uri': url,
+                'latlng': None,
+            })
+        return items
+
+    # Metro Commerce 站點清單頁：抓取「空き状況はこちら」的站點連結
+    if 'metocan.co.jp/locker' in url:
+        items = []
+        for a in soup.find_all('a', href=True):
+            text = a.get_text(' ', strip=True)
+            if '空き状況' not in text:
+                continue
+            href = a['href']
+            # 站名：往上找最近的標題元素
+            station = None
+            for tag in ['h3', 'h2', 'h4', 'strong', 'b']:
+                t = a.find_previous(tag)
+                if t:
+                    t_text = t.get_text(strip=True)
+                    if ('駅' in t_text) or ('Station' in t_text):
+                        station = t_text
+                        break
+            name = (station or '東京メトロ駅') + ' コインロッカー'
+            items.append({
+                'name': name,
+                'address': station or '東京メトロ',
+                'map_uri': href if href.startswith('http') else url,
+                'latlng': None,
+            })
+        # 若沒有特定站點，至少返回總覽頁
+        if not items:
+            items.append({
+                'name': '東京メトロ コインロッカー一覧',
+                'address': '東京メトロ',
+                'map_uri': url,
+                'latlng': None,
+            })
+        return items
+
+    # 京王線站點頁：嘗試彙總「空き数」做為 available_slots
+    if 'keiochika.co.jp/locker' in url:
+        title_el = soup.find(['h1', 'title'])
+        title_text = title_el.get_text(strip=True) if title_el else '京王線 駅'
+        page_text = soup.get_text('\n', strip=True)
+        # 匹配多個「空き数」數字
+        slot_nums = [int(m.group(1)) for m in re.finditer(r'空き数\s*[^\d]*(\d+)', page_text)]
+        available_slots = sum(slot_nums) if slot_nums else None
+        has_vacancy = (available_slots is not None and available_slots > 0)
+        return [{
+            'name': f'{title_text} コインロッカー',
+            'address': title_text,
+            'map_uri': url,
+            'latlng': None,
+            'has_vacancy': has_vacancy if slot_nums else None,
+            'available_slots': available_slots
+        }]
+
+    # QR Translator 站點頁（例：新宿）
+    if 'qrtranslator.com' in url:
+        h1 = soup.find('h1')
+        page_title = h1.get_text(strip=True) if h1 else soup.title.get_text(strip=True) if soup.title else 'Coin Locker Map'
+        return [{
+            'name': page_title,
+            'address': '駅構内',
+            'map_uri': url,
+            'latlng': None,
+        }]
 
     # 專用解析：coinlocker-navi（例：https://www.coinlocker-navi.com/tokyo/area/tokyo/）
     if 'coinlocker-navi.com' in url:
@@ -184,6 +285,10 @@ def fetch_nearby_lockers(lat: float, lng: float, max_items: int = 3):
             urls.append(LOCKER_SITE_URL)
         if LOCKER_EXTRA_SOURCES:
             urls.extend([u.strip() for u in LOCKER_EXTRA_SOURCES.split(',') if u.strip()])
+        # 加入預設整合來源（避免重複）
+        for u in DEFAULT_LOCKER_SOURCES:
+            if u not in urls:
+                urls.append(u)
 
         candidates = []
         seen = set()
