@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
-LOCKER_SITE_URL = os.environ.get('LOCKER_SITE_URL', '')
+LOCKER_SITE_URL = os.environ.get('LOCKER_SITE_URL', 'https://metro.akilocker.biz/index.html?lgId=tokyometro')
 LOCKER_EXTRA_SOURCES = os.environ.get('LOCKER_EXTRA_SOURCES', '')  # 逗號分隔 URL 清單
 
 def _parse_vacancy_info(text: str):
