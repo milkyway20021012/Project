@@ -244,7 +244,15 @@ KEYWORD_MAPPINGS = {
         "feature_name": "trip_management"
     },
     "locker": {
-        "keywords": ["置物櫃", "寄物點", "行李寄存", "寄物", "置物", "locker", "Locker"],
+        "keywords": [
+            "置物櫃", "儲物櫃", "寄物櫃",
+            "寄物點", "寄存點",
+            "行李寄存", "行李寄放", "行李寄物",
+            "寄物", "置物",
+            "coin locker", "Coin Locker",
+            "locker", "Locker",
+            "コインロッカー"
+        ],
         "template": "feature",
         "feature_name": "locker"
     },
@@ -360,7 +368,23 @@ KEYWORD_MAPPINGS = {
 
     # 附近置物櫃（提示用戶上傳位置）
     "locker_nearby_prompt": {
-        "keywords": ["附近置物櫃", "附近寄物", "附近寄物點"],
+        "keywords": [
+            "附近置物櫃", "附近儲物櫃", "附近寄物櫃",
+            "附近寄物", "附近寄物點", "附近寄存點", "附近寄放點",
+            "附近行李寄存", "附近行李寄放", "附近行李寄物",
+            "附近置物",
+            "附近的置物櫃", "附近的寄物點", "附近的儲物櫃",
+            "最近置物櫃", "最近寄物點",
+            "就近置物櫃", "就近寄物",
+            "周邊置物櫃", "周邊寄物點",
+            "附近 locker", "附近Locker", "最近locker", "附近coin locker",
+            "nearby locker", "Nearby locker",
+            "nearest locker", "Nearest locker",
+            "lockers near me", "Lockers near me",
+            "nearby coin locker", "Nearby coin locker",
+            "coin locker near me", "Coin locker near me",
+            "コインロッカー", "近くのコインロッカー", "コインロッカー 近く"
+        ],
         "template": "locker_nearby_prompt"
     },
 
