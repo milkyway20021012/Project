@@ -354,6 +354,38 @@ def build_lockers_carousel(lockers):
         has_vacancy = item.get('has_vacancy')
         available_slots = item.get('available_slots')
 
+        # 產生適合顯示的地點標題（盡量顯示站名/地點，而非來源網站）
+        def _clean_title(text: str) -> str:
+            if not text:
+                return ''
+            cleaned = text
+            # 去除常見來源或泛稱用語
+            for bad in [
+                '東京メトロ', 'Tokyo Metro', 'Locker Concierge', 'ロッカーコンシェルジュ',
+                'コインロッカー一覧', 'Coin Locker Map', 'コインロッカーガイド',
+                'コインロッカー', 'Coin Locker', 'ロッカー', 'Lockers', '附近置物點',
+                '駅コインロッカー案内', 'QR Translator'
+            ]:
+                cleaned = cleaned.replace(bad, '')
+            return cleaned.strip(' ・-—|/\u3000')
+
+        def _looks_like_place(text: str) -> bool:
+            if not text:
+                return False
+            tokens = ['駅', 'Station', '車站', '機場', '空港', '機场']
+            return any(t in text for t in tokens)
+
+        title_candidates = []
+        if _looks_like_place(addr):
+            title_candidates.append(_clean_title(addr))
+        if _looks_like_place(name):
+            title_candidates.append(_clean_title(name))
+        # 一般情況也嘗試用 name
+        title_candidates.append(_clean_title(name))
+        # 最後備援用地址
+        title_candidates.append(_clean_title(addr))
+        header_title = next((t for t in title_candidates if t), '附近置物櫃')
+
         # 狀態徽章
         if has_vacancy is True:
             vacancy_short = "有空"
@@ -419,7 +451,7 @@ def build_lockers_carousel(lockers):
             "header": {
                 "type": "box",
                 "layout": "vertical",
-                "contents": [{"type": "text", "text": f"🛅 附近置物櫃 #{idx}", "weight": "bold", "size": "lg", "color": "#ffffff", "align": "center"}],
+                "contents": [{"type": "text", "text": f"🛅 {header_title}", "weight": "bold", "size": "lg", "color": "#ffffff", "align": "center"}],
                 "backgroundColor": "#FFA500",
                 "paddingAll": "20px"
             },
