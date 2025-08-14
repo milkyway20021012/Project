@@ -350,21 +350,72 @@ def build_lockers_carousel(lockers):
         addr = item.get('address')
         uri = item.get('map_uri')
         distance_km = item.get('distance_km')
-        distance_text = f"距離：約 {distance_km:.1f} 公里" if isinstance(distance_km, (int, float)) else None
+        has_distance = isinstance(distance_km, (int, float))
         has_vacancy = item.get('has_vacancy')
         available_slots = item.get('available_slots')
+
+        # 狀態徽章
         if has_vacancy is True:
-            vacancy_text = f"空位：有{f'（約{available_slots}）' if isinstance(available_slots, int) else ''}"
-            vacancy_color = "#0E7A0D"  # 綠色
+            vacancy_short = "有空"
+            vacancy_color = "#0E7A0D"
         elif has_vacancy is False:
-            vacancy_text = "空位：已滿"
-            vacancy_color = "#B00020"  # 紅色
+            vacancy_short = "已滿"
+            vacancy_color = "#B00020"
         else:
-            vacancy_text = None
-            vacancy_color = "#555555"
+            vacancy_short = None
+            vacancy_color = "#AAAAAA"
+
+        vacancy_chip = None
+        if vacancy_short:
+            text_val = vacancy_short if not isinstance(available_slots, int) else f"{vacancy_short}（約{available_slots}）"
+            vacancy_chip = {
+                "type": "box",
+                "layout": "baseline",
+                "contents": [
+                    {"type": "text", "text": text_val, "size": "xs", "weight": "bold", "color": "#ffffff"}
+                ],
+                "backgroundColor": vacancy_color,
+                "cornerRadius": "12px",
+                "paddingAll": "6px"
+            }
+
+        distance_chip = None
+        if has_distance:
+            distance_chip = {
+                "type": "box",
+                "layout": "baseline",
+                "contents": [
+                    {"type": "text", "text": f"約 {distance_km:.1f} 公里", "size": "xs", "color": "#333333"}
+                ],
+                "backgroundColor": "#F2F2F2",
+                "cornerRadius": "12px",
+                "paddingAll": "6px"
+            }
+
+        chips_row_contents = []
+        if vacancy_chip:
+            chips_row_contents.append(vacancy_chip)
+        if distance_chip:
+            chips_row_contents.append(distance_chip)
+
+        body_contents = [
+            {"type": "text", "text": name, "weight": "bold", "size": "md", "color": "#333333", "wrap": True}
+        ]
+        if chips_row_contents:
+            body_contents.append({
+                "type": "box",
+                "layout": "horizontal",
+                "contents": chips_row_contents,
+                "spacing": "sm",
+                "margin": "sm"
+            })
+        body_contents.append({"type": "separator", "margin": "md"})
+        body_contents.append({"type": "text", "text": f"📍 {addr}", "size": "sm", "color": "#555555", "wrap": True, "margin": "sm"})
+
         bubbles.append({
             "type": "bubble",
             "size": "kilo",
+            "action": {"type": "uri", "uri": uri, "label": "查看地圖"},
             "header": {
                 "type": "box",
                 "layout": "vertical",
@@ -375,12 +426,7 @@ def build_lockers_carousel(lockers):
             "body": {
                 "type": "box",
                 "layout": "vertical",
-                "contents": [
-                    {"type": "text", "text": name, "weight": "bold", "size": "md", "color": "#333333", "wrap": True},
-                    {"type": "text", "text": addr, "size": "sm", "color": "#555555", "wrap": True, "margin": "sm"},
-                    *(([{"type": "text", "text": distance_text, "size": "sm", "color": "#555555", "margin": "sm"}] if distance_text else [])),
-                    *(([{"type": "text", "text": vacancy_text, "size": "sm", "color": vacancy_color, "margin": "sm"}] if vacancy_text else []))
-                ],
+                "contents": body_contents,
                 "paddingAll": "20px"
             },
             "footer": {
