@@ -7,6 +7,65 @@ import re
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# 全域 Flex Message 藍白主題套用工具
+THEME_PRIMARY_BLUE = "#0D47A1"  # 深藍（header / 主要按鈕）
+THEME_LIGHT_BLUE_BG = "#E8F0FE"  # 淺藍背景（chips / 次要區塊）
+THEME_TEXT_PRIMARY = "#1F2937"   # 主要文字深灰藍
+THEME_TEXT_SECONDARY = "#4B5563" # 次要文字
+
+def apply_blue_theme(payload):
+    """遞迴套用藍白主題到 Flex Message dict。
+    - header 背景 → 深藍
+    - 主要 button 顏色 → 深藍
+    - 常見的橘色（#FFA500）統一替換為深藍
+    - 主要/次要文字顏色優化
+    """
+    if payload is None:
+        return payload
+
+    def _transform(node, parent_key=None):
+        if isinstance(node, dict):
+            # 統一替換橘色 → 深藍
+            if 'backgroundColor' in node and node['backgroundColor'] == '#FFA500':
+                node['backgroundColor'] = THEME_PRIMARY_BLUE
+
+            # header 區塊底色統一深藍
+            if node.get('type') == 'box' and parent_key == 'header':
+                node['backgroundColor'] = THEME_PRIMARY_BLUE
+
+            # 主要按鈕顏色統一深藍
+            if node.get('type') == 'button':
+                style = node.get('style')
+                if style == 'primary':
+                    node['color'] = THEME_PRIMARY_BLUE
+                elif style == 'secondary':
+                    # 次要按鈕維持淺色系，若未指定顏色則給文字深灰藍
+                    node.setdefault('color', THEME_TEXT_SECONDARY)
+
+            # 統一調整常見文字色彩
+            if node.get('type') == 'text':
+                # header 文字維持白色，其他調整為主要或次要
+                if parent_key == 'header':
+                    node['color'] = '#ffffff'
+                else:
+                    # 僅在未指定或為過深/過淺時替換
+                    current = node.get('color')
+                    if current in (None, '#333333', '#222222', '#000000'):
+                        node['color'] = THEME_TEXT_PRIMARY
+                    elif current in ('#666666', '#777777', '#888888', '#555555'):
+                        node['color'] = THEME_TEXT_SECONDARY
+
+            # 遞迴處理子節點
+            for k, v in list(node.items()):
+                node[k] = _transform(v, parent_key=k)
+            return node
+        elif isinstance(node, list):
+            return [ _transform(child, parent_key=parent_key) for child in node ]
+        else:
+            return node
+
+    return _transform(payload)
+
 # 加載環境變數
 try:
     from dotenv import load_dotenv
@@ -2094,10 +2153,11 @@ if line_handler:
 
                 with ApiClient(configuration) as api_client:
                     line_bot_api = MessagingApi(api_client)
+                    themed = apply_blue_theme(flex_message)
                     line_bot_api.reply_message_with_http_info(
                         ReplyMessageRequest(
                             reply_token=event.reply_token,
-                            messages=[FlexMessage(alt_text="TourHub 排行榜", contents=FlexContainer.from_dict(flex_message))]
+                            messages=[FlexMessage(alt_text="TourHub 排行榜", contents=FlexContainer.from_dict(themed))]
                         )
                     )
                 return
@@ -2109,10 +2169,11 @@ if line_handler:
 
                 with ApiClient(configuration) as api_client:
                     line_bot_api = MessagingApi(api_client)
+                    themed = apply_blue_theme(response_message)
                     line_bot_api.reply_message_with_http_info(
                         ReplyMessageRequest(
                             reply_token=event.reply_token,
-                            messages=[FlexMessage(alt_text="內容創建結果", contents=FlexContainer.from_dict(response_message))]
+                            messages=[FlexMessage(alt_text="內容創建結果", contents=FlexContainer.from_dict(themed))]
                         )
                     )
                     logger.info("✅ 內容創建結果發送成功")
@@ -2192,17 +2253,18 @@ if line_handler:
                 logger.info("❌ 沒有匹配的模板，使用預設回應")
                 flex_message = create_simple_flex_message("default")
 
-            # 發送消息
+            # 發送消息（統一套用藍白主題）
             logger.info(f"📤 準備發送訊息，Flex Message 存在: {bool(flex_message)}")
             if flex_message:
                 logger.info(f"📤 Flex Message 類型: {flex_message.get('type', 'N/A')}")
 
             with ApiClient(configuration) as api_client:
                 line_bot_api = MessagingApi(api_client)
+                themed = apply_blue_theme(flex_message)
                 line_bot_api.reply_message_with_http_info(
                     ReplyMessageRequest(
                         reply_token=event.reply_token,
-                        messages=[FlexMessage(alt_text="TourHub Bot", contents=FlexContainer.from_dict(flex_message))]
+                        messages=[FlexMessage(alt_text="TourHub Bot", contents=FlexContainer.from_dict(themed))]
                     )
                 )
                 logger.info("✅ 訊息發送成功")
@@ -2254,10 +2316,11 @@ if line_handler:
 
             with ApiClient(configuration) as api_client:
                 line_bot_api = MessagingApi(api_client)
+                themed = apply_blue_theme(flex_message)
                 response = line_bot_api.reply_message_with_http_info(
                     ReplyMessageRequest(
                         reply_token=event.reply_token,
-                        messages=[FlexMessage(alt_text="附近置物櫃", contents=FlexContainer.from_dict(flex_message))]
+                        messages=[FlexMessage(alt_text="附近置物櫃", contents=FlexContainer.from_dict(themed))]
                     )
                 )
                 # 獲取消息ID並更新會話
@@ -2340,10 +2403,11 @@ if line_handler:
                         line_bot_api = MessagingApi(api_client)
                         
                         # 發送新的Flex Message來替換舊的
+                        themed = apply_blue_theme(flex_message)
                         line_bot_api.push_message_with_http_info(
                             PushMessageRequest(
                                 to=line_user_id,
-                                messages=[FlexMessage(alt_text="附近置物櫃", contents=FlexContainer.from_dict(flex_message))]
+                                messages=[FlexMessage(alt_text="附近置物櫃", contents=FlexContainer.from_dict(themed))]
                             )
                         )
                         logger.info("✅ 置物櫃分頁更新成功")
