@@ -1209,7 +1209,8 @@ def create_quick_reply_menu():
                                 "label": "🥇 第一名",
                                 "data": "action=quick_reply&type=leaderboard&rank=1"
                             },
-                            "style": "secondary",
+                            "style": "primary",
+                            "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
                             "marginStart": "sm"
@@ -1243,7 +1244,8 @@ def create_quick_reply_menu():
                                 "label": "⏰ 集合管理",
                                 "data": "action=quick_reply&type=tour_clock"
                             },
-                            "style": "secondary",
+                            "style": "primary",
+                            "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
                             "marginStart": "sm"
@@ -1277,7 +1279,8 @@ def create_quick_reply_menu():
                                 "label": "💰 分帳工具",
                                 "data": "action=quick_reply&type=split_bill"
                             },
-                            "style": "secondary",
+                            "style": "primary",
+                            "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
                             "marginStart": "sm"
@@ -1311,7 +1314,8 @@ def create_quick_reply_menu():
                                 "label": "👤 我的帳號",
                                 "data": "action=quick_reply&type=user_account"
                             },
-                            "style": "secondary",
+                            "style": "primary",
+                            "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
                             "marginStart": "sm"
@@ -1345,7 +1349,8 @@ def create_quick_reply_menu():
                                 "label": "🔗 綁定狀態",
                                 "data": "action=quick_reply&type=binding_status"
                             },
-                            "style": "secondary",
+                            "style": "primary",
+                            "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
                             "marginStart": "sm"
