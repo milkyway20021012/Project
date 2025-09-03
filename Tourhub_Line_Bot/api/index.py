@@ -21,6 +21,7 @@ def apply_blue_theme(payload):
     - 主要/次要文字顏色優化
     """
     if payload is None:
+        
         return payload
 
     def _transform(node, parent_key=None):
@@ -1151,6 +1152,257 @@ def create_error_message(error_text):
         }
     }
 
+def create_quick_reply_menu():
+    """創建快速回覆選單"""
+    return {
+        "type": "bubble",
+        "size": "giga",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "⚡ 快速回覆選單",
+                    "weight": "bold",
+                    "size": "lg",
+                    "color": "#ffffff",
+                    "align": "center"
+                },
+                {
+                    "type": "text",
+                    "text": "點擊下方按鈕快速使用功能",
+                    "size": "sm",
+                    "color": "#ffffff",
+                    "align": "center",
+                    "margin": "sm"
+                }
+            ],
+            "backgroundColor": "#6C5CE7",
+            "paddingAll": "20px"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                # 第一行：排行榜相關
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "postback",
+                                "label": "🏆 排行榜",
+                                "data": "action=quick_reply&type=leaderboard_list"
+                            },
+                            "style": "primary",
+                            "color": "#FF6B6B",
+                            "height": "sm",
+                            "flex": 1
+                        },
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "postback",
+                                "label": "🥇 第一名",
+                                "data": "action=quick_reply&type=leaderboard&rank=1"
+                            },
+                            "style": "secondary",
+                            "height": "sm",
+                            "flex": 1,
+                            "marginStart": "sm"
+                        }
+                    ],
+                    "spacing": "sm",
+                    "marginBottom": "sm"
+                },
+                
+                # 第二行：行程管理
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "postback",
+                                "label": "🗓️ 行程管理",
+                                "data": "action=quick_reply&type=trip_management"
+                            },
+                            "style": "primary",
+                            "color": "#4ECDC4",
+                            "height": "sm",
+                            "flex": 1
+                        },
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "postback",
+                                "label": "⏰ 集合管理",
+                                "data": "action=quick_reply&type=tour_clock"
+                            },
+                            "style": "secondary",
+                            "height": "sm",
+                            "flex": 1,
+                            "marginStart": "sm"
+                        }
+                    ],
+                    "spacing": "sm",
+                    "marginBottom": "sm"
+                },
+                
+                # 第三行：實用工具
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "postback",
+                                "label": "🛅 置物櫃",
+                                "data": "action=quick_reply&type=locker"
+                            },
+                            "style": "primary",
+                            "color": "#FFA500",
+                            "height": "sm",
+                            "flex": 1
+                        },
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "postback",
+                                "label": "💰 分帳工具",
+                                "data": "action=quick_reply&type=split_bill"
+                            },
+                            "style": "secondary",
+                            "height": "sm",
+                            "flex": 1,
+                            "marginStart": "sm"
+                        }
+                    ],
+                    "spacing": "sm",
+                    "marginBottom": "sm"
+                },
+                
+                # 第四行：個人功能
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "postback",
+                                "label": "❤️ 我的收藏",
+                                "data": "action=quick_reply&type=my_favorites"
+                            },
+                            "style": "primary",
+                            "color": "#E74C3C",
+                            "height": "sm",
+                            "flex": 1
+                        },
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "postback",
+                                "label": "👤 我的帳號",
+                                "data": "action=quick_reply&type=user_account"
+                            },
+                            "style": "secondary",
+                            "height": "sm",
+                            "flex": 1,
+                            "marginStart": "sm"
+                        }
+                    ],
+                    "spacing": "sm",
+                    "marginBottom": "sm"
+                },
+                
+                # 第五行：幫助和設定
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "postback",
+                                "label": "❓ 功能說明",
+                                "data": "action=quick_reply&type=help"
+                            },
+                            "style": "primary",
+                            "color": "#9B59B6",
+                            "height": "sm",
+                            "flex": 1
+                        },
+                        {
+                            "type": "button",
+                            "action": {
+                                "type": "postback",
+                                "label": "🔗 綁定狀態",
+                                "data": "action=quick_reply&type=binding_status"
+                            },
+                            "style": "secondary",
+                            "height": "sm",
+                            "flex": 1,
+                            "marginStart": "sm"
+                        }
+                    ],
+                    "spacing": "sm"
+                }
+            ],
+            "paddingAll": "20px"
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "💡 提示：您也可以直接輸入文字來使用功能",
+                    "size": "xs",
+                    "color": "#666666",
+                    "align": "center",
+                    "wrap": True
+                }
+            ],
+            "paddingAll": "15px"
+        }
+    }
+
+def handle_quick_reply(params, line_user_id):
+    """處理快速回覆"""
+    if params is None:
+        params = {}
+    reply_type = params.get('type')
+    rank = params.get('rank', '1')
+    
+    if reply_type == 'leaderboard_list':
+        return create_simple_flex_message("leaderboard_list")
+    elif reply_type == 'leaderboard':
+        return create_simple_flex_message("leaderboard", rank=rank)
+    elif reply_type == 'trip_management':
+        return create_simple_flex_message("feature", feature_name="trip_management")
+    elif reply_type == 'tour_clock':
+        return create_simple_flex_message("feature", feature_name="tour_clock")
+    elif reply_type == 'locker':
+        return create_simple_flex_message("feature", feature_name="locker")
+    elif reply_type == 'split_bill':
+        return create_simple_flex_message("feature", feature_name="split_bill")
+    elif reply_type == 'my_favorites':
+        return create_simple_flex_message("my_favorites", line_user_id=line_user_id)
+    elif reply_type == 'user_account':
+        return create_simple_flex_message("user_account", line_user_id=line_user_id)
+    elif reply_type == 'help':
+        return create_simple_flex_message("feature_menu")
+    elif reply_type == 'binding_status':
+        return create_simple_flex_message("binding_status", line_user_id=line_user_id)
+    else:
+        return create_simple_flex_message("default")
+
 def create_simple_flex_message(template_type, **kwargs):
     """創建簡單的 Flex Message"""
     
@@ -1478,6 +1730,9 @@ def create_simple_flex_message(template_type, **kwargs):
 
     elif template_type == "rebind_confirm":
         return create_rebind_confirm()
+
+    elif template_type == "quick_reply_menu":
+        return create_quick_reply_menu()
 
     elif template_type == "leaderboard":
         # 使用分頁系統顯示排行榜詳細資料
@@ -2467,6 +2722,10 @@ if line_handler:
                         "paddingAll": "20px"
                     }
                 }
+            elif action == 'quick_reply':
+                # 快速回覆處理
+                logger.info(f"🔧 處理快速回覆: {params}")
+                flex_message = handle_quick_reply(params, line_user_id)
 
 
             if flex_message:

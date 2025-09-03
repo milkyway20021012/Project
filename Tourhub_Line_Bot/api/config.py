@@ -388,5 +388,15 @@ KEYWORD_MAPPINGS = {
         "template": "locker_nearby_prompt"
     },
 
+    # 快速回覆選單
+    "quick_reply_menu": {
+        "keywords": [
+            "快速回覆", "快速選單", "快捷鍵", "快速", "常用功能",
+            "快速功能", "功能選單", "快速操作", "快捷選單",
+            "quick reply", "Quick Reply", "quick menu", "Quick Menu"
+        ],
+        "template": "quick_reply_menu"
+    },
+
     
 }
