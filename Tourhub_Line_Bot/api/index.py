@@ -2236,9 +2236,13 @@ if line_handler:
 
             # 使用 locker_service 查詢真實資料
             try:
-                from api.locker_service import fetch_nearby_lockers, build_lockers_carousel
+                from api.locker_service import fetch_nearby_lockers, build_lockers_carousel, store_user_locker_session
                 lockers = fetch_nearby_lockers(latitude, longitude)
-                flex_message = build_lockers_carousel(lockers)
+                # 存儲用戶會話數據
+                line_user_id = event.source.user_id if hasattr(event.source, 'user_id') else 'unknown'
+                store_user_locker_session(line_user_id, lockers)
+                # 顯示第一個置物櫃
+                flex_message = build_lockers_carousel(lockers, 0)
             except Exception as e:
                 logger.error(f"locker_service 失敗，改回 mock: {e}")
                 # 最後回退：一張提示卡
@@ -2315,6 +2319,16 @@ if line_handler:
                 # 執行重新綁定
                 logger.info(f"🔧 執行重新綁定")
                 flex_message = execute_rebind(line_user_id)
+            elif action == 'locker_next':
+                # 置物櫃分頁處理
+                try:
+                    from api.locker_service import build_locker_with_pagination
+                    current_index = int(params.get('index', 0))
+                    logger.info(f"🔧 置物櫃分頁: index={current_index}, user={line_user_id}")
+                    flex_message = build_locker_with_pagination(line_user_id, current_index)
+                except Exception as e:
+                    logger.error(f"❌ 置物櫃分頁處理失敗: {e}")
+                    flex_message = create_simple_flex_message("default")
             elif action == 'favorite_add':
                 # 加入收藏（排行榜名次）
                 try:

@@ -3,6 +3,7 @@ import logging
 import requests
 import re
 import math
+import time
 from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
@@ -331,7 +332,8 @@ def fetch_nearby_lockers(lat: float, lng: float, max_items: int = 3):
         logger.error(f"爬取置物櫃網站失敗: {e}")
         return []
 
-def build_lockers_carousel(lockers):
+def build_lockers_carousel(lockers, current_index=0):
+    """構建置物櫃輪播圖，支持單個顯示和分頁功能"""
     if not lockers:
         return {
             "type": "bubble",
@@ -344,131 +346,218 @@ def build_lockers_carousel(lockers):
                 "paddingAll": "20px"
             }
         }
-    bubbles = []
-    for idx, item in enumerate(lockers, 1):
-        name = item.get('name')
-        addr = item.get('address')
-        uri = item.get('map_uri')
-        distance_km = item.get('distance_km')
-        has_distance = isinstance(distance_km, (int, float))
-        has_vacancy = item.get('has_vacancy')
-        available_slots = item.get('available_slots')
+    
+    # 確保索引在有效範圍內
+    current_index = max(0, min(current_index, len(lockers) - 1))
+    item = lockers[current_index]
+    
+    # 只顯示當前索引的置物櫃
+    name = item.get('name')
+    addr = item.get('address')
+    uri = item.get('map_uri')
+    distance_km = item.get('distance_km')
+    has_distance = isinstance(distance_km, (int, float))
+    has_vacancy = item.get('has_vacancy')
+    available_slots = item.get('available_slots')
 
-        # 產生適合顯示的地點標題（盡量顯示站名/地點，而非來源網站）
-        def _clean_title(text: str) -> str:
-            if not text:
-                return ''
-            cleaned = text
-            # 去除常見來源或泛稱用語
-            for bad in [
-                '東京メトロ', 'Tokyo Metro', 'Locker Concierge', 'ロッカーコンシェルジュ',
-                'コインロッカー一覧', 'Coin Locker Map', 'コインロッカーガイド',
-                'コインロッカー', 'Coin Locker', 'ロッカー', 'Lockers', '附近置物點',
-                '駅コインロッカー案内', 'QR Translator'
-            ]:
-                cleaned = cleaned.replace(bad, '')
-            return cleaned.strip(' ・-—|/\u3000')
+    # 產生適合顯示的地點標題（盡量顯示站名/地點，而非來源網站）
+    def _clean_title(text: str) -> str:
+        if not text:
+            return ''
+        cleaned = text
+        # 去除常見來源或泛稱用語
+        for bad in [
+            '東京メトロ', 'Tokyo Metro', 'Locker Concierge', 'ロッカーコンシェルジュ',
+            'コインロッカー一覧', 'Coin Locker Map', 'コインロッカーガイド',
+            'コインロッカー', 'Coin Locker', 'ロッカー', 'Lockers', '附近置物點',
+            '駅コインロッカー案内', 'QR Translator'
+        ]:
+            cleaned = cleaned.replace(bad, '')
+        return cleaned.strip(' ・-—|/\u3000')
 
-        def _looks_like_place(text: str) -> bool:
-            if not text:
-                return False
-            tokens = ['駅', 'Station', '車站', '機場', '空港', '機场']
-            return any(t in text for t in tokens)
+    def _looks_like_place(text: str) -> bool:
+        if not text:
+            return False
+        tokens = ['駅', 'Station', '車站', '機場', '空港', '機场']
+        return any(t in text for t in tokens)
 
-        title_candidates = []
-        if _looks_like_place(addr):
-            title_candidates.append(_clean_title(addr))
-        if _looks_like_place(name):
-            title_candidates.append(_clean_title(name))
-        # 一般情況也嘗試用 name
-        title_candidates.append(_clean_title(name))
-        # 最後備援用地址
+    title_candidates = []
+    if _looks_like_place(addr):
         title_candidates.append(_clean_title(addr))
-        header_title = next((t for t in title_candidates if t), '附近置物櫃')
+    if _looks_like_place(name):
+        title_candidates.append(_clean_title(name))
+    # 一般情況也嘗試用 name
+    title_candidates.append(_clean_title(name))
+    # 最後備援用地址
+    title_candidates.append(_clean_title(addr))
+    header_title = next((t for t in title_candidates if t), '附近置物櫃')
 
-        # 狀態徽章
-        if has_vacancy is True:
-            vacancy_short = "有空"
-            vacancy_color = "#0E7A0D"
-        elif has_vacancy is False:
-            vacancy_short = "已滿"
-            vacancy_color = "#B00020"
-        else:
-            vacancy_short = None
-            vacancy_color = "#AAAAAA"
+    # 狀態徽章
+    if has_vacancy is True:
+        vacancy_short = "有空"
+        vacancy_color = "#0E7A0D"
+    elif has_vacancy is False:
+        vacancy_short = "已滿"
+        vacancy_color = "#B00020"
+    else:
+        vacancy_short = None
+        vacancy_color = "#AAAAAA"
 
-        vacancy_chip = None
-        if vacancy_short:
-            text_val = vacancy_short if not isinstance(available_slots, int) else f"{vacancy_short}（約{available_slots}）"
-            vacancy_chip = {
-                "type": "box",
-                "layout": "baseline",
-                "contents": [
-                    {"type": "text", "text": text_val, "size": "xs", "weight": "bold", "color": "#ffffff"}
-                ],
-                "backgroundColor": vacancy_color,
-                "cornerRadius": "12px",
-                "paddingAll": "6px"
-            }
+    vacancy_chip = None
+    if vacancy_short:
+        text_val = vacancy_short if not isinstance(available_slots, int) else f"{vacancy_short}（約{available_slots}）"
+        vacancy_chip = {
+            "type": "box",
+            "layout": "baseline",
+            "contents": [
+                {"type": "text", "text": text_val, "size": "xs", "weight": "bold", "color": "#ffffff"}
+            ],
+            "backgroundColor": vacancy_color,
+            "cornerRadius": "12px",
+            "paddingAll": "6px"
+        }
 
-        distance_chip = None
-        if has_distance:
-            distance_chip = {
-                "type": "box",
-                "layout": "baseline",
-                "contents": [
-                    {"type": "text", "text": f"約 {distance_km:.1f} 公里", "size": "xs", "color": "#333333"}
-                ],
-                "backgroundColor": "#F2F2F2",
-                "cornerRadius": "12px",
-                "paddingAll": "6px"
-            }
+    distance_chip = None
+    if has_distance:
+        distance_chip = {
+            "type": "box",
+            "layout": "baseline",
+            "contents": [
+                {"type": "text", "text": f"約 {distance_km:.1f} 公里", "size": "xs", "color": "#333333"}
+            ],
+            "backgroundColor": "#F2F2F2",
+            "cornerRadius": "12px",
+            "paddingAll": "6px"
+        }
 
-        chips_row_contents = []
-        if vacancy_chip:
-            chips_row_contents.append(vacancy_chip)
-        if distance_chip:
-            chips_row_contents.append(distance_chip)
+    chips_row_contents = []
+    if vacancy_chip:
+        chips_row_contents.append(vacancy_chip)
+    if distance_chip:
+        chips_row_contents.append(distance_chip)
 
-        body_contents = [
-            {"type": "text", "text": name, "weight": "bold", "size": "md", "color": "#333333", "wrap": True}
-        ]
-        if chips_row_contents:
-            body_contents.append({
-                "type": "box",
-                "layout": "horizontal",
-                "contents": chips_row_contents,
-                "spacing": "sm",
-                "margin": "sm"
+    body_contents = [
+        {"type": "text", "text": name, "weight": "bold", "size": "md", "color": "#333333", "wrap": True}
+    ]
+    if chips_row_contents:
+        body_contents.append({
+            "type": "box",
+            "layout": "horizontal",
+            "contents": chips_row_contents,
+            "spacing": "sm",
+            "margin": "sm"
+        })
+    body_contents.append({"type": "separator", "margin": "md"})
+    body_contents.append({"type": "text", "text": f"📍 {addr}", "size": "sm", "color": "#555555", "wrap": True, "margin": "sm"})
+
+    # 構建分頁按鈕
+    footer_buttons = []
+    
+    # 導航按鈕
+    footer_buttons.append({
+        "type": "button", 
+        "action": {"type": "uri", "label": "導航", "uri": uri}, 
+        "style": "primary", 
+        "color": "#FFA500", 
+        "height": "sm"
+    })
+    
+    # 分頁按鈕
+    if len(lockers) > 1:
+        # 顯示當前位置和總數
+        page_info = f"{current_index + 1}/{len(lockers)}"
+        
+        # 如果有下一個置物櫃，添加"查看下一個"按鈕
+        if current_index < len(lockers) - 1:
+            footer_buttons.append({
+                "type": "button",
+                "action": {
+                    "type": "postback",
+                    "label": f"查看下一個 ({page_info})",
+                    "data": f"action=locker_next&index={current_index + 1}&total={len(lockers)}"
+                },
+                "style": "secondary",
+                "color": "#666666",
+                "height": "sm"
             })
-        body_contents.append({"type": "separator", "margin": "md"})
-        body_contents.append({"type": "text", "text": f"📍 {addr}", "size": "sm", "color": "#555555", "wrap": True, "margin": "sm"})
+        else:
+            # 如果是最後一個，顯示"重新開始"按鈕
+            footer_buttons.append({
+                "type": "button",
+                "action": {
+                    "type": "postback",
+                    "label": f"重新開始 ({page_info})",
+                    "data": f"action=locker_next&index=0&total={len(lockers)}"
+                },
+                "style": "secondary",
+                "color": "#666666",
+                "height": "sm"
+            })
 
-        bubbles.append({
+    bubble = {
+        "type": "bubble",
+        "size": "kilo",
+        "action": {"type": "uri", "uri": uri, "label": "查看地圖"},
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [{"type": "text", "text": f"🛅 {header_title}", "weight": "bold", "size": "lg", "color": "#ffffff", "align": "center"}],
+            "backgroundColor": "#FFA500",
+            "paddingAll": "20px"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": body_contents,
+            "paddingAll": "20px"
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": footer_buttons,
+            "paddingAll": "20px"
+        }
+    }
+    
+    return bubble
+
+# 用戶會話存儲（簡單的內存存儲，生產環境建議使用 Redis 或數據庫）
+_user_locker_sessions = {}
+
+def store_user_locker_session(user_id: str, lockers: list):
+    """存儲用戶的置物櫃會話數據"""
+    _user_locker_sessions[user_id] = {
+        'lockers': lockers,
+        'timestamp': time.time()
+    }
+
+def get_user_locker_session(user_id: str):
+    """獲取用戶的置物櫃會話數據"""
+    session = _user_locker_sessions.get(user_id)
+    if session:
+        # 檢查會話是否過期（30分鐘）
+        if time.time() - session['timestamp'] < 1800:
+            return session['lockers']
+        else:
+            # 會話過期，清除
+            del _user_locker_sessions[user_id]
+    return None
+
+def build_locker_with_pagination(user_id: str, current_index: int = 0):
+    """根據用戶會話和當前索引構建置物櫃顯示"""
+    lockers = get_user_locker_session(user_id)
+    if not lockers:
+        return {
             "type": "bubble",
-            "size": "kilo",
-            "action": {"type": "uri", "uri": uri, "label": "查看地圖"},
-            "header": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [{"type": "text", "text": f"🛅 {header_title}", "weight": "bold", "size": "lg", "color": "#ffffff", "align": "center"}],
-                "backgroundColor": "#FFA500",
-                "paddingAll": "20px"
-            },
             "body": {
                 "type": "box",
                 "layout": "vertical",
-                "contents": body_contents,
-                "paddingAll": "20px"
-            },
-            "footer": {
-                "type": "box",
-                "layout": "vertical",
                 "contents": [
-                    {"type": "button", "action": {"type": "uri", "label": "導航", "uri": uri}, "style": "primary", "color": "#FFA500", "height": "sm"}
+                    {"type": "text", "text": "會話已過期，請重新查詢附近置物櫃", "align": "center", "color": "#666666"}
                 ],
                 "paddingAll": "20px"
             }
-        })
-    return {"type": "carousel", "contents": bubbles}
+        }
+    
+    return build_lockers_carousel(lockers, current_index)
 
