@@ -2506,6 +2506,8 @@ if line_handler:
                     flex_message = create_simple_flex_message("leaderboard_top10")
                 elif template_config["template"] == "locker_nearby_prompt":
                     flex_message = create_simple_flex_message("locker_nearby_prompt")
+                elif template_config["template"] == "quick_reply_menu":
+                    flex_message = create_simple_flex_message("quick_reply_menu")
                 else:
                     # 預設回應
                     flex_message = create_simple_flex_message("default")
