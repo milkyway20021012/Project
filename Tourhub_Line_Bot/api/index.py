@@ -62,6 +62,7 @@ from linebot.v3.messaging import (
     ApiClient,
     MessagingApi,
     ReplyMessageRequest,
+    PushMessageRequest,
     FlexMessage,
     FlexContainer
 )
@@ -2253,12 +2254,17 @@ if line_handler:
 
             with ApiClient(configuration) as api_client:
                 line_bot_api = MessagingApi(api_client)
-                line_bot_api.reply_message_with_http_info(
+                response = line_bot_api.reply_message_with_http_info(
                     ReplyMessageRequest(
                         reply_token=event.reply_token,
                         messages=[FlexMessage(alt_text="附近置物櫃", contents=FlexContainer.from_dict(flex_message))]
                     )
                 )
+                # 獲取消息ID並更新會話
+                if hasattr(response, 'headers') and 'x-line-request-id' in response.headers:
+                    message_id = response.headers['x-line-request-id']
+                    from api.locker_service import store_user_locker_session
+                    store_user_locker_session(line_user_id, lockers, message_id)
                 logger.info("✅ 附近置物櫃回覆成功")
         except Exception as e:
             logger.error(f"❌ 處理位置訊息錯誤: {str(e)}")
@@ -2320,12 +2326,31 @@ if line_handler:
                 logger.info(f"🔧 執行重新綁定")
                 flex_message = execute_rebind(line_user_id)
             elif action == 'locker_next':
-                # 置物櫃分頁處理
+                # 置物櫃分頁處理 - 使用push_message更新現有消息
                 try:
-                    from api.locker_service import build_locker_with_pagination
+                    from api.locker_service import build_locker_with_pagination, get_user_message_id
                     current_index = int(params.get('index', 0))
                     logger.info(f"🔧 置物櫃分頁: index={current_index}, user={line_user_id}")
+                    
+                    # 構建新的Flex Message
                     flex_message = build_locker_with_pagination(line_user_id, current_index)
+                    
+                    # 使用push_message更新現有消息
+                    with ApiClient(configuration) as api_client:
+                        line_bot_api = MessagingApi(api_client)
+                        
+                        # 發送新的Flex Message來替換舊的
+                        line_bot_api.push_message_with_http_info(
+                            PushMessageRequest(
+                                to=line_user_id,
+                                messages=[FlexMessage(alt_text="附近置物櫃", contents=FlexContainer.from_dict(flex_message))]
+                            )
+                        )
+                        logger.info("✅ 置物櫃分頁更新成功")
+                    
+                    # 不返回flex_message，因為已經直接發送了
+                    return
+                    
                 except Exception as e:
                     logger.error(f"❌ 置物櫃分頁處理失敗: {e}")
                     flex_message = create_simple_flex_message("default")

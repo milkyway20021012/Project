@@ -524,10 +524,11 @@ def build_lockers_carousel(lockers, current_index=0):
 # 用戶會話存儲（簡單的內存存儲，生產環境建議使用 Redis 或數據庫）
 _user_locker_sessions = {}
 
-def store_user_locker_session(user_id: str, lockers: list):
+def store_user_locker_session(user_id: str, lockers: list, message_id: str = None):
     """存儲用戶的置物櫃會話數據"""
     _user_locker_sessions[user_id] = {
         'lockers': lockers,
+        'message_id': message_id,
         'timestamp': time.time()
     }
 
@@ -537,7 +538,7 @@ def get_user_locker_session(user_id: str):
     if session:
         # 檢查會話是否過期（30分鐘）
         if time.time() - session['timestamp'] < 1800:
-            return session['lockers']
+            return session
         else:
             # 會話過期，清除
             del _user_locker_sessions[user_id]
@@ -545,8 +546,8 @@ def get_user_locker_session(user_id: str):
 
 def build_locker_with_pagination(user_id: str, current_index: int = 0):
     """根據用戶會話和當前索引構建置物櫃顯示"""
-    lockers = get_user_locker_session(user_id)
-    if not lockers:
+    session = get_user_locker_session(user_id)
+    if not session:
         return {
             "type": "bubble",
             "body": {
@@ -559,5 +560,10 @@ def build_locker_with_pagination(user_id: str, current_index: int = 0):
             }
         }
     
-    return build_lockers_carousel(lockers, current_index)
+    return build_lockers_carousel(session['lockers'], current_index)
+
+def get_user_message_id(user_id: str):
+    """獲取用戶的消息ID"""
+    session = get_user_locker_session(user_id)
+    return session['message_id'] if session else None
 
