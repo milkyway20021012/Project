@@ -1306,19 +1306,6 @@ def create_quick_reply_menu():
                             "color": "#E74C3C",
                             "height": "sm",
                             "flex": 1
-                        },
-                        {
-                            "type": "button",
-                            "action": {
-                                "type": "postback",
-                                "label": "👤 我的帳號",
-                                "data": "action=quick_reply&type=user_account"
-                            },
-                            "style": "primary",
-                            "color": "#87CEEB",
-                            "height": "sm",
-                            "flex": 1,
-                            "marginStart": "sm"
                         }
                     ],
                     "spacing": "sm",
@@ -1341,19 +1328,6 @@ def create_quick_reply_menu():
                             "color": "#9B59B6",
                             "height": "sm",
                             "flex": 1
-                        },
-                        {
-                            "type": "button",
-                            "action": {
-                                "type": "postback",
-                                "label": "🔗 綁定狀態",
-                                "data": "action=quick_reply&type=binding_status"
-                            },
-                            "style": "primary",
-                            "color": "#87CEEB",
-                            "height": "sm",
-                            "flex": 1,
-                            "marginStart": "sm"
                         }
                     ],
                     "spacing": "sm"
@@ -1399,12 +1373,8 @@ def handle_quick_reply(params, line_user_id):
         return create_simple_flex_message("feature", feature_name="split_bill")
     elif reply_type == 'my_favorites':
         return create_simple_flex_message("my_favorites", line_user_id=line_user_id)
-    elif reply_type == 'user_account':
-        return create_simple_flex_message("user_account", line_user_id=line_user_id)
     elif reply_type == 'help':
         return create_simple_flex_message("feature_menu")
-    elif reply_type == 'binding_status':
-        return create_simple_flex_message("binding_status", line_user_id=line_user_id)
     else:
         return create_simple_flex_message("default")
 
@@ -1719,19 +1689,6 @@ def create_simple_flex_message(template_type, **kwargs):
     elif template_type == "creation_help":
         return create_creation_help()
 
-    elif template_type == "user_account":
-        line_user_id = kwargs.get('line_user_id')
-        if line_user_id:
-            return create_user_account_info(line_user_id)
-        else:
-            return create_error_message("無法獲取用戶資訊")
-
-    elif template_type == "binding_status":
-        line_user_id = kwargs.get('line_user_id')
-        if line_user_id:
-            return create_binding_status(line_user_id)
-        else:
-            return create_error_message("無法獲取用戶資訊")
 
     elif template_type == "rebind_confirm":
         return create_rebind_confirm()
