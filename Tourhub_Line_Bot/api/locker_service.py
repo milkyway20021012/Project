@@ -16,7 +16,11 @@ DEFAULT_LOCKER_SOURCES = [
     'https://cloak.ecbo.io/zh-TW',                           # Ecbo Cloak 置物櫃服務
     'https://metro.akilocker.biz/index.html?lgId=tokyometro',  # Tokyo Metro Locker Concierge
     'https://www.metocan.co.jp/locker/',                      # Metro Commerce 站點清單（含各站空位頁連結）
-    'https://qrtranslator.com/0000001730/000048/'             # Shinjuku 站 QR Translator 範例頁
+    'https://qrtranslator.com/0000001730/000048/',            # Shinjuku 站 QR Translator 範例頁
+    'https://www.coinlocker-navi.com/',                       # 全國置物櫃導航
+    'https://www.ecbo-cloak.com/',                           # Ecbo Cloak 官方網站
+    'https://coinlocker.jp/',                                # 置物櫃資訊網站
+    'https://www.locker-navi.com/'                           # 置物櫃導航
 ]
 
 def _parse_vacancy_info(text: str):
@@ -130,6 +134,8 @@ def _get_location_name_from_coordinates(lat: float, lng: float) -> str:
             return "新加坡"
         elif 37.4 <= lat <= 37.7 and 126.9 <= lng <= 127.2:
             return "首爾"
+        elif 36.6 <= lat <= 36.8 and 137.1 <= lng <= 137.3:
+            return "富山"
         else:
             # 如果不在已知範圍內，嘗試使用更精確的判斷
             if 35.0 <= lat <= 36.0 and 139.0 <= lng <= 140.0:
@@ -351,7 +357,7 @@ def _scrape_site_for_lockers(url: str, headers: dict):
             'latlng': None,
         }]
 
-    # 專用解析：coinlocker-navi（例：https://www.coinlocker-navi.com/tokyo/area/tokyo/）
+    # 全國置物櫃導航網站
     if 'coinlocker-navi.com' in url:
         items = []
         for a in soup.find_all('a', href=True):
@@ -398,6 +404,114 @@ def _scrape_site_for_lockers(url: str, headers: dict):
                 'available_slots': available_slots
             })
         return items
+
+    # 通用置物櫃網站解析（適用於富山市等較小城市）
+    if any(domain in url for domain in ['ecbo-cloak.com', 'coinlocker.jp', 'locker-navi.com']):
+        items = []
+        # 查找包含置物櫃信息的元素
+        selectors = [
+            '.locker-item', '.locker-card', '.location-item', '.store-item',
+            '[class*="locker"]', '[class*="location"]', '[class*="store"]',
+            '.card', '.item', 'li', '.station-item', '.facility-item'
+        ]
+        
+        elements = []
+        for selector in selectors:
+            elements = soup.select(selector)
+            if elements:
+                break
+        
+        # 如果沒有找到特定元素，嘗試查找包含置物櫃相關關鍵詞的文本
+        if not elements:
+            text_blocks = soup.find_all(text=True)
+            for text in text_blocks:
+                if any(keyword in text.lower() for keyword in ['locker', '置物櫃', 'cloak', '行李', 'コインロッカー', 'ロッカー']):
+                    parent = text.parent
+                    if parent and parent.name in ['div', 'p', 'span', 'li', 'td']:
+                        elements.append(parent)
+        
+        for el in elements:
+            try:
+                # 提取置物櫃名稱
+                name = None
+                name_selectors = ['h1', 'h2', 'h3', 'h4', 'h5', '.title', '.name', '.location-name', '.station-name']
+                for sel in name_selectors:
+                    name_el = el.select_one(sel)
+                    if name_el:
+                        name = name_el.get_text(strip=True)
+                        break
+                
+                if not name:
+                    # 嘗試從元素文本中提取名稱
+                    text = el.get_text(strip=True)
+                    lines = [line.strip() for line in text.split('\n') if line.strip()]
+                    for line in lines:
+                        if len(line) > 3 and len(line) < 50 and any(keyword in line for keyword in ['駅', 'Station', '車站', 'ロッカー', 'Locker']):
+                            name = line
+                            break
+                
+                # 提取地址信息
+                address = None
+                address_selectors = ['.address', '.location', '.address-text', '[class*="address"]', '.station-address']
+                for sel in address_selectors:
+                    addr_el = el.select_one(sel)
+                    if addr_el:
+                        address = addr_el.get_text(strip=True)
+                        break
+                
+                if not address:
+                    # 嘗試從文本中提取地址
+                    text = el.get_text(strip=True)
+                    if '地址' in text or 'Address' in text or '所在地' in text:
+                        lines = text.split('\n')
+                        for i, line in enumerate(lines):
+                            if any(keyword in line for keyword in ['地址', 'Address', '所在地']):
+                                if i + 1 < len(lines):
+                                    address = lines[i + 1].strip()
+                                    break
+                
+                # 提取地圖鏈接
+                map_uri = None
+                map_links = el.find_all('a', href=True)
+                for link in map_links:
+                    href = link['href']
+                    if any(keyword in href.lower() for keyword in ['maps', 'google', 'map', 'location']):
+                        map_uri = href
+                        break
+                
+                # 提取座標信息
+                latlng = None
+                if map_uri:
+                    latlng = _extract_lat_lng_from_text(map_uri)
+                
+                # 解析空位信息
+                block_text = el.get_text("\n", strip=True)
+                has_vacancy, available_slots = _parse_vacancy_info(block_text)
+                
+                if name or address:
+                    items.append({
+                        'name': name or '置物櫃',
+                        'address': address or '—',
+                        'map_uri': map_uri or url,
+                        'latlng': latlng,
+                        'has_vacancy': has_vacancy,
+                        'available_slots': available_slots
+                    })
+            except Exception as e:
+                logger.warning(f"解析通用置物櫃元素時出錯: {e}")
+                continue
+        
+        # 如果沒有找到具體的置物櫃信息，至少返回網站入口
+        if not items:
+            items.append({
+                'name': '置物櫃服務',
+                'address': '—',
+                'map_uri': url,
+                'latlng': None,
+            })
+        
+        return items
+
     selectors = ['.locker-item', '.item', '.card', '[class*="locker"]', '[data-type*="locker"]', 'li']
     elements = []
     for sel in selectors:
@@ -477,8 +591,20 @@ def fetch_nearby_lockers(lat: float, lng: float, max_items: int = 3):
         # 先過濾出有距離的，按距離排序；若不足，再補無距離者
         with_distance = [c for c in candidates if c['distance_km'] is not None]
         without_distance = [c for c in candidates if c['distance_km'] is None]
-        with_distance.sort(key=lambda x: x['distance_km'])
-        lockers_sorted = with_distance + without_distance
+        
+        # 過濾掉距離過遠的置物櫃（超過50公里）
+        nearby_with_distance = [c for c in with_distance if c['distance_km'] <= 50]
+        far_with_distance = [c for c in with_distance if c['distance_km'] > 50]
+        
+        # 優先顯示附近的置物櫃，如果附近沒有，再考慮較遠的
+        if nearby_with_distance:
+            nearby_with_distance.sort(key=lambda x: x['distance_km'])
+            lockers_sorted = nearby_with_distance + without_distance
+        else:
+            # 如果附近沒有置物櫃，顯示較遠的（但限制在100公里內）
+            far_with_distance = [c for c in far_with_distance if c['distance_km'] <= 100]
+            far_with_distance.sort(key=lambda x: x['distance_km'])
+            lockers_sorted = far_with_distance + without_distance
 
         final = []
         for c in lockers_sorted[:max_items]:
@@ -796,5 +922,32 @@ def test_ecbo_cloak_scraping():
         return items
     except Exception as e:
         logger.error(f"❌ Ecbo Cloak 爬蟲測試失敗: {e}")
+        return []
+
+def test_toyama_lockers():
+    """測試富山市的置物櫃查詢功能"""
+    try:
+        # 富山市的座標
+        toyama_lat = 36.6953
+        toyama_lng = 137.2113
+        
+        logger.info(f"🧪 測試富山市置物櫃查詢: ({toyama_lat}, {toyama_lng})")
+        
+        lockers = fetch_nearby_lockers(toyama_lat, toyama_lng, max_items=5)
+        logger.info(f"✅ 成功查詢到 {len(lockers)} 個置物櫃")
+        
+        for i, locker in enumerate(lockers):
+            logger.info(f"置物櫃 {i+1}: {locker.get('name', 'N/A')}")
+            logger.info(f"  地址: {locker.get('address', 'N/A')}")
+            if locker.get('distance_km'):
+                logger.info(f"  距離: {locker['distance_km']:.1f} 公里")
+            if locker.get('has_vacancy') is not None:
+                logger.info(f"  空位狀態: {locker['has_vacancy']}")
+            if locker.get('available_slots'):
+                logger.info(f"  可用數量: {locker['available_slots']}")
+        
+        return lockers
+    except Exception as e:
+        logger.error(f"❌ 富山市置物櫃查詢測試失敗: {e}")
         return []
 
