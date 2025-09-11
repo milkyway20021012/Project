@@ -1223,10 +1223,10 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "md",
-                            "marginBottom": "md",
-                            "marginStart": "md",
-                            "marginEnd": "sm"
+                            "marginTop": "12px",
+                            "marginBottom": "12px",
+                            "marginStart": "12px",
+                            "marginEnd": "6px"
                         },
                         {
                             "type": "button",
@@ -1239,15 +1239,15 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "md",
-                            "marginBottom": "md",
-                            "marginStart": "sm",
-                            "marginEnd": "md"
+                            "marginTop": "12px",
+                            "marginBottom": "12px",
+                            "marginStart": "6px",
+                            "marginEnd": "12px"
                         }
                     ],
                     "spacing": "xl",
-                    "marginTop": "md",
-                    "marginBottom": "md"
+                    "marginTop": "12px",
+                    "marginBottom": "12px"
                 },
                 
                 # 第二行：行程管理
@@ -1266,10 +1266,10 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "md",
-                            "marginBottom": "md",
-                            "marginStart": "md",
-                            "marginEnd": "sm"
+                            "marginTop": "12px",
+                            "marginBottom": "12px",
+                            "marginStart": "12px",
+                            "marginEnd": "6px"
                         },
                         {
                             "type": "button",
@@ -1282,15 +1282,15 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "md",
-                            "marginBottom": "md",
-                            "marginStart": "sm",
-                            "marginEnd": "md"
+                            "marginTop": "12px",
+                            "marginBottom": "12px",
+                            "marginStart": "6px",
+                            "marginEnd": "12px"
                         }
                     ],
                     "spacing": "xl",
-                    "marginTop": "md",
-                    "marginBottom": "md"
+                    "marginTop": "12px",
+                    "marginBottom": "12px"
                 },
                 
                 # 第三行：實用工具
@@ -1309,10 +1309,10 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "md",
-                            "marginBottom": "md",
-                            "marginStart": "md",
-                            "marginEnd": "sm"
+                            "marginTop": "12px",
+                            "marginBottom": "12px",
+                            "marginStart": "12px",
+                            "marginEnd": "6px"
                         },
                         {
                             "type": "button",
@@ -1325,15 +1325,15 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "md",
-                            "marginBottom": "md",
-                            "marginStart": "sm",
-                            "marginEnd": "md"
+                            "marginTop": "12px",
+                            "marginBottom": "12px",
+                            "marginStart": "6px",
+                            "marginEnd": "12px"
                         }
                     ],
                     "spacing": "xl",
-                    "marginTop": "md",
-                    "marginBottom": "md"
+                    "marginTop": "12px",
+                    "marginBottom": "12px"
                 },
                 
                 # 第四行：個人功能
@@ -1352,10 +1352,10 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "md",
-                            "marginBottom": "md",
-                            "marginStart": "md",
-                            "marginEnd": "sm"
+                            "marginTop": "12px",
+                            "marginBottom": "12px",
+                            "marginStart": "12px",
+                            "marginEnd": "6px"
                         },
                         {
                             "type": "button",
@@ -1368,15 +1368,15 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "md",
-                            "marginBottom": "md",
-                            "marginStart": "sm",
-                            "marginEnd": "md"
+                            "marginTop": "12px",
+                            "marginBottom": "12px",
+                            "marginStart": "6px",
+                            "marginEnd": "12px"
                         }
                     ],
                     "spacing": "xl",
-                    "marginTop": "md",
-                    "marginBottom": "md"
+                    "marginTop": "12px",
+                    "marginBottom": "12px"
                 }
             ],
             "paddingAll": "20px"
