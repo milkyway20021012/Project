@@ -1398,6 +1398,8 @@ def handle_quick_reply(params, line_user_id):
         return create_simple_flex_message("my_favorites", line_user_id=line_user_id)
     elif reply_type == 'help':
         return create_simple_flex_message("feature_menu")
+    elif reply_type == 'quick_reply_menu':
+        return create_quick_reply_menu()
     else:
         return create_simple_flex_message("default")
 
@@ -2299,8 +2301,67 @@ def create_simple_flex_message(template_type, **kwargs):
             }
         }
 
-    # 預設回應：直接顯示快速選單
-    return create_quick_reply_menu()
+    # 預設回應：說明情況並提供快速選單
+    return {
+        "type": "bubble",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "🤔 需要幫助嗎？",
+                    "weight": "bold",
+                    "size": "lg",
+                    "color": "#ffffff",
+                    "align": "center"
+                }
+            ],
+            "backgroundColor": THEME_PRIMARY_BLUE,
+            "paddingAll": "20px"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "抱歉，我不太理解您的意思。",
+                    "size": "md",
+                    "color": THEME_TEXT_PRIMARY,
+                    "wrap": True,
+                    "margin": "md"
+                },
+                {
+                    "type": "text",
+                    "text": "您可以參考以下快速選單了解所有可用功能，或直接輸入功能名稱來使用。",
+                    "size": "sm",
+                    "color": THEME_TEXT_SECONDARY,
+                    "wrap": True,
+                    "margin": "sm"
+                }
+            ],
+            "paddingAll": "24px"
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "button",
+                    "action": {
+                        "type": "postback",
+                        "label": "🎯 查看快速選單",
+                        "data": "action=quick_reply&type=quick_reply_menu"
+                    },
+                    "style": "primary",
+                    "color": THEME_PRIMARY_BLUE,
+                    "height": "sm"
+                }
+            ],
+            "paddingAll": "20px"
+        }
+    }
 
 # 環境變數檢查
 CHANNEL_ACCESS_TOKEN = os.environ.get('CHANNEL_ACCESS_TOKEN')
