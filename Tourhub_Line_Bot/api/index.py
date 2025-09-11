@@ -1220,7 +1220,7 @@ def create_new_quick_menu():
                                 "data": "action=quick_reply&type=leaderboard_list"
                             },
                             "style": "primary",
-                            "color": THEME_PRIMARY_BLUE,
+                            "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
                             "margin": "md"
@@ -1233,14 +1233,14 @@ def create_new_quick_menu():
                                 "data": "action=quick_reply&type=leaderboard&rank=1"
                             },
                             "style": "primary",
-                            "color": THEME_PRIMARY_BLUE,
+                            "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
                             "margin": "md"
                         }
                     ],
                     "spacing": "xl",
-                    "marginBottom": "xl"
+                    "marginBottom": "lg"
                 },
                 
                 # 第二行：行程管理
@@ -1256,7 +1256,7 @@ def create_new_quick_menu():
                                 "data": "action=quick_reply&type=trip_management"
                             },
                             "style": "primary",
-                            "color": THEME_SUCCESS,
+                            "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
                             "margin": "md"
@@ -1269,14 +1269,14 @@ def create_new_quick_menu():
                                 "data": "action=quick_reply&type=tour_clock"
                             },
                             "style": "primary",
-                            "color": THEME_ACCENT_BLUE,
+                            "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
                             "margin": "md"
                         }
                     ],
                     "spacing": "xl",
-                    "marginBottom": "xl"
+                    "marginBottom": "lg"
                 },
                 
                 # 第三行：實用工具
@@ -1292,7 +1292,7 @@ def create_new_quick_menu():
                                 "data": "action=quick_reply&type=locker"
                             },
                             "style": "primary",
-                            "color": THEME_WARNING,
+                            "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
                             "margin": "md"
@@ -1305,14 +1305,14 @@ def create_new_quick_menu():
                                 "data": "action=quick_reply&type=split_bill"
                             },
                             "style": "primary",
-                            "color": THEME_SUCCESS,
+                            "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
                             "margin": "md"
                         }
                     ],
                     "spacing": "xl",
-                    "marginBottom": "xl"
+                    "marginBottom": "lg"
                 },
                 
                 # 第四行：個人功能
@@ -1328,7 +1328,7 @@ def create_new_quick_menu():
                                 "data": "action=quick_reply&type=my_favorites"
                             },
                             "style": "primary",
-                            "color": THEME_ERROR,
+                            "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
                             "margin": "md"
@@ -1341,14 +1341,14 @@ def create_new_quick_menu():
                                 "data": "action=quick_reply&type=help"
                             },
                             "style": "primary",
-                            "color": THEME_ACCENT_BLUE,
+                            "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
                             "margin": "md"
                         }
                     ],
                     "spacing": "xl",
-                    "marginBottom": "xl"
+                    "marginBottom": "lg"
                 }
             ],
             "paddingAll": "20px"
