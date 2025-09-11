@@ -1223,8 +1223,8 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "12px",
-                            "marginBottom": "12px",
+                            "marginTop": "8px",
+                            "marginBottom": "8px",
                             "marginStart": "12px",
                             "marginEnd": "6px"
                         },
@@ -1239,15 +1239,15 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "12px",
-                            "marginBottom": "12px",
+                            "marginTop": "8px",
+                            "marginBottom": "8px",
                             "marginStart": "6px",
                             "marginEnd": "12px"
                         }
                     ],
                     "spacing": "xl",
-                    "marginTop": "12px",
-                    "marginBottom": "12px"
+                    "marginTop": "16px",
+                    "marginBottom": "20px"
                 },
                 
                 # 第二行：行程管理
@@ -1266,8 +1266,8 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "12px",
-                            "marginBottom": "12px",
+                            "marginTop": "8px",
+                            "marginBottom": "8px",
                             "marginStart": "12px",
                             "marginEnd": "6px"
                         },
@@ -1282,15 +1282,15 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "12px",
-                            "marginBottom": "12px",
+                            "marginTop": "8px",
+                            "marginBottom": "8px",
                             "marginStart": "6px",
                             "marginEnd": "12px"
                         }
                     ],
                     "spacing": "xl",
-                    "marginTop": "12px",
-                    "marginBottom": "12px"
+                    "marginTop": "20px",
+                    "marginBottom": "20px"
                 },
                 
                 # 第三行：實用工具
@@ -1309,8 +1309,8 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "12px",
-                            "marginBottom": "12px",
+                            "marginTop": "8px",
+                            "marginBottom": "8px",
                             "marginStart": "12px",
                             "marginEnd": "6px"
                         },
@@ -1325,15 +1325,15 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "12px",
-                            "marginBottom": "12px",
+                            "marginTop": "8px",
+                            "marginBottom": "8px",
                             "marginStart": "6px",
                             "marginEnd": "12px"
                         }
                     ],
                     "spacing": "xl",
-                    "marginTop": "12px",
-                    "marginBottom": "12px"
+                    "marginTop": "20px",
+                    "marginBottom": "20px"
                 },
                 
                 # 第四行：個人功能
@@ -1352,8 +1352,8 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "12px",
-                            "marginBottom": "12px",
+                            "marginTop": "8px",
+                            "marginBottom": "8px",
                             "marginStart": "12px",
                             "marginEnd": "6px"
                         },
@@ -1368,15 +1368,15 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "12px",
-                            "marginBottom": "12px",
+                            "marginTop": "8px",
+                            "marginBottom": "8px",
                             "marginStart": "6px",
                             "marginEnd": "12px"
                         }
                     ],
                     "spacing": "xl",
-                    "marginTop": "12px",
-                    "marginBottom": "12px"
+                    "marginTop": "20px",
+                    "marginBottom": "16px"
                 }
             ],
             "paddingAll": "20px"
