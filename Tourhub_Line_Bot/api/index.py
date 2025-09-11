@@ -203,13 +203,17 @@ def get_message_template(user_message):
     for mapping_key, mapping in KEYWORD_MAPPINGS.items():
         for keyword in mapping["keywords"]:
             if keyword in user_message:
-                all_mappings.append((len(keyword), mapping))
+                all_mappings.append((len(keyword), mapping, keyword))
+                logger.info(f"🔍 匹配到關鍵字: '{keyword}' (長度: {len(keyword)}) -> 模板: {mapping['template']}")
 
     # 如果有匹配，返回最長的關鍵字對應的模板
     if all_mappings:
         all_mappings.sort(key=lambda x: x[0], reverse=True)  # 按長度降序排列
-        return all_mappings[0][1]
+        best_match = all_mappings[0]
+        logger.info(f"✅ 最佳匹配: '{best_match[2]}' (長度: {best_match[0]}) -> 模板: {best_match[1]['template']}")
+        return best_match[1]
 
+    logger.info("❌ 沒有匹配到任何關鍵字")
     return None
 
 def parse_rank_request(user_message):
@@ -1168,9 +1172,9 @@ def create_error_message(error_text):
         }
     }
 
-def create_quick_reply_menu():
-    """創建快速回覆選單"""
-    logger.info("🔧 開始創建快速選單")
+def create_new_quick_menu():
+    """創建全新的快速選單"""
+    logger.info("🔧 創建新的快速選單")
     return {
         "type": "bubble",
         "size": "giga",
@@ -1252,7 +1256,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=trip_management"
                             },
                             "style": "primary",
-                            "color": THEME_PRIMARY_BLUE,
+                            "color": THEME_SUCCESS,
                             "height": "sm",
                             "flex": 1,
                             "margin": "md"
@@ -1265,7 +1269,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=tour_clock"
                             },
                             "style": "primary",
-                            "color": THEME_PRIMARY_BLUE,
+                            "color": THEME_ACCENT_BLUE,
                             "height": "sm",
                             "flex": 1,
                             "margin": "md"
@@ -1288,7 +1292,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=locker"
                             },
                             "style": "primary",
-                            "color": THEME_PRIMARY_BLUE,
+                            "color": THEME_WARNING,
                             "height": "sm",
                             "flex": 1,
                             "margin": "md"
@@ -1301,7 +1305,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=split_bill"
                             },
                             "style": "primary",
-                            "color": THEME_PRIMARY_BLUE,
+                            "color": THEME_SUCCESS,
                             "height": "sm",
                             "flex": 1,
                             "margin": "md"
@@ -1324,31 +1328,11 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=my_favorites"
                             },
                             "style": "primary",
-                            "color": THEME_PRIMARY_BLUE,
+                            "color": THEME_ERROR,
                             "height": "sm",
                             "flex": 1,
                             "margin": "md"
-                        }
-                    ],
-                    "spacing": "xl",
-                    "marginBottom": "xl"
-                },
-                
-                # 分隔線
-                {
-                    "type": "separator",
-                    "margin": "xxl"
-                },
-                {
-                    "type": "spacer",
-                    "size": "lg"
-                },
-                
-                # 第五行：幫助和設定
-                {
-                    "type": "box",
-                    "layout": "horizontal",
-                    "contents": [
+                        },
                         {
                             "type": "button",
                             "action": {
@@ -1357,13 +1341,14 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=help"
                             },
                             "style": "primary",
-                            "color": THEME_PRIMARY_BLUE,
+                            "color": THEME_ACCENT_BLUE,
                             "height": "sm",
                             "flex": 1,
                             "margin": "md"
                         }
                     ],
-                    "spacing": "lg"
+                    "spacing": "xl",
+                    "marginBottom": "xl"
                 }
             ],
             "paddingAll": "20px"
@@ -1384,6 +1369,7 @@ def create_quick_reply_menu():
             "paddingAll": "15px"
         }
     }
+
 
 def handle_quick_reply(params, line_user_id):
     """處理快速回覆"""
@@ -1409,7 +1395,7 @@ def handle_quick_reply(params, line_user_id):
     elif reply_type == 'help':
         return create_simple_flex_message("feature_menu")
     elif reply_type == 'quick_reply_menu':
-        return create_quick_reply_menu()
+        return create_new_quick_menu()
     else:
         return create_simple_flex_message("default")
 
@@ -1729,7 +1715,7 @@ def create_simple_flex_message(template_type, **kwargs):
         return create_rebind_confirm()
 
     elif template_type == "quick_reply_menu":
-        return create_quick_reply_menu()
+        return create_new_quick_menu()
 
     elif template_type == "leaderboard":
         # 使用分頁系統顯示排行榜詳細資料
@@ -2312,7 +2298,7 @@ def create_simple_flex_message(template_type, **kwargs):
         }
 
     # 預設回應：直接顯示快速選單
-    return create_quick_reply_menu()
+    return create_new_quick_menu()
 
 # 環境變數檢查
 CHANNEL_ACCESS_TOKEN = os.environ.get('CHANNEL_ACCESS_TOKEN')
