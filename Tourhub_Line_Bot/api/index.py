@@ -372,7 +372,7 @@ def create_optimized_flex_itinerary(data):
                         "weight": "bold",
                         "size": "md",
                         "color": THEME_TEXT_PRIMARY,
-                        "marginBottom": "md"
+                        "marginBottom": "lg"
                     }
                 ] + itinerary_items,
                 "paddingAll": "20px"
@@ -1218,7 +1218,7 @@ def create_quick_reply_menu():
                             "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1,
-                            "margin": "xs"
+                            "margin": "sm"
                         },
                         {
                             "type": "button",
@@ -1231,11 +1231,11 @@ def create_quick_reply_menu():
                             "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1,
-                            "margin": "xs"
+                            "margin": "sm"
                         }
                     ],
-                    "spacing": "md",
-                    "marginBottom": "md"
+                    "spacing": "lg",
+                    "marginBottom": "lg"
                 },
                 
                 # 第二行：行程管理
@@ -1254,7 +1254,7 @@ def create_quick_reply_menu():
                             "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1,
-                            "margin": "xs"
+                            "margin": "sm"
                         },
                         {
                             "type": "button",
@@ -1267,11 +1267,11 @@ def create_quick_reply_menu():
                             "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1,
-                            "margin": "xs"
+                            "margin": "sm"
                         }
                     ],
-                    "spacing": "md",
-                    "marginBottom": "md"
+                    "spacing": "lg",
+                    "marginBottom": "lg"
                 },
                 
                 # 第三行：實用工具
@@ -1290,7 +1290,7 @@ def create_quick_reply_menu():
                             "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1,
-                            "margin": "xs"
+                            "margin": "sm"
                         },
                         {
                             "type": "button",
@@ -1303,11 +1303,11 @@ def create_quick_reply_menu():
                             "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1,
-                            "margin": "xs"
+                            "margin": "sm"
                         }
                     ],
-                    "spacing": "md",
-                    "marginBottom": "md"
+                    "spacing": "lg",
+                    "marginBottom": "lg"
                 },
                 
                 # 第四行：個人功能
@@ -1326,17 +1326,17 @@ def create_quick_reply_menu():
                             "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1,
-                            "margin": "xs"
+                            "margin": "sm"
                         }
                     ],
-                    "spacing": "md",
-                    "marginBottom": "md"
+                    "spacing": "lg",
+                    "marginBottom": "lg"
                 },
                 
                 # 分隔線
                 {
                     "type": "separator",
-                    "margin": "xl"
+                    "margin": "xxl"
                 },
                 
                 # 第五行：幫助和設定
@@ -1355,10 +1355,10 @@ def create_quick_reply_menu():
                             "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1,
-                            "margin": "xs"
+                            "margin": "sm"
                         }
                     ],
-                    "spacing": "md"
+                    "spacing": "lg"
                 }
             ],
             "paddingAll": "20px"
