@@ -1170,6 +1170,7 @@ def create_error_message(error_text):
 
 def create_quick_reply_menu():
     """創建快速回覆選單"""
+    logger.info("🔧 開始創建快速選單")
     return {
         "type": "bubble",
         "size": "giga",
@@ -2542,7 +2543,9 @@ if line_handler:
                 elif template_config["template"] == "locker_nearby_prompt":
                     flex_message = create_simple_flex_message("locker_nearby_prompt")
                 elif template_config["template"] == "quick_reply_menu":
+                    logger.info("🔧 創建快速選單")
                     flex_message = create_simple_flex_message("quick_reply_menu")
+                    logger.info(f"🔧 快速選單創建結果: {bool(flex_message)}")
                 else:
                     # 預設回應
                     flex_message = create_simple_flex_message("default")
@@ -2774,10 +2777,11 @@ if line_handler:
                 logger.info(f"📤 準備發送分頁回應")
                 with ApiClient(configuration) as api_client:
                     line_bot_api = MessagingApi(api_client)
+                    themed = apply_modern_theme(flex_message)
                     line_bot_api.reply_message_with_http_info(
                         ReplyMessageRequest(
                             reply_token=event.reply_token,
-                            messages=[FlexMessage(alt_text="TourHub Bot", contents=FlexContainer.from_dict(flex_message))]
+                            messages=[FlexMessage(alt_text="TourHub Bot", contents=FlexContainer.from_dict(themed))]
                         )
                     )
                     logger.info("✅ 分頁回應發送成功")
