@@ -2559,9 +2559,9 @@ if line_handler:
                 lockers = fetch_nearby_lockers(latitude, longitude)
                 # 存儲用戶會話數據
                 line_user_id = event.source.user_id if hasattr(event.source, 'user_id') else 'unknown'
-                store_user_locker_session(line_user_id, lockers)
+                store_user_locker_session(line_user_id, lockers, user_lat=latitude, user_lng=longitude)
                 # 顯示第一個置物櫃
-                flex_message = build_lockers_carousel(lockers, 0)
+                flex_message = build_lockers_carousel(lockers, 0, latitude, longitude)
             except Exception as e:
                 logger.error(f"locker_service 失敗，改回 mock: {e}")
                 # 最後回退：一張提示卡

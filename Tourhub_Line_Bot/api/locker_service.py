@@ -103,6 +103,47 @@ def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
 
+def _get_location_name_from_coordinates(lat: float, lng: float) -> str:
+    """根據座標獲取地點名稱"""
+    try:
+        # 使用反向地理編碼來獲取地點名稱
+        # 這裡使用一個簡單的座標範圍判斷來識別主要城市
+        if 35.5 <= lat <= 35.8 and 139.5 <= lng <= 139.9:
+            return "東京"
+        elif 34.6 <= lat <= 34.8 and 135.4 <= lng <= 135.6:
+            return "大阪"
+        elif 35.0 <= lat <= 35.2 and 135.7 <= lng <= 135.8:
+            return "京都"
+        elif 35.1 <= lat <= 35.2 and 136.8 <= lng <= 137.0:
+            return "名古屋"
+        elif 43.0 <= lat <= 43.2 and 141.3 <= lng <= 141.5:
+            return "札幌"
+        elif 33.5 <= lat <= 33.7 and 130.3 <= lng <= 130.5:
+            return "福岡"
+        elif 26.1 <= lat <= 26.3 and 127.6 <= lng <= 127.8:
+            return "沖繩"
+        elif 25.0 <= lat <= 25.1 and 121.4 <= lng <= 121.6:
+            return "台北"
+        elif 22.2 <= lat <= 22.4 and 114.1 <= lng <= 114.3:
+            return "香港"
+        elif 1.2 <= lat <= 1.5 and 103.6 <= lng <= 103.9:
+            return "新加坡"
+        elif 37.4 <= lat <= 37.7 and 126.9 <= lng <= 127.2:
+            return "首爾"
+        else:
+            # 如果不在已知範圍內，嘗試使用更精確的判斷
+            if 35.0 <= lat <= 36.0 and 139.0 <= lng <= 140.0:
+                return "關東地區"
+            elif 34.0 <= lat <= 35.0 and 135.0 <= lng <= 136.0:
+                return "關西地區"
+            elif 42.0 <= lat <= 44.0 and 140.0 <= lng <= 142.0:
+                return "北海道"
+            else:
+                return "附近地區"
+    except Exception as e:
+        logger.warning(f"獲取地點名稱失敗: {e}")
+        return "附近地區"
+
 def _scrape_site_for_lockers(url: str, headers: dict):
     resp = requests.get(url, headers=headers, timeout=12)
     resp.raise_for_status()
@@ -455,7 +496,7 @@ def fetch_nearby_lockers(lat: float, lng: float, max_items: int = 3):
         logger.error(f"爬取置物櫃網站失敗: {e}")
         return []
 
-def build_lockers_carousel(lockers, current_index=0):
+def build_lockers_carousel(lockers, current_index=0, user_lat=None, user_lng=None):
     """構建置物櫃輪播圖，支持單個顯示和分頁功能"""
     if not lockers:
         return {
@@ -483,37 +524,42 @@ def build_lockers_carousel(lockers, current_index=0):
     has_vacancy = item.get('has_vacancy')
     available_slots = item.get('available_slots')
 
-    # 產生適合顯示的地點標題（盡量顯示站名/地點，而非來源網站）
-    def _clean_title(text: str) -> str:
-        if not text:
-            return ''
-        cleaned = text
-        # 去除常見來源或泛稱用語
-        for bad in [
-            '東京メトロ', 'Tokyo Metro', 'Locker Concierge', 'ロッカーコンシェルジュ',
-            'コインロッカー一覧', 'Coin Locker Map', 'コインロッカーガイド',
-            'コインロッカー', 'Coin Locker', 'ロッカー', 'Lockers', '附近置物點',
-            '駅コインロッカー案内', 'QR Translator'
-        ]:
-            cleaned = cleaned.replace(bad, '')
-        return cleaned.strip(' ・-—|/\u3000')
+    # 根據用戶位置生成標題
+    if user_lat is not None and user_lng is not None:
+        location_name = _get_location_name_from_coordinates(user_lat, user_lng)
+        header_title = f"{location_name} 置物櫃"
+    else:
+        # 產生適合顯示的地點標題（盡量顯示站名/地點，而非來源網站）
+        def _clean_title(text: str) -> str:
+            if not text:
+                return ''
+            cleaned = text
+            # 去除常見來源或泛稱用語
+            for bad in [
+                '東京メトロ', 'Tokyo Metro', 'Locker Concierge', 'ロッカーコンシェルジュ',
+                'コインロッカー一覧', 'Coin Locker Map', 'コインロッカーガイド',
+                'コインロッカー', 'Coin Locker', 'ロッカー', 'Lockers', '附近置物點',
+                '駅コインロッカー案内', 'QR Translator'
+            ]:
+                cleaned = cleaned.replace(bad, '')
+            return cleaned.strip(' ・-—|/\u3000')
 
-    def _looks_like_place(text: str) -> bool:
-        if not text:
-            return False
-        tokens = ['駅', 'Station', '車站', '機場', '空港', '機场']
-        return any(t in text for t in tokens)
+        def _looks_like_place(text: str) -> bool:
+            if not text:
+                return False
+            tokens = ['駅', 'Station', '車站', '機場', '空港', '機场']
+            return any(t in text for t in tokens)
 
-    title_candidates = []
-    if _looks_like_place(addr):
-        title_candidates.append(_clean_title(addr))
-    if _looks_like_place(name):
+        title_candidates = []
+        if _looks_like_place(addr):
+            title_candidates.append(_clean_title(addr))
+        if _looks_like_place(name):
+            title_candidates.append(_clean_title(name))
+        # 一般情況也嘗試用 name
         title_candidates.append(_clean_title(name))
-    # 一般情況也嘗試用 name
-    title_candidates.append(_clean_title(name))
-    # 最後備援用地址
-    title_candidates.append(_clean_title(addr))
-    header_title = next((t for t in title_candidates if t), '附近置物櫃')
+        # 最後備援用地址
+        title_candidates.append(_clean_title(addr))
+        header_title = next((t for t in title_candidates if t), '附近置物櫃')
 
     # 狀態徽章
     if has_vacancy is True:
@@ -681,11 +727,13 @@ def build_lockers_carousel(lockers, current_index=0):
 # 用戶會話存儲（簡單的內存存儲，生產環境建議使用 Redis 或數據庫）
 _user_locker_sessions = {}
 
-def store_user_locker_session(user_id: str, lockers: list, message_id: str = None):
+def store_user_locker_session(user_id: str, lockers: list, message_id: str = None, user_lat: float = None, user_lng: float = None):
     """存儲用戶的置物櫃會話數據"""
     _user_locker_sessions[user_id] = {
         'lockers': lockers,
         'message_id': message_id,
+        'user_lat': user_lat,
+        'user_lng': user_lng,
         'timestamp': time.time()
     }
 
@@ -717,7 +765,7 @@ def build_locker_with_pagination(user_id: str, current_index: int = 0):
             }
         }
     
-    return build_lockers_carousel(session['lockers'], current_index)
+    return build_lockers_carousel(session['lockers'], current_index, session.get('user_lat'), session.get('user_lng'))
 
 def get_user_message_id(user_id: str):
     """獲取用戶的消息ID"""
