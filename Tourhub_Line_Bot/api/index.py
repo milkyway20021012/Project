@@ -1217,7 +1217,8 @@ def create_quick_reply_menu():
                             "style": "primary",
                             "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
-                            "flex": 1
+                            "flex": 1,
+                            "margin": "xs"
                         },
                         {
                             "type": "button",
@@ -1230,11 +1231,11 @@ def create_quick_reply_menu():
                             "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1,
-                            "marginStart": "sm"
+                            "margin": "xs"
                         }
                     ],
-                    "spacing": "sm",
-                    "marginBottom": "sm"
+                    "spacing": "md",
+                    "marginBottom": "md"
                 },
                 
                 # 第二行：行程管理
@@ -1252,7 +1253,8 @@ def create_quick_reply_menu():
                             "style": "primary",
                             "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
-                            "flex": 1
+                            "flex": 1,
+                            "margin": "xs"
                         },
                         {
                             "type": "button",
@@ -1265,11 +1267,11 @@ def create_quick_reply_menu():
                             "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1,
-                            "marginStart": "sm"
+                            "margin": "xs"
                         }
                     ],
-                    "spacing": "sm",
-                    "marginBottom": "sm"
+                    "spacing": "md",
+                    "marginBottom": "md"
                 },
                 
                 # 第三行：實用工具
@@ -1287,7 +1289,8 @@ def create_quick_reply_menu():
                             "style": "primary",
                             "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
-                            "flex": 1
+                            "flex": 1,
+                            "margin": "xs"
                         },
                         {
                             "type": "button",
@@ -1300,11 +1303,11 @@ def create_quick_reply_menu():
                             "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1,
-                            "marginStart": "sm"
+                            "margin": "xs"
                         }
                     ],
-                    "spacing": "sm",
-                    "marginBottom": "sm"
+                    "spacing": "md",
+                    "marginBottom": "md"
                 },
                 
                 # 第四行：個人功能
@@ -1322,17 +1325,18 @@ def create_quick_reply_menu():
                             "style": "primary",
                             "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
-                            "flex": 1
+                            "flex": 1,
+                            "margin": "xs"
                         }
                     ],
-                    "spacing": "sm",
-                    "marginBottom": "sm"
+                    "spacing": "md",
+                    "marginBottom": "md"
                 },
                 
                 # 分隔線
                 {
                     "type": "separator",
-                    "margin": "lg"
+                    "margin": "xl"
                 },
                 
                 # 第五行：幫助和設定
@@ -1350,10 +1354,11 @@ def create_quick_reply_menu():
                             "style": "primary",
                             "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
-                            "flex": 1
+                            "flex": 1,
+                            "margin": "xs"
                         }
                     ],
-                    "spacing": "sm"
+                    "spacing": "md"
                 }
             ],
             "paddingAll": "20px"
