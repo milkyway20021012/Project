@@ -1240,7 +1240,8 @@ def create_new_quick_menu():
                         }
                     ],
                     "spacing": "xl",
-                    "marginBottom": "lg"
+                    "marginTop": "md",
+                    "marginBottom": "md"
                 },
                 
                 # 第二行：行程管理
@@ -1276,7 +1277,8 @@ def create_new_quick_menu():
                         }
                     ],
                     "spacing": "xl",
-                    "marginBottom": "lg"
+                    "marginTop": "md",
+                    "marginBottom": "md"
                 },
                 
                 # 第三行：實用工具
@@ -1312,7 +1314,8 @@ def create_new_quick_menu():
                         }
                     ],
                     "spacing": "xl",
-                    "marginBottom": "lg"
+                    "marginTop": "md",
+                    "marginBottom": "md"
                 },
                 
                 # 第四行：個人功能
@@ -1348,7 +1351,8 @@ def create_new_quick_menu():
                         }
                     ],
                     "spacing": "xl",
-                    "marginBottom": "lg"
+                    "marginTop": "md",
+                    "marginBottom": "md"
                 }
             ],
             "paddingAll": "20px"
