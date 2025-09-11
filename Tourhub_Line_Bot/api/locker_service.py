@@ -8,11 +8,12 @@ from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
-LOCKER_SITE_URL = os.environ.get('LOCKER_SITE_URL', 'https://metro.akilocker.biz/index.html?lgId=tokyometro')
+LOCKER_SITE_URL = os.environ.get('LOCKER_SITE_URL', 'https://cloak.ecbo.io/zh-TW')
 LOCKER_EXTRA_SOURCES = os.environ.get('LOCKER_EXTRA_SOURCES', '')  # 逗號分隔 URL 清單
 
 # 預設整合來源（若未提供環境變數，或作為補充）
 DEFAULT_LOCKER_SOURCES = [
+    'https://cloak.ecbo.io/zh-TW',                           # Ecbo Cloak 置物櫃服務
     'https://metro.akilocker.biz/index.html?lgId=tokyometro',  # Tokyo Metro Locker Concierge
     'https://www.metocan.co.jp/locker/',                      # Metro Commerce 站點清單（含各站空位頁連結）
     'https://qrtranslator.com/0000001730/000048/'             # Shinjuku 站 QR Translator 範例頁
@@ -50,6 +51,20 @@ def _parse_vacancy_info(text: str):
                 has_vacancy = available_slots > 0
             else:
                 m = re.search(r'(\d+)\s*(?:available|free|slots?)', lowered)
+                if m:
+                    available_slots = int(m.group(1))
+                    has_vacancy = available_slots > 0
+
+        # Ecbo Cloak 特定格式
+        if available_slots is None:
+            # 查找 "X/XX" 格式 (如 "3/20" 表示 3個可用，總共20個)
+            m = re.search(r'(\d+)/(\d+)', text)
+            if m:
+                available_slots = int(m.group(1))
+                has_vacancy = available_slots > 0
+            # 查找 "X of XX" 格式
+            elif re.search(r'(\d+)\s*of\s*(\d+)', lowered):
+                m = re.search(r'(\d+)\s*of\s*(\d+)', lowered)
                 if m:
                     available_slots = int(m.group(1))
                     has_vacancy = available_slots > 0
@@ -92,6 +107,114 @@ def _scrape_site_for_lockers(url: str, headers: dict):
     resp = requests.get(url, headers=headers, timeout=12)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.content, 'html.parser')
+
+    # Ecbo Cloak 置物櫃服務
+    if 'cloak.ecbo.io' in url:
+        items = []
+        # 查找置物櫃相關的元素
+        # 嘗試多種選擇器來找到置物櫃信息
+        selectors = [
+            '.locker-item', '.locker-card', '.location-item', '.store-item',
+            '[class*="locker"]', '[class*="location"]', '[class*="store"]',
+            '.card', '.item', 'li'
+        ]
+        
+        for selector in selectors:
+            elements = soup.select(selector)
+            if elements:
+                break
+        
+        # 如果沒有找到特定元素，嘗試查找包含置物櫃信息的文本
+        if not elements:
+            # 查找包含置物櫃相關關鍵詞的文本塊
+            text_blocks = soup.find_all(text=True)
+            for text in text_blocks:
+                if any(keyword in text.lower() for keyword in ['locker', '置物櫃', 'cloak', '行李']):
+                    parent = text.parent
+                    if parent and parent.name in ['div', 'p', 'span', 'li']:
+                        elements.append(parent)
+        
+        for el in elements:
+            try:
+                # 提取置物櫃名稱
+                name = None
+                name_selectors = ['h1', 'h2', 'h3', 'h4', 'h5', '.title', '.name', '.location-name']
+                for sel in name_selectors:
+                    name_el = el.select_one(sel)
+                    if name_el:
+                        name = name_el.get_text(strip=True)
+                        break
+                
+                if not name:
+                    # 嘗試從元素文本中提取名稱
+                    text = el.get_text(strip=True)
+                    lines = [line.strip() for line in text.split('\n') if line.strip()]
+                    for line in lines:
+                        if len(line) > 3 and len(line) < 50:
+                            name = line
+                            break
+                
+                # 提取地址信息
+                address = None
+                address_selectors = ['.address', '.location', '.address-text', '[class*="address"]']
+                for sel in address_selectors:
+                    addr_el = el.select_one(sel)
+                    if addr_el:
+                        address = addr_el.get_text(strip=True)
+                        break
+                
+                if not address:
+                    # 嘗試從文本中提取地址
+                    text = el.get_text(strip=True)
+                    if '地址' in text or 'Address' in text:
+                        lines = text.split('\n')
+                        for i, line in enumerate(lines):
+                            if '地址' in line or 'Address' in line:
+                                if i + 1 < len(lines):
+                                    address = lines[i + 1].strip()
+                                    break
+                
+                # 提取地圖鏈接
+                map_uri = None
+                map_links = el.find_all('a', href=True)
+                for link in map_links:
+                    href = link['href']
+                    if any(keyword in href.lower() for keyword in ['maps', 'google', 'map', 'location']):
+                        map_uri = href
+                        break
+                
+                # 提取座標信息
+                latlng = None
+                if map_uri:
+                    latlng = _extract_lat_lng_from_text(map_uri)
+                
+                # 解析空位信息
+                block_text = el.get_text("\n", strip=True)
+                has_vacancy, available_slots = _parse_vacancy_info(block_text)
+                
+                if name or address:
+                    items.append({
+                        'name': name or 'Ecbo Cloak 置物櫃',
+                        'address': address or '—',
+                        'map_uri': map_uri or url,
+                        'latlng': latlng,
+                        'has_vacancy': has_vacancy,
+                        'available_slots': available_slots
+                    })
+            except Exception as e:
+                logger.warning(f"解析 Ecbo Cloak 元素時出錯: {e}")
+                continue
+        
+        # 如果沒有找到具體的置物櫃信息，至少返回網站入口
+        if not items:
+            items.append({
+                'name': 'Ecbo Cloak 置物櫃服務',
+                'address': '—',
+                'map_uri': url,
+                'latlng': None,
+            })
+        
+        return items
 
     # Tokyo Metro Locker Concierge（入口頁，多語，動態內容為主：保底抽鏈結與區塊文字）
     if 'akilocker.biz' in url:
@@ -436,9 +559,7 @@ def build_lockers_carousel(lockers, current_index=0):
     if distance_chip:
         chips_row_contents.append(distance_chip)
 
-    body_contents = [
-        {"type": "text", "text": name, "weight": "bold", "size": "md", "color": "#333333", "wrap": True}
-    ]
+    body_contents = []
     if chips_row_contents:
         body_contents.append({
             "type": "box",
@@ -448,7 +569,43 @@ def build_lockers_carousel(lockers, current_index=0):
             "margin": "sm"
         })
     body_contents.append({"type": "separator", "margin": "md"})
-    body_contents.append({"type": "text", "text": f"📍 {addr}", "size": "sm", "color": "#555555", "wrap": True, "margin": "sm"})
+    
+    # 改善地點信息顯示
+    location_info = []
+    if name and addr and name != addr:
+        # 如果名稱和地址不同，分別顯示
+        location_info.append({
+            "type": "text", 
+            "text": f"🏢 {name}", 
+            "size": "md", 
+            "color": "#333333", 
+            "weight": "bold",
+            "wrap": True, 
+            "margin": "sm"
+        })
+        location_info.append({
+            "type": "text", 
+            "text": f"📍 {addr}", 
+            "size": "sm", 
+            "color": "#666666", 
+            "wrap": True, 
+            "margin": "xs"
+        })
+    else:
+        # 如果名稱和地址相同或只有一個，合併顯示
+        display_text = name if name else addr
+        location_info.append({
+            "type": "text", 
+            "text": f"📍 {display_text}", 
+            "size": "md", 
+            "color": "#333333", 
+            "weight": "bold",
+            "wrap": True, 
+            "margin": "sm"
+        })
+    
+    # 添加地點信息到內容中
+    body_contents.extend(location_info)
 
     # 構建分頁按鈕
     footer_buttons = []
@@ -566,4 +723,30 @@ def get_user_message_id(user_id: str):
     """獲取用戶的消息ID"""
     session = get_user_locker_session(user_id)
     return session['message_id'] if session else None
+
+def test_ecbo_cloak_scraping():
+    """測試 Ecbo Cloak 網站的爬蟲功能"""
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36'
+        }
+        url = 'https://cloak.ecbo.io/zh-TW'
+        logger.info(f"🧪 測試 Ecbo Cloak 網站爬蟲: {url}")
+        
+        items = _scrape_site_for_lockers(url, headers)
+        logger.info(f"✅ 成功爬取到 {len(items)} 個置物櫃項目")
+        
+        for i, item in enumerate(items):
+            logger.info(f"項目 {i+1}: {item.get('name', 'N/A')} - {item.get('address', 'N/A')}")
+            if item.get('latlng'):
+                logger.info(f"  座標: {item['latlng']}")
+            if item.get('has_vacancy') is not None:
+                logger.info(f"  空位狀態: {item['has_vacancy']}")
+            if item.get('available_slots'):
+                logger.info(f"  可用數量: {item['available_slots']}")
+        
+        return items
+    except Exception as e:
+        logger.error(f"❌ Ecbo Cloak 爬蟲測試失敗: {e}")
+        return []
 
