@@ -1215,7 +1215,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=leaderboard_list"
                             },
                             "style": "primary",
-                            "color": THEME_ERROR,
+                            "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1
                         },
@@ -1227,7 +1227,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=leaderboard&rank=1"
                             },
                             "style": "primary",
-                            "color": THEME_WARNING,
+                            "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1,
                             "marginStart": "sm"
@@ -1250,7 +1250,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=trip_management"
                             },
                             "style": "primary",
-                            "color": THEME_SUCCESS,
+                            "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1
                         },
@@ -1262,7 +1262,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=tour_clock"
                             },
                             "style": "primary",
-                            "color": THEME_ACCENT_BLUE,
+                            "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1,
                             "marginStart": "sm"
@@ -1285,7 +1285,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=locker"
                             },
                             "style": "primary",
-                            "color": THEME_WARNING,
+                            "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1
                         },
@@ -1297,7 +1297,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=split_bill"
                             },
                             "style": "primary",
-                            "color": THEME_SUCCESS,
+                            "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1,
                             "marginStart": "sm"
@@ -1320,7 +1320,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=my_favorites"
                             },
                             "style": "primary",
-                            "color": THEME_ERROR,
+                            "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1
                         }
@@ -1342,7 +1342,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=help"
                             },
                             "style": "primary",
-                            "color": THEME_ACCENT_BLUE,
+                            "color": THEME_PRIMARY_BLUE,
                             "height": "sm",
                             "flex": 1
                         }
