@@ -2293,67 +2293,8 @@ def create_simple_flex_message(template_type, **kwargs):
             }
         }
 
-    # 預設錯誤訊息
-    return {
-        "type": "bubble",
-        "header": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "🤔 需要幫助嗎？",
-                    "weight": "bold",
-                    "size": "lg",
-                    "color": "#ffffff",
-                    "align": "center"
-                }
-            ],
-            "backgroundColor": THEME_PRIMARY_BLUE,
-            "paddingAll": "20px"
-        },
-        "body": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "抱歉，我不太理解您的訊息。",
-                    "size": "md",
-                    "color": THEME_TEXT_PRIMARY,
-                    "wrap": True,
-                    "margin": "md"
-                },
-                {
-                    "type": "text",
-                    "text": "請嘗試輸入「功能介紹」查看可用功能，或使用快速選單。",
-                    "size": "sm",
-                    "color": THEME_TEXT_SECONDARY,
-                    "wrap": True,
-                    "margin": "sm"
-                }
-            ],
-            "paddingAll": "24px"
-        },
-        "footer": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "button",
-                    "action": {
-                        "type": "postback",
-                        "label": "📋 查看功能介紹",
-                        "data": "action=quick_reply&type=help"
-                    },
-                    "style": "primary",
-                    "color": THEME_PRIMARY_BLUE,
-                    "height": "sm"
-                }
-            ],
-            "paddingAll": "20px"
-        }
-    }
+    # 預設回應：直接顯示快速選單
+    return create_quick_reply_menu()
 
 # 環境變數檢查
 CHANNEL_ACCESS_TOKEN = os.environ.get('CHANNEL_ACCESS_TOKEN')
