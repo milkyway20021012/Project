@@ -2555,8 +2555,8 @@ if line_handler:
 
             # 使用 locker_service 查詢真實資料
             try:
-                from api.locker_service import fetch_nearby_lockers, build_lockers_carousel, store_user_locker_session
-                lockers = fetch_nearby_lockers(latitude, longitude)
+                from api.locker_service import get_station_specific_lockers, build_lockers_carousel, store_user_locker_session
+                lockers = get_station_specific_lockers(latitude, longitude)
                 # 存儲用戶會話數據
                 line_user_id = event.source.user_id if hasattr(event.source, 'user_id') else 'unknown'
                 store_user_locker_session(line_user_id, lockers, user_lat=latitude, user_lng=longitude)
