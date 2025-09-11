@@ -502,7 +502,7 @@ def build_lockers_carousel(lockers, current_index=0):
             "type": "box",
             "layout": "vertical",
             "contents": [{"type": "text", "text": f"🛅 {header_title}", "weight": "bold", "size": "lg", "color": "#ffffff", "align": "center"}],
-            "backgroundColor": "#FFA500",
+            "backgroundColor": "#F59E0B",
             "paddingAll": "20px"
         },
         "body": {

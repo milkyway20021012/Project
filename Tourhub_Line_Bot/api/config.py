@@ -7,7 +7,7 @@ MESSAGE_TEMPLATES = {
             "description": "查看最新的排行榜",
             "sub_description": "點擊下方按鈕查看詳細排名",
             "button_text": "查看排行榜",
-            "color": "#FF6B6B",
+            "color": "#EF4444",
             "url": "https://tourhub-ashy.vercel.app/"
         },
         "trip_management": {
@@ -15,7 +15,7 @@ MESSAGE_TEMPLATES = {
             "description": "建立屬於您的專屬行程內容",
             "sub_description": "點擊下方按鈕開始規劃您的完美旅程",
             "button_text": "管理行程",
-            "color": "#4ECDC4",
+            "color": "#10B981",
             "url": "https://tripfrontend.vercel.app/linetrip"
         },
         "locker": {
@@ -23,7 +23,7 @@ MESSAGE_TEMPLATES = {
             "description": "快速定位附近有空位的置物櫃",
             "sub_description": "輕鬆寄存行李，讓您的旅程更輕鬆",
             "button_text": "尋找置物櫃",
-            "color": "#FFA500",
+            "color": "#F59E0B",
             "url": "https://tripfrontend.vercel.app/linelocker"
         },
         "split_bill": {
@@ -31,7 +31,7 @@ MESSAGE_TEMPLATES = {
             "description": "記錄每一筆費用，自動計算每人應付金額",
             "sub_description": "輕鬆分攤旅費，避免尷尬的算帳時刻",
             "button_text": "開始分帳",
-            "color": "#28A745",
+            "color": "#10B981",
             "url": "https://liff.line.me/2007317887-Dq8Rorg5"
         },
         "tour_clock": {
@@ -39,14 +39,14 @@ MESSAGE_TEMPLATES = {
             "description": "智能集合時間管理工具",
             "sub_description": "設定集合時間，自動發送提醒通知",
             "button_text": "開啟 TourClock",
-            "color": "#9B59B6",
+            "color": "#1D4ED8",
             "url": "https://tourclock-dvf2.vercel.app/?state=EICy1YHneLoC&liffClientId=2007488134&liffRedirectUri=https%3A%2F%2Ftourclock-dvf2.vercel.app&code=uj41KyebQrmS2IzWredf"
         }
     },
     # 集合成功模板已移除
     "help": {
         "title": "📱 TourHub 功能介紹",
-        "color": "#6C5CE7",
+        "color": "#1D4ED8",
         "features": [
             {
                 "emoji": "🏆",
@@ -79,7 +79,7 @@ MESSAGE_TEMPLATES = {
     # 功能選單模板
     "feature_menu": {
         "title": "🎯 選擇您想了解的功能",
-        "color": "#6C5CE7",
+        "color": "#1D4ED8",
         "description": "點擊下方按鈕查看詳細功能介紹"
     },
 
@@ -87,7 +87,7 @@ MESSAGE_TEMPLATES = {
     "feature_details": {
         "leaderboard": {
             "title": "🏆 排行榜功能",
-            "color": "#FF6B6B",
+            "color": "#EF4444",
             "description": "查看最受歡迎的旅遊行程排行榜",
             "details": [
                 "📊 即時更新的行程排名",
@@ -105,7 +105,7 @@ MESSAGE_TEMPLATES = {
         },
         "trip_management": {
             "title": "🗓️ 行程管理功能",
-            "color": "#4ECDC4",
+            "color": "#10B981",
             "description": "建立和管理您的專屬旅遊行程",
             "details": [
                 "📝 自由建立個人行程",
@@ -123,7 +123,7 @@ MESSAGE_TEMPLATES = {
         },
         "tour_clock": {
             "title": "⏰ 集合管理功能",
-            "color": "#9B59B6",
+            "color": "#1D4ED8",
             "description": "智能集合時間管理工具",
             "details": [
                 "⏰ 設定集合時間和地點",
@@ -141,7 +141,7 @@ MESSAGE_TEMPLATES = {
         },
         "locker": {
             "title": "🛅 置物櫃功能",
-            "color": "#FFA500",
+            "color": "#F59E0B",
             "description": "快速找到附近的置物櫃服務",
             "details": [
                 "📍 定位附近置物櫃位置",
@@ -159,7 +159,7 @@ MESSAGE_TEMPLATES = {
         },
         "split_bill": {
             "title": "💰 分帳工具功能",
-            "color": "#E74C3C",
+            "color": "#10B981",
             "description": "輕鬆管理旅行中的共同費用",
             "details": [
                 "💳 記錄每筆旅行支出",

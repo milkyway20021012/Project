@@ -7,61 +7,77 @@ import re
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 全域 Flex Message 藍白主題套用工具
-THEME_PRIMARY_BLUE = "#0D47A1"  # 深藍（header / 主要按鈕）
-THEME_LIGHT_BLUE_BG = "#E8F0FE"  # 淺藍背景（chips / 次要區塊）
-THEME_TEXT_PRIMARY = "#1F2937"   # 主要文字深灰藍
-THEME_TEXT_SECONDARY = "#4B5563" # 次要文字
+# 全域 Flex Message 現代化主題系統
+THEME_PRIMARY_BLUE = "#2563EB"      # 現代藍色（主要按鈕/header）
+THEME_SECONDARY_BLUE = "#3B82F6"    # 次要藍色（hover狀態）
+THEME_LIGHT_BLUE_BG = "#EFF6FF"     # 淺藍背景（卡片背景）
+THEME_ACCENT_BLUE = "#1D4ED8"       # 強調藍色（重要元素）
+THEME_TEXT_PRIMARY = "#1F2937"      # 主要文字深灰藍
+THEME_TEXT_SECONDARY = "#6B7280"    # 次要文字
+THEME_TEXT_MUTED = "#9CA3AF"        # 靜音文字
+THEME_SUCCESS = "#10B981"           # 成功綠色
+THEME_WARNING = "#F59E0B"           # 警告橙色
+THEME_ERROR = "#EF4444"             # 錯誤紅色
+THEME_BORDER = "#E5E7EB"            # 邊框顏色
 
-def apply_blue_theme(payload):
-    """遞迴套用藍白主題到 Flex Message dict。
-    - header 背景 → 深藍
-    - 主要 button 顏色 → 深藍
-    - 常見的橘色（#FFA500）統一替換為深藍
-    - 主要/次要文字顏色優化
+def apply_modern_theme(payload):
+    """套用現代化主題到 Flex Message dict
+    - 統一的色彩系統
+    - 改善的視覺層次
+    - 更好的可讀性
     """
     if payload is None:
-        
         return payload
 
     def _transform(node, parent_key=None):
         if isinstance(node, dict):
-            # 統一替換橘色 → 深藍
-            if 'backgroundColor' in node and node['backgroundColor'] == '#FFA500':
+            # 統一替換舊的橘色系統
+            if node.get('backgroundColor') == '#FFA500':
                 node['backgroundColor'] = THEME_PRIMARY_BLUE
-
-            # header 區塊底色統一深藍
+            
+            # header 區塊統一使用主色調
             if node.get('type') == 'box' and parent_key == 'header':
-                node['backgroundColor'] = THEME_PRIMARY_BLUE
+                if node.get('backgroundColor') not in [THEME_PRIMARY_BLUE, THEME_ACCENT_BLUE]:
+                    node['backgroundColor'] = THEME_PRIMARY_BLUE
 
-            # 主要按鈕顏色統一深藍
+            # 按鈕顏色優化
             if node.get('type') == 'button':
                 style = node.get('style')
                 if style == 'primary':
-                    node['color'] = THEME_PRIMARY_BLUE
+                    # 根據功能類型使用不同顏色
+                    current_color = node.get('color', '')
+                    if current_color in ['#FF6B6B', '#E74C3C']:  # 排行榜
+                        node['color'] = THEME_ERROR
+                    elif current_color in ['#4ECDC4', '#2ECC71']:  # 行程管理/成功
+                        node['color'] = THEME_SUCCESS
+                    elif current_color in ['#FFA500', '#F59E0B']:  # 置物櫃/警告
+                        node['color'] = THEME_WARNING
+                    elif current_color in ['#9B59B6', '#6C5CE7']:  # TourClock/功能說明
+                        node['color'] = THEME_ACCENT_BLUE
+                    else:
+                        node['color'] = THEME_PRIMARY_BLUE
                 elif style == 'secondary':
-                    # 次要按鈕維持淺色系，若未指定顏色則給文字深灰藍
                     node.setdefault('color', THEME_TEXT_SECONDARY)
 
-            # 統一調整常見文字色彩
+            # 文字顏色優化
             if node.get('type') == 'text':
-                # header 文字維持白色，其他調整為主要或次要
                 if parent_key == 'header':
                     node['color'] = '#ffffff'
                 else:
-                    # 僅在未指定或為過深/過淺時替換
                     current = node.get('color')
                     if current in (None, '#333333', '#222222', '#000000'):
                         node['color'] = THEME_TEXT_PRIMARY
                     elif current in ('#666666', '#777777', '#888888', '#555555'):
                         node['color'] = THEME_TEXT_SECONDARY
+                    elif current == '#999999':
+                        node['color'] = THEME_TEXT_MUTED
 
             # 遞迴處理子節點
             for k, v in list(node.items()):
                 node[k] = _transform(v, parent_key=k)
             return node
         elif isinstance(node, list):
-            return [ _transform(child, parent_key=parent_key) for child in node ]
+            return [_transform(child, parent_key=parent_key) for child in node]
         else:
             return node
 
@@ -258,7 +274,7 @@ def create_optimized_flex_itinerary(data):
                             "type": "text",
                             "text": date_text,
                             "size": "sm",
-                            "color": "#666666",
+                            "color": THEME_TEXT_SECONDARY,
                             "margin": "md",
                             "weight": "bold"
                         },
@@ -272,7 +288,7 @@ def create_optimized_flex_itinerary(data):
                             "type": "text",
                             "text": location,
                             "size": "sm",
-                            "color": "#333333",
+                            "color": THEME_TEXT_PRIMARY,
                             "wrap": True
                         }
                     ])
@@ -301,7 +317,7 @@ def create_optimized_flex_itinerary(data):
                     "type": "text",
                     "text": "...",
                     "size": "sm",
-                    "color": "#999999",
+                            "color": THEME_TEXT_MUTED,
                     "align": "center",
                     "margin": "md"
                 },
@@ -309,7 +325,7 @@ def create_optimized_flex_itinerary(data):
                     "type": "text",
                     "text": f"完整行程共 {total_days} 天，以上僅顯示前 6 天",
                     "size": "xs",
-                    "color": "#999999",
+                            "color": THEME_TEXT_MUTED,
                     "align": "center",
                     "wrap": True
                 }
@@ -352,10 +368,10 @@ def create_optimized_flex_itinerary(data):
                 "contents": [
                     {
                         "type": "text",
-                        "text": "行程安排",
+                        "text": "📋 行程安排",
                         "weight": "bold",
                         "size": "md",
-                        "color": "#555555",
+                        "color": THEME_TEXT_PRIMARY,
                         "marginBottom": "md"
                     }
                 ] + itinerary_items,
@@ -369,7 +385,7 @@ def create_optimized_flex_itinerary(data):
                         "type": "text",
                         "text": "完整行程請查看 TourHub 網站",
                         "size": "xs",
-                        "color": "#666666",
+                        "color": THEME_TEXT_SECONDARY,
                         "align": "center"
                     }
                 ],
@@ -480,7 +496,7 @@ def create_creation_response(creation_result):
                             "uri": creation_result.get('url', 'https://tripfrontend.vercel.app')
                         },
                         "style": "primary",
-                        "color": "#2ECC71",
+                        "color": THEME_SUCCESS,
                         "height": "sm"
                     }
                 ] if creation_result.get('url') else [],
@@ -796,7 +812,7 @@ def create_user_account_info(line_user_id):
                         "data": "action=binding_status"
                     },
                     "style": "primary",
-                    "color": "#6C5CE7",
+                    "color": THEME_ACCENT_BLUE,
                     "height": "sm"
                 },
                 {
@@ -885,7 +901,7 @@ def create_binding_status(line_user_id):
                     "align": "center"
                 }
             ],
-            "backgroundColor": "#2ECC71",
+            "backgroundColor": THEME_SUCCESS,
             "paddingAll": "20px"
         },
         "body": {
@@ -896,7 +912,7 @@ def create_binding_status(line_user_id):
                     "type": "text",
                     "text": f"綁定狀態總覽 ({len(bindings)}/5)",
                     "size": "md",
-                    "color": "#555555",
+                    "color": THEME_TEXT_PRIMARY,
                     "margin": "md",
                     "weight": "bold"
                 },
@@ -919,7 +935,7 @@ def create_binding_status(line_user_id):
                         "data": "action=rebind_all"
                     },
                     "style": "primary",
-                    "color": "#2ECC71",
+                    "color": THEME_SUCCESS,
                     "height": "sm"
                 }
             ],
@@ -1079,7 +1095,7 @@ def execute_rebind(line_user_id):
                             "type": "text",
                             "text": f"🎉 已成功重新綁定 {success_count} 個服務！",
                             "size": "md",
-                            "color": "#555555",
+                            "color": THEME_TEXT_PRIMARY,
                             "margin": "md",
                             "weight": "bold"
                         },
@@ -1087,7 +1103,7 @@ def execute_rebind(line_user_id):
                             "type": "text",
                             "text": "• 🏆 排行榜\n• 🗓️ 行程管理\n• ⏰ 集合管理\n• 🛅 置物櫃\n• 💰 分帳系統",
                             "size": "sm",
-                            "color": "#666666",
+                            "color": THEME_TEXT_SECONDARY,
                             "wrap": True,
                             "margin": "md"
                         },
@@ -1099,7 +1115,7 @@ def execute_rebind(line_user_id):
                             "type": "text",
                             "text": "💡 現在您可以正常使用所有功能了！",
                             "size": "sm",
-                            "color": "#2ECC71",
+                            "color": THEME_SUCCESS,
                             "wrap": True,
                             "margin": "lg"
                         }
@@ -1118,7 +1134,7 @@ def execute_rebind(line_user_id):
                                 "data": "action=back_to_menu"
                             },
                             "style": "primary",
-                            "color": "#2ECC71",
+                            "color": THEME_SUCCESS,
                             "height": "sm"
                         }
                     ],
@@ -1144,7 +1160,7 @@ def create_error_message(error_text):
                     "type": "text",
                     "text": f"❌ {error_text}",
                     "wrap": True,
-                    "color": "#E74C3C",
+                    "color": THEME_ERROR,
                     "align": "center"
                 }
             ],
@@ -1163,23 +1179,24 @@ def create_quick_reply_menu():
             "contents": [
                 {
                     "type": "text",
-                    "text": "⚡ 快速回覆選單",
+                    "text": "🎯 TourHub 快速選單",
                     "weight": "bold",
-                    "size": "lg",
+                    "size": "xl",
                     "color": "#ffffff",
                     "align": "center"
                 },
                 {
                     "type": "text",
-                    "text": "點擊下方按鈕快速使用功能",
+                    "text": "選擇您需要的功能，開始您的完美旅程",
                     "size": "sm",
-                    "color": "#ffffff",
+                    "color": "#E0E7FF",
                     "align": "center",
-                    "margin": "sm"
+                    "margin": "sm",
+                    "wrap": True
                 }
             ],
-            "backgroundColor": "#6C5CE7",
-            "paddingAll": "20px"
+            "backgroundColor": THEME_PRIMARY_BLUE,
+            "paddingAll": "24px"
         },
         "body": {
             "type": "box",
@@ -1198,7 +1215,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=leaderboard_list"
                             },
                             "style": "primary",
-                            "color": "#FF6B6B",
+                            "color": THEME_ERROR,
                             "height": "sm",
                             "flex": 1
                         },
@@ -1210,7 +1227,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=leaderboard&rank=1"
                             },
                             "style": "primary",
-                            "color": "#87CEEB",
+                            "color": THEME_WARNING,
                             "height": "sm",
                             "flex": 1,
                             "marginStart": "sm"
@@ -1233,7 +1250,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=trip_management"
                             },
                             "style": "primary",
-                            "color": "#4ECDC4",
+                            "color": THEME_SUCCESS,
                             "height": "sm",
                             "flex": 1
                         },
@@ -1245,7 +1262,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=tour_clock"
                             },
                             "style": "primary",
-                            "color": "#87CEEB",
+                            "color": THEME_ACCENT_BLUE,
                             "height": "sm",
                             "flex": 1,
                             "marginStart": "sm"
@@ -1268,7 +1285,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=locker"
                             },
                             "style": "primary",
-                            "color": "#FFA500",
+                            "color": THEME_WARNING,
                             "height": "sm",
                             "flex": 1
                         },
@@ -1280,7 +1297,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=split_bill"
                             },
                             "style": "primary",
-                            "color": "#87CEEB",
+                            "color": THEME_SUCCESS,
                             "height": "sm",
                             "flex": 1,
                             "marginStart": "sm"
@@ -1303,7 +1320,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=my_favorites"
                             },
                             "style": "primary",
-                            "color": "#E74C3C",
+                            "color": THEME_ERROR,
                             "height": "sm",
                             "flex": 1
                         }
@@ -1325,7 +1342,7 @@ def create_quick_reply_menu():
                                 "data": "action=quick_reply&type=help"
                             },
                             "style": "primary",
-                            "color": "#9B59B6",
+                            "color": THEME_ACCENT_BLUE,
                             "height": "sm",
                             "flex": 1
                         }
@@ -1343,7 +1360,7 @@ def create_quick_reply_menu():
                     "type": "text",
                     "text": "💡 提示：您也可以直接輸入文字來使用功能",
                     "size": "xs",
-                    "color": "#666666",
+                    "color": THEME_TEXT_SECONDARY,
                     "align": "center",
                     "wrap": True
                 }
@@ -1413,7 +1430,7 @@ def create_simple_flex_message(template_type, **kwargs):
                             "type": "text",
                             "text": template["description"],
                             "size": "md",
-                            "color": "#555555",
+                            "color": THEME_TEXT_PRIMARY,
                             "align": "center",
                             "margin": "md"
                         }
@@ -1739,7 +1756,7 @@ def create_simple_flex_message(template_type, **kwargs):
                                     "type": "text",
                                     "text": data.get('title', data.get('destination', '未知行程')),
                                     "size": "xs",
-                                    "color": "#666666",
+                                    "color": THEME_TEXT_SECONDARY,
                                     "marginTop": "xs",
                                     "wrap": True
                                 },
@@ -2084,7 +2101,7 @@ def create_simple_flex_message(template_type, **kwargs):
                             "type": "text",
                             "text": f"抱歉，{rank_titles.get(rank_int, f'第{rank_int}名')}的詳細行程安排暫時無法提供。",
                             "wrap": True,
-                            "color": "#666666",
+                            "color": THEME_TEXT_SECONDARY,
                             "align": "center"
                         }
                     ],
@@ -2175,7 +2192,7 @@ def create_simple_flex_message(template_type, **kwargs):
                             "type": "text",
                             "text": f"抱歉，暫無 {location} 的行程資料",
                             "wrap": True,
-                            "color": "#666666",
+                            "color": THEME_TEXT_SECONDARY,
                             "align": "center"
                         }
                     ],
@@ -2279,15 +2296,59 @@ def create_simple_flex_message(template_type, **kwargs):
     # 預設錯誤訊息
     return {
         "type": "bubble",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "🤔 需要幫助嗎？",
+                    "weight": "bold",
+                    "size": "lg",
+                    "color": "#ffffff",
+                    "align": "center"
+                }
+            ],
+            "backgroundColor": THEME_PRIMARY_BLUE,
+            "paddingAll": "20px"
+        },
         "body": {
             "type": "box",
             "layout": "vertical",
             "contents": [
                 {
                     "type": "text",
-                    "text": "抱歉，我不太理解您的訊息。請嘗試輸入「功能介紹」查看可用功能。",
+                    "text": "抱歉，我不太理解您的訊息。",
+                    "size": "md",
+                    "color": THEME_TEXT_PRIMARY,
                     "wrap": True,
-                    "color": "#666666"
+                    "margin": "md"
+                },
+                {
+                    "type": "text",
+                    "text": "請嘗試輸入「功能介紹」查看可用功能，或使用快速選單。",
+                    "size": "sm",
+                    "color": THEME_TEXT_SECONDARY,
+                    "wrap": True,
+                    "margin": "sm"
+                }
+            ],
+            "paddingAll": "24px"
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "button",
+                    "action": {
+                        "type": "postback",
+                        "label": "📋 查看功能介紹",
+                        "data": "action=quick_reply&type=help"
+                    },
+                    "style": "primary",
+                    "color": THEME_PRIMARY_BLUE,
+                    "height": "sm"
                 }
             ],
             "paddingAll": "20px"
@@ -2370,7 +2431,7 @@ if line_handler:
 
                 with ApiClient(configuration) as api_client:
                     line_bot_api = MessagingApi(api_client)
-                    themed = apply_blue_theme(flex_message)
+                    themed = apply_modern_theme(flex_message)
                     line_bot_api.reply_message_with_http_info(
                         ReplyMessageRequest(
                             reply_token=event.reply_token,
@@ -2386,7 +2447,7 @@ if line_handler:
 
                 with ApiClient(configuration) as api_client:
                     line_bot_api = MessagingApi(api_client)
-                    themed = apply_blue_theme(response_message)
+                    themed = apply_modern_theme(response_message)
                     line_bot_api.reply_message_with_http_info(
                         ReplyMessageRequest(
                             reply_token=event.reply_token,
@@ -2479,7 +2540,7 @@ if line_handler:
 
             with ApiClient(configuration) as api_client:
                 line_bot_api = MessagingApi(api_client)
-                themed = apply_blue_theme(flex_message)
+                themed = apply_modern_theme(flex_message)
                 line_bot_api.reply_message_with_http_info(
                     ReplyMessageRequest(
                         reply_token=event.reply_token,
@@ -2535,7 +2596,7 @@ if line_handler:
 
             with ApiClient(configuration) as api_client:
                 line_bot_api = MessagingApi(api_client)
-                themed = apply_blue_theme(flex_message)
+                themed = apply_modern_theme(flex_message)
                 response = line_bot_api.reply_message_with_http_info(
                     ReplyMessageRequest(
                         reply_token=event.reply_token,
@@ -2622,7 +2683,7 @@ if line_handler:
                         line_bot_api = MessagingApi(api_client)
                         
                         # 發送新的Flex Message來替換舊的
-                        themed = apply_blue_theme(flex_message)
+                        themed = apply_modern_theme(flex_message)
                         line_bot_api.push_message_with_http_info(
                             PushMessageRequest(
                                 to=line_user_id,
