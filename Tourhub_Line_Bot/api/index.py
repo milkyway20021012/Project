@@ -1223,7 +1223,10 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "margin": "md"
+                            "marginTop": "md",
+                            "marginBottom": "md",
+                            "marginStart": "md",
+                            "marginEnd": "sm"
                         },
                         {
                             "type": "button",
@@ -1236,7 +1239,10 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "margin": "md"
+                            "marginTop": "md",
+                            "marginBottom": "md",
+                            "marginStart": "sm",
+                            "marginEnd": "md"
                         }
                     ],
                     "spacing": "xl",
@@ -1260,7 +1266,10 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "margin": "md"
+                            "marginTop": "md",
+                            "marginBottom": "md",
+                            "marginStart": "md",
+                            "marginEnd": "sm"
                         },
                         {
                             "type": "button",
@@ -1273,7 +1282,10 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "margin": "md"
+                            "marginTop": "md",
+                            "marginBottom": "md",
+                            "marginStart": "sm",
+                            "marginEnd": "md"
                         }
                     ],
                     "spacing": "xl",
@@ -1297,7 +1309,10 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "margin": "md"
+                            "marginTop": "md",
+                            "marginBottom": "md",
+                            "marginStart": "md",
+                            "marginEnd": "sm"
                         },
                         {
                             "type": "button",
@@ -1310,7 +1325,10 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "margin": "md"
+                            "marginTop": "md",
+                            "marginBottom": "md",
+                            "marginStart": "sm",
+                            "marginEnd": "md"
                         }
                     ],
                     "spacing": "xl",
@@ -1334,7 +1352,10 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "margin": "md"
+                            "marginTop": "md",
+                            "marginBottom": "md",
+                            "marginStart": "md",
+                            "marginEnd": "sm"
                         },
                         {
                             "type": "button",
@@ -1347,7 +1368,10 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "margin": "md"
+                            "marginTop": "md",
+                            "marginBottom": "md",
+                            "marginStart": "sm",
+                            "marginEnd": "md"
                         }
                     ],
                     "spacing": "xl",
