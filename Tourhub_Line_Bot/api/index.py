@@ -1329,6 +1329,12 @@ def create_quick_reply_menu():
                     "marginBottom": "sm"
                 },
                 
+                # 分隔線
+                {
+                    "type": "separator",
+                    "margin": "lg"
+                },
+                
                 # 第五行：幫助和設定
                 {
                     "type": "box",
