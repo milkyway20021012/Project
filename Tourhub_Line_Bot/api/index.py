@@ -1226,7 +1226,7 @@ def create_new_quick_menu():
                             "marginTop": "8px",
                             "marginBottom": "8px",
                             "marginStart": "12px",
-                            "marginEnd": "6px"
+                            "marginEnd": "8px"
                         },
                         {
                             "type": "button",
@@ -1241,13 +1241,13 @@ def create_new_quick_menu():
                             "flex": 1,
                             "marginTop": "8px",
                             "marginBottom": "8px",
-                            "marginStart": "6px",
+                            "marginStart": "8px",
                             "marginEnd": "12px"
                         }
                     ],
                     "spacing": "xl",
-                    "marginTop": "16px",
-                    "marginBottom": "20px"
+                    "marginTop": "20px",
+                    "marginBottom": "24px"
                 },
                 
                 # 第二行：行程管理
@@ -1269,7 +1269,7 @@ def create_new_quick_menu():
                             "marginTop": "8px",
                             "marginBottom": "8px",
                             "marginStart": "12px",
-                            "marginEnd": "6px"
+                            "marginEnd": "8px"
                         },
                         {
                             "type": "button",
@@ -1284,13 +1284,13 @@ def create_new_quick_menu():
                             "flex": 1,
                             "marginTop": "8px",
                             "marginBottom": "8px",
-                            "marginStart": "6px",
+                            "marginStart": "8px",
                             "marginEnd": "12px"
                         }
                     ],
                     "spacing": "xl",
-                    "marginTop": "20px",
-                    "marginBottom": "20px"
+                    "marginTop": "24px",
+                    "marginBottom": "24px"
                 },
                 
                 # 第三行：實用工具
@@ -1312,7 +1312,7 @@ def create_new_quick_menu():
                             "marginTop": "8px",
                             "marginBottom": "8px",
                             "marginStart": "12px",
-                            "marginEnd": "6px"
+                            "marginEnd": "8px"
                         },
                         {
                             "type": "button",
@@ -1327,13 +1327,13 @@ def create_new_quick_menu():
                             "flex": 1,
                             "marginTop": "8px",
                             "marginBottom": "8px",
-                            "marginStart": "6px",
+                            "marginStart": "8px",
                             "marginEnd": "12px"
                         }
                     ],
                     "spacing": "xl",
-                    "marginTop": "20px",
-                    "marginBottom": "20px"
+                    "marginTop": "24px",
+                    "marginBottom": "24px"
                 },
                 
                 # 第四行：個人功能
@@ -1355,7 +1355,7 @@ def create_new_quick_menu():
                             "marginTop": "8px",
                             "marginBottom": "8px",
                             "marginStart": "12px",
-                            "marginEnd": "6px"
+                            "marginEnd": "8px"
                         },
                         {
                             "type": "button",
@@ -1370,13 +1370,13 @@ def create_new_quick_menu():
                             "flex": 1,
                             "marginTop": "8px",
                             "marginBottom": "8px",
-                            "marginStart": "6px",
+                            "marginStart": "8px",
                             "marginEnd": "12px"
                         }
                     ],
                     "spacing": "xl",
-                    "marginTop": "20px",
-                    "marginBottom": "16px"
+                    "marginTop": "24px",
+                    "marginBottom": "20px"
                 }
             ],
             "paddingAll": "20px"
