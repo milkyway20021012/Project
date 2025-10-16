@@ -917,6 +917,12 @@ def build_lockers_carousel(lockers, current_index=0, user_lat=None, user_lng=Non
         "height": "sm"
     })
     
+    # 添加間隙
+    footer_buttons.append({
+        "type": "spacer",
+        "size": "sm"
+    })
+    
     # 分頁按鈕
     if len(lockers) > 1:
         # 顯示當前位置和總數
