@@ -1223,10 +1223,14 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "8px",
-                            "marginBottom": "8px",
-                            "marginStart": "12px",
-                            "marginEnd": "8px"
+                            "marginTop": "12px",
+                            "marginBottom": "12px",
+                            "marginStart": "16px",
+                            "marginEnd": "12px"
+                        },
+                        {
+                            "type": "spacer",
+                            "size": "md"
                         },
                         {
                             "type": "button",
@@ -1239,15 +1243,14 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "8px",
-                            "marginBottom": "8px",
-                            "marginStart": "8px",
-                            "marginEnd": "12px"
+                            "marginTop": "12px",
+                            "marginBottom": "12px",
+                            "marginStart": "12px",
+                            "marginEnd": "16px"
                         }
                     ],
-                    "spacing": "xl",
-                    "marginTop": "20px",
-                    "marginBottom": "24px"
+                    "marginTop": "24px",
+                    "marginBottom": "32px"
                 },
                 
                 # 第二行：行程管理
@@ -1266,10 +1269,14 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "8px",
-                            "marginBottom": "8px",
-                            "marginStart": "12px",
-                            "marginEnd": "8px"
+                            "marginTop": "12px",
+                            "marginBottom": "12px",
+                            "marginStart": "16px",
+                            "marginEnd": "12px"
+                        },
+                        {
+                            "type": "spacer",
+                            "size": "md"
                         },
                         {
                             "type": "button",
@@ -1282,15 +1289,14 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "8px",
-                            "marginBottom": "8px",
-                            "marginStart": "8px",
-                            "marginEnd": "12px"
+                            "marginTop": "12px",
+                            "marginBottom": "12px",
+                            "marginStart": "12px",
+                            "marginEnd": "16px"
                         }
                     ],
-                    "spacing": "xl",
-                    "marginTop": "24px",
-                    "marginBottom": "24px"
+                    "marginTop": "32px",
+                    "marginBottom": "32px"
                 },
                 
                 # 第三行：實用工具
@@ -1309,10 +1315,14 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "8px",
-                            "marginBottom": "8px",
-                            "marginStart": "12px",
-                            "marginEnd": "8px"
+                            "marginTop": "12px",
+                            "marginBottom": "12px",
+                            "marginStart": "16px",
+                            "marginEnd": "12px"
+                        },
+                        {
+                            "type": "spacer",
+                            "size": "md"
                         },
                         {
                             "type": "button",
@@ -1325,15 +1335,14 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "8px",
-                            "marginBottom": "8px",
-                            "marginStart": "8px",
-                            "marginEnd": "12px"
+                            "marginTop": "12px",
+                            "marginBottom": "12px",
+                            "marginStart": "12px",
+                            "marginEnd": "16px"
                         }
                     ],
-                    "spacing": "xl",
-                    "marginTop": "24px",
-                    "marginBottom": "24px"
+                    "marginTop": "32px",
+                    "marginBottom": "32px"
                 },
                 
                 # 第四行：個人功能
@@ -1352,10 +1361,14 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "8px",
-                            "marginBottom": "8px",
-                            "marginStart": "12px",
-                            "marginEnd": "8px"
+                            "marginTop": "12px",
+                            "marginBottom": "12px",
+                            "marginStart": "16px",
+                            "marginEnd": "12px"
+                        },
+                        {
+                            "type": "spacer",
+                            "size": "md"
                         },
                         {
                             "type": "button",
@@ -1368,15 +1381,14 @@ def create_new_quick_menu():
                             "color": "#87CEEB",
                             "height": "sm",
                             "flex": 1,
-                            "marginTop": "8px",
-                            "marginBottom": "8px",
-                            "marginStart": "8px",
-                            "marginEnd": "12px"
+                            "marginTop": "12px",
+                            "marginBottom": "12px",
+                            "marginStart": "12px",
+                            "marginEnd": "16px"
                         }
                     ],
-                    "spacing": "xl",
-                    "marginTop": "24px",
-                    "marginBottom": "20px"
+                    "marginTop": "32px",
+                    "marginBottom": "24px"
                 }
             ],
             "paddingAll": "20px"
